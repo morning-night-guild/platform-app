@@ -1,5 +1,7 @@
 # platform-app
 
+![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/morning-night-guild/platform-app?style=plastic)
+
 ## commit message prefix
 
 Create an issue and include the number in the PREFIX when implementing.
