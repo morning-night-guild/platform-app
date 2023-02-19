@@ -4,8 +4,8 @@ import (
 	"testing"
 
 	"github.com/bufbuild/connect-go"
-	"github.com/morning-night-guild/platform-app/pkg/connect/proto/article/v1/articlev1connect"
-	"github.com/morning-night-guild/platform-app/pkg/connect/proto/health/v1/healthv1connect"
+	"github.com/morning-night-guild/platform-app/pkg/connect/article/v1/articlev1connect"
+	"github.com/morning-night-guild/platform-app/pkg/connect/health/v1/healthv1connect"
 )
 
 type ConnectClient struct {

@@ -15,7 +15,7 @@ import (
 	dme "github.com/morning-night-guild/platform-app/internal/domain/model/errors"
 	"github.com/morning-night-guild/platform-app/internal/usecase"
 	"github.com/morning-night-guild/platform-app/internal/usecase/port"
-	articlev1 "github.com/morning-night-guild/platform-app/pkg/connect/proto/article/v1"
+	articlev1 "github.com/morning-night-guild/platform-app/pkg/connect/article/v1"
 )
 
 func TestArticleShare(t *testing.T) {

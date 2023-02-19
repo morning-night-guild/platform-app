@@ -8,7 +8,7 @@ import (
 
 	"github.com/bufbuild/connect-go"
 	"github.com/morning-night-guild/platform-app/e2e/helper"
-	articlev1 "github.com/morning-night-guild/platform-app/pkg/connect/proto/article/v1"
+	articlev1 "github.com/morning-night-guild/platform-app/pkg/connect/article/v1"
 )
 
 const articleCount = uint32(5)
