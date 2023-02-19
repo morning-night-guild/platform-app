@@ -2,6 +2,12 @@
 
 ![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/morning-night-guild/platform-app?style=plastic)
 
+## document
+
+- [api](https://github.com/morning-night-guild/platform-app/tree/gh-pages/api)
+- [database](https://github.com/morning-night-guild/platform-app/tree/gh-pages/database)
+- [proto](https://github.com/morning-night-guild/platform-app/tree/gh-pages/proto)
+
 ## commit message prefix
 
 Create an issue and include the number in the PREFIX when implementing.
