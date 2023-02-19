@@ -30,5 +30,5 @@ make env
 ```
 
 ```shell
-make dup
+make dev
 ```
