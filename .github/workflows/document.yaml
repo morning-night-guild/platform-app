@@ -89,7 +89,7 @@ jobs:
   publish:
     runs-on: ubuntu-22.04
     needs: [api, proto, database]
-    # if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main'
     steps:
       - name: Download document api
         uses: actions/download-artifact@v3
