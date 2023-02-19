@@ -30,7 +30,7 @@ jobs:
       - name: Generate api document
         run: |
           mkdir -p public/api
-          npx widdershins --omitHeader --code true api/openapi.yaml public/openapi/README.md
+          npx widdershins --omitHeader --code true api/openapi.yaml public/api/README.md
       - name: Upload
         uses: actions/upload-artifact@v3
         with:
