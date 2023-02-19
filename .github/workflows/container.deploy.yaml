@@ -28,14 +28,14 @@ jobs:
       - name: Docker login
         run: ko login -u ${{ secrets.DOCKERHUB_USERNAME }} -p ${{ secrets.DOCKERHUB_PASSWORD }} index.docker.io
       - name: Build and push app api container
-        working-directory: ./backend/cmd/appapi
+        working-directory: ./cmd/appapi
         run: |
           IMAGE_NAME=platform-app-api
           KO_DOCKER_REPO=${{ secrets.DOCKERHUB_USERNAME }}/${IMAGE_NAME} \
           SOURCE_DATE_EPOCH=$(date +%s) \
           ko build --sbom=none --bare --tags=${{ env.TAG }},latest ./ --platform=linux/amd64
       - name: Build and push app core container
-        working-directory: ./backend/cmd/appcore
+        working-directory: ./cmd/appcore
         run: |
           IMAGE_NAME=platform-app-core
           KO_DOCKER_REPO=${{ secrets.DOCKERHUB_USERNAME }}/${IMAGE_NAME} \
