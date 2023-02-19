@@ -18,3 +18,17 @@ Create an issue and include the number in the PREFIX when implementing.
 | **chore(#x)**    | Changes to the build process or auxiliary tools and libraries such as documentation generation         |
 
 [reference](https://github.com/angular/angular.js/blob/master/DEVELOPERS.md#commits)
+
+## local development setup
+
+`.env` is required to Makefile.  
+`.env` file is prepared to switch the port number in each developer's environment.
+
+```shell
+touch .env
+make env
+```
+
+```shell
+make dup
+```

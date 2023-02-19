@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package health.v1;
+
+option go_package = "github.com/morning-night-guild/platform-app/pkg/connect/proto/health/v1;healthv1";
+
+// ヘルスサービス
+service HealthService {
+  // チェック
+  // Need X-Api-Key Header
+  rpc Check(CheckRequest) returns (CheckResponse) {}
+}
+
+// チェックリクエスト
+message CheckRequest {}
+
+// チェックレスポンス
+message CheckResponse {}
