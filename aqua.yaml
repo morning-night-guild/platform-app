@@ -1,0 +1,25 @@
+# aqua - Declarative CLI Version Manager
+# https://aquaproj.github.io/
+registries:
+  - type: standard
+    ref: v3.134.0 # renovate: depName=aquaproj/aqua-registry
+  - name: local
+    type: local
+    path: registry.yaml
+packages:
+  - name: google/yamlfmt@v0.7.1
+  - name: rhysd/actionlint@v1.6.23
+  - name: golangci/golangci-lint@v1.50.1
+  - name: bufbuild/buf@v1.9.0
+  - name: github.com/deepmap/oapi-codegen/cmd/oapi-codegen
+    registry: local
+    version: v1.12.4
+  - name: google.golang.org/protobuf/cmd/protoc-gen-go
+    registry: local
+    version: v1.28.1
+  - name: github.com/bufbuild/connect-go/cmd/protoc-gen-connect-go
+    registry: local
+    version: v1.1.0
+  - name: github.com/k1LoW/tbls
+    registry: local
+    version: v1.62.0

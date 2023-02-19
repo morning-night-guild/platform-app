@@ -1,0 +1,49 @@
+syntax = "proto3";
+
+package article.v1;
+
+option go_package = "github.com/morning-night-guild/platform-app/pkg/connect/proto/article/v1;articlev1";
+
+// 記事サービス
+service ArticleService {
+  // 共有
+  // Need X-Api-Key Header
+  rpc Share(ShareRequest) returns (ShareResponse) {}
+  // 一覧
+  rpc List(ListRequest) returns (ListResponse) {}
+}
+
+// 記事モデル
+message Article {
+  string id = 1;
+  string url = 2;
+  string title = 3;
+  string description = 4;
+  string thumbnail = 5;
+  repeated string tags = 6;
+}
+
+// 共有リクエスト
+message ShareRequest {
+  string url = 1;
+  string title = 2;
+  string description = 3;
+  string thumbnail = 4;
+}
+
+// 共有レスポンス
+message ShareResponse {
+  Article article = 1;
+}
+
+// 一覧リクエスト
+message ListRequest {
+  string page_token = 1;
+  uint32 max_page_size = 2;
+}
+
+// 一覧レスポンス
+message ListResponse {
+  repeated Article articles = 1;
+  string next_page_token = 2;
+}

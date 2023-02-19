@@ -1,0 +1,174 @@
+openapi: 3.0.3
+info:
+  title: Morning Night Guild - App API
+  description: |-
+    This is the AppAPI API documentation.
+  termsOfService: https://example.com
+  contact:
+    email: morning.night.guild@example.com
+  license:
+    name: MIT
+  version: 0.0.1
+externalDocs:
+  description: Find out more about Swagger
+  url: http://swagger.io
+servers:
+  - url: http://localhost:8080/api
+tags:
+  - name: article
+    description: 記事
+  - name: health
+    description: ヘルスチェック
+paths:
+  /v1/articles:
+    get:
+      tags:
+        - article
+      summary: 記事一覧
+      description: 記事一覧を取得する
+      operationId: v1ListArticles
+      parameters:
+        - name: pageToken
+          in: query
+          description: トークン
+          required: false
+          explode: true
+          schema:
+            type: string
+        - name: maxPageSize
+          in: query
+          description: ページサイズ
+          required: true
+          explode: true
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 20
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListArticleResponse'
+        '500':
+          description: Internal Server Error
+    post:
+      tags:
+        - article
+      summary: 記事共有
+      description: 記事を共有する
+      operationId: v1ShareArticle
+      security:
+        - apiKey: []
+      requestBody:
+        required: true
+        description: 記事共有リクエストボディ
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/V1ShareArticleRequest'
+      responses:
+        '200':
+          description: 成功
+        '400':
+          description: Bad Request
+        '403':
+          description: Forbidden
+        '500':
+          description: Internal Server Error
+  /v1/health/api:
+    get:
+      tags:
+        - health
+      summary: apiヘルスチェック
+      description: ヘルスチェック
+      operationId: v1HealthAPI
+      responses:
+        '200':
+          description: OK
+        '500':
+          description: Internal Server Error
+  /v1/health/core:
+    get:
+      tags:
+        - health
+      summary: coreヘルスチェック
+      description: ヘルスチェック
+      operationId: v1HealthCore
+      responses:
+        '200':
+          description: OK
+        '500':
+          description: Internal Server Error
+components:
+  schemas:
+    Article:
+      type: object
+      properties:
+        id:
+          type: string
+          description: id
+          format: uuid
+        url:
+          type: string
+          description: 記事のURL
+          format: uri
+          example: https://example.com
+        title:
+          type: string
+          description: タイトル
+          example: title
+        description:
+          type: string
+          description: description
+          example: description
+        thumbnail:
+          type: string
+          description: サムネイルのURL
+          format: uri
+          example: https://example.com
+        tags:
+          type: array
+          description: タグ
+          items:
+            type: string
+            example: tag
+    ListArticleResponse:
+      type: object
+      properties:
+        articles:
+          type: array
+          items:
+            $ref: '#/components/schemas/Article'
+        nextPageToken:
+          type: string
+          description: 次回リクエスト時に指定するページトークン
+    V1ShareArticleRequest:
+      type: object
+      properties:
+        url:
+          type: string
+          description: 記事のURL
+          format: uri
+          example: https://example.com
+        title:
+          type: string
+          description: タイトル
+          example: title
+        description:
+          type: string
+          description: description
+          example: description
+        thumbnail:
+          type: string
+          description: サムネイルのURL
+          format: uri
+          example: https://example.com
+      required:
+        - url
+  securitySchemes:
+    apiKey:
+      type: apiKey
+      name: api-key
+      in: header

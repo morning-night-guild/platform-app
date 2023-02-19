@@ -1,0 +1,49 @@
+run:
+  timeout: 10m
+linters-settings:
+  varnamelen:
+    min-name-length: 1
+linters:
+  enable-all: true
+  disable:
+    # disable because the large amount of correspondence
+    - wrapcheck
+    # disable because unnecessary field declaration
+    - exhaustruct
+    # disable because deprecated since golangci-lint since v1.38.0
+    - maligned
+    # disable because deprecated since golangci-lint since v1.39.0
+    - scopelint
+    # disable because deprecated since golangci-lint since v1.41.0
+    - golint
+    # disable because deprecated since golangci-lint since v1.46.0
+    - exhaustivestruct
+    # disable because deprecated since golangci-lint since v1.48.0
+    - ifshort
+    # disable because deprecated since golangci-lint since v1.48.1
+    - nosnakecase
+    # disable because deprecated since golangci-lint since v1.49.0
+    - deadcode
+    - varcheck
+    - structcheck
+    # disable because deprecated since golangci-lint since v1.38.0
+    - interfacer
+    # disable because because of generics
+    - rowserrcheck
+    - sqlclosecheck
+    - wastedassign
+issues:
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - funlen
+        - nosprintfhostport
+        - dupl
+        - containedctx
+        - goerr113
+        - cyclop
+        - errorlint
+        - tenv
+        - gocognit
+        - maintidx
+        - lll
