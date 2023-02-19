@@ -1,0 +1,23 @@
+name: unit test
+run-name: ${{ github.ref_name }} by @${{ github.actor }} ${{ github.workflow }}
+on:
+  pull_request:
+    paths:
+      - .github/workflows/test.unit.yaml
+      - api/openapi.yaml
+      - proto/**/*.proto
+      - "**/*.go"
+      - go.mod
+      - go.sum
+jobs:
+  test:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Setup Go
+        uses: actions/setup-go@v3
+        with:
+          go-version-file: go.mod
+      - name: Go Test
+        run: go test ./internal/...

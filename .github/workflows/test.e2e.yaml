@@ -1,0 +1,67 @@
+name: e2e test
+run-name: ${{ github.ref_name }} by @${{ github.actor }} ${{ github.workflow }}
+on:
+  pull_request:
+    paths:
+      - .github/workflows/test.e2e.yaml
+      - api/openapi.yaml
+      - proto/**/*.proto
+      - "**/*.go"
+      - go.mod
+      - go.sum
+jobs:
+  e2e:
+    runs-on: ubuntu-22.04
+    services:
+      postgres:
+        image: postgres:14.7
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Set up go
+        uses: actions/setup-go@v3
+        with:
+          go-version-file: go.mod
+      - name: Migrate postgresql
+        env:
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable
+        run: go run cmd/migrate/main.go
+      - name: Run app core
+        env:
+          PORT: "8888"
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable
+        run: | # サーバー起動待機のためにsleepを導入 TODO health check 待機でも良いかも
+          go run cmd/appcore/main.go &
+          echo APP_CORE_PID=$! >> $GITHUB_ENV
+          sleep 20
+      - name: Run app api
+        env:
+          PORT: "8080"
+          API_KEY: e2e
+          APP_CORE_URL: http://localhost:8888
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable
+          CORS_ALLOW_ORIGINS: http://localhost:5173
+        run: | # サーバー起動待機のためにsleepを導入 TODO health check 待機でも良いかも
+          go run cmd/appapi/main.go &
+          echo APP_API_PID=$! >> $GITHUB_ENV
+          sleep 20
+      - name: Test e2e
+        env:
+          APP_API_ENDPOINT: http://localhost:8080
+          APP_CORE_ENDPOINT: http://localhost:8888
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable
+          API_KEY: e2e
+        run: go test ./e2e/...
+      - name: Shutdown
+        if: always()
+        run: |
+          kill ${{ env.APP_CORE_PID }}
+          kill ${{ env.APP_API_PID }}
