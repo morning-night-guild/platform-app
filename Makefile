@@ -109,9 +109,9 @@ doc: ## Generate documentation.
 buflint: ## Lint proto file.
 	@(cd proto && buf lint)
 
-.PHONY: buffmt
-buffmt: ## Format proto file.
-	@buf format -w
+.PHONY: bufmt
+bufmt: ## Format proto file.
+	@(cd proto && buf format -w)
 
 .PHONY: apilint
 apilint: ## Lint api file.
