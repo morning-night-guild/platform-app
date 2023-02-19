@@ -1,0 +1,20 @@
+name: yaml lint
+run-name: ${{ github.ref_name }} by @${{ github.actor }} ${{ github.workflow }}
+on:
+  pull_request:
+    paths:
+      - "**/*.yaml"
+jobs:
+  lint:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Setup aqua
+        uses: aquaproj/aqua-installer@v2.0.2
+        with:
+          aqua_version: v1.33.0
+      - name: Install yamlfmt
+        run: ${AQUA_ROOT_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/aquaproj-aqua}/bin/aqua install -t yamlfmt
+      - name: Yaml format lint
+        run: yamlfmt -lint
