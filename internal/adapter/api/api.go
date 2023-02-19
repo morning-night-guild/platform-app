@@ -41,3 +41,11 @@ func (api *API) HandleConnectError(ctx context.Context, err error) int {
 
 	return http.StatusInternalServerError
 }
+
+func (api *API) PointerToString(s *string) string {
+	if s == nil {
+		return ""
+	}
+
+	return *s
+}

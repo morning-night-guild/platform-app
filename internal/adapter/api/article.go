@@ -89,9 +89,9 @@ func (api *API) V1ShareArticle(w http.ResponseWriter, r *http.Request) {
 
 	req := &articlev1.ShareRequest{
 		Url:         body.Url,
-		Title:       *body.Title,
-		Description: *body.Description,
-		Thumbnail:   *body.Thumbnail,
+		Title:       api.PointerToString(body.Title),
+		Description: api.PointerToString(body.Description),
+		Thumbnail:   api.PointerToString(body.Thumbnail),
 	}
 
 	res, err := api.connect.Article.Share(ctx, connect.NewRequest(req))
