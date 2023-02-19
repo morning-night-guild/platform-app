@@ -1,4 +1,4 @@
-name: yaml lint
+name: lint yaml
 run-name: ${{ github.ref_name }} by @${{ github.actor }} ${{ github.workflow }}
 on:
   pull_request:
