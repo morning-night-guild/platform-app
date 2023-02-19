@@ -91,7 +91,7 @@ gen: ## Generate code.
 	@oapi-codegen -generate types -package openapi ./api/openapi.yaml > ./pkg/openapi/types.gen.go
 	@oapi-codegen -generate chi-server -package openapi ./api/openapi.yaml > ./pkg/openapi/server.gen.go
 	@oapi-codegen -generate client -package openapi ./api/openapi.yaml > ./pkg/openapi/client.gen.go
-	@buf generate --template ./proto/buf.gen.yaml
+	@(cd proto && buf generate --template buf.gen.yaml)
 	@go mod tidy
 
 # support
@@ -109,9 +109,9 @@ doc: ## Generate documentation.
 buflint: ## Lint proto file.
 	@(cd proto && buf lint)
 
-.PHONY: buffmt
-buffmt: ## Format proto file.
-	@buf format -w
+.PHONY: bufmt
+bufmt: ## Format proto file.
+	@(cd proto && buf format -w)
 
 .PHONY: apilint
 apilint: ## Lint api file.

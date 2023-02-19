@@ -1,0 +1,53 @@
+name: diff gen code
+run-name: ${{ github.ref_name }} by @${{ github.actor }} ${{ github.workflow }}
+on:
+  pull_request:
+    paths:
+      - .github/workflows/diff.gen.code.yaml
+      - api/openapi.yaml
+      - proto/**/*.proto
+      - "**/*.go"
+      - go.mod
+      - go.sum
+jobs:
+  diff:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Setup Go
+        uses: actions/setup-go@v3
+        with:
+          go-version-file: go.mod
+      - name: Setup aqua
+        uses: aquaproj/aqua-installer@v2.0.2
+        with:
+          aqua_version: v1.33.0
+      - name: Install buf
+        run: ${AQUA_ROOT_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/aquaproj-aqua}/bin/aqua install -t buf
+      - name: Install protoc-gen-go
+        run: ${AQUA_ROOT_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/aquaproj-aqua}/bin/aqua install -t protoc-gen-go
+      - name: Install protoc-gen-connect-go
+        run: ${AQUA_ROOT_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/aquaproj-aqua}/bin/aqua install -t protoc-gen-connect-go
+      - name: Generate connect code
+        working-directory: ./proto
+        run: buf generate --template buf.gen.yaml
+      - name: Install oapi-codegen
+        run: ${AQUA_ROOT_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/aquaproj-aqua}/bin/aqua install -t oapi-codegen
+      - name: Generate openapi code
+        run: |
+          oapi-codegen -generate types -package openapi ./api/openapi.yaml > ./pkg/openapi/types.gen.go
+          oapi-codegen -generate chi-server -package openapi ./api/openapi.yaml > ./pkg/openapi/server.gen.go
+          oapi-codegen -generate client -package openapi ./api/openapi.yaml > ./pkg/openapi/client.gen.go
+      - name: Generate go code
+        run: go generate ./...
+      - name: Go mod tidy
+        run: go mod tidy
+      - name: Check diff
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            git status --porcelain;
+            exit 1;
+          else
+            echo "no changes";
+          fi

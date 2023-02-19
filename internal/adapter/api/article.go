@@ -7,7 +7,7 @@ import (
 
 	"github.com/bufbuild/connect-go"
 	"github.com/google/uuid"
-	articlev1 "github.com/morning-night-guild/platform-app/pkg/connect/proto/article/v1"
+	articlev1 "github.com/morning-night-guild/platform-app/pkg/connect/article/v1"
 	"github.com/morning-night-guild/platform-app/pkg/log"
 	"github.com/morning-night-guild/platform-app/pkg/openapi"
 )

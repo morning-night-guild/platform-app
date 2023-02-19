@@ -7,7 +7,7 @@ import (
 
 	"github.com/bufbuild/connect-go"
 	"github.com/morning-night-guild/platform-app/e2e/helper"
-	healthv1 "github.com/morning-night-guild/platform-app/pkg/connect/proto/health/v1"
+	healthv1 "github.com/morning-night-guild/platform-app/pkg/connect/health/v1"
 )
 
 func TestAppCoreE2EHealthCheck(t *testing.T) {

@@ -1,0 +1,23 @@
+name: lint api
+run-name: ${{ github.ref_name }} by @${{ github.actor }} ${{ github.workflow }}
+on:
+  pull_request:
+    paths:
+      - .github/workflows/lint.api.yaml
+      - api/openapi.yaml
+jobs:
+  lint:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+      - name: Install spectral
+        working-directory: ./api
+        run: npm install -g @stoplight/spectral-cli
+      - name: Lint openapi
+        working-directory: ./api
+        run: spectral lint openapi.yaml

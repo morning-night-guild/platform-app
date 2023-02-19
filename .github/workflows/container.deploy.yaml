@@ -1,0 +1,78 @@
+name: container deploy
+run-name: ${{ github.ref_name }} by @${{ github.actor }} ${{ github.workflow }}
+on:
+  schedule:
+    # 日曜24時(JST)
+    - cron: '0 15 * * 0'
+  workflow_dispatch:
+jobs:
+  container-push:
+    runs-on: ubuntu-22.04
+    outputs:
+      tag: ${{ steps.create-tag.outputs.tag }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Create tag
+        id: create-tag
+        run: |
+          TAG=`date +%Y-%m-%d-%H-%M-%S`
+          echo "TAG=${TAG}" >> $GITHUB_ENV
+          echo "tag=${TAG}" >> $GITHUB_OUTPUT
+      - name: Setup go
+        uses: actions/setup-go@v3
+        with:
+          go-version-file: go.mod
+      - name: Install ko
+        run: go install github.com/google/ko@latest
+      - name: Docker login
+        run: ko login -u ${{ secrets.DOCKERHUB_USERNAME }} -p ${{ secrets.DOCKERHUB_PASSWORD }} index.docker.io
+      - name: Build and push app api container
+        working-directory: ./cmd/appapi
+        run: |
+          IMAGE_NAME=platform-app-api
+          KO_DOCKER_REPO=${{ secrets.DOCKERHUB_USERNAME }}/${IMAGE_NAME} \
+          SOURCE_DATE_EPOCH=$(date +%s) \
+          ko build --sbom=none --bare --tags=${{ env.TAG }},latest ./ --platform=linux/amd64
+      - name: Build and push app core container
+        working-directory: ./cmd/appcore
+        run: |
+          IMAGE_NAME=platform-app-core
+          KO_DOCKER_REPO=${{ secrets.DOCKERHUB_USERNAME }}/${IMAGE_NAME} \
+          SOURCE_DATE_EPOCH=$(date +%s) \
+          ko build --sbom=none --bare --tags=${{ env.TAG }},latest ./ --platform=linux/amd64
+  create-tag:
+    needs: container-push
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Generate token
+        id: generate-token
+        uses: tibdex/github-app-token@v1
+        with:
+          app_id: ${{ secrets.BOT_GITHUB_APP_ID }}
+          private_key: ${{ secrets.BOT_GITHUB_APP_PRIVATE_KEY }}
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          token: ${{ steps.generate-token.outputs.token }}
+      - name: Create tag
+        run: |
+          git tag ${{ needs.container-push.outputs.tag }}
+          git push origin ${{ needs.container-push.outputs.tag }}
+  repository-dispatch:
+    needs: container-push
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Generate token
+        id: generate-token
+        uses: tibdex/github-app-token@v1
+        with:
+          app_id: ${{ secrets.BOT_GITHUB_APP_ID }}
+          private_key: ${{ secrets.BOT_GITHUB_APP_PRIVATE_KEY }}
+      - name: Repository dispatch
+        run: |
+          curl -X POST \
+            -H "Accespt: application/vnd.github.v3+json" \
+            -H "Authorization: token ${{ steps.generate-token.outputs.token }}" \
+            https://api.github.com/repos/morning-night-guild/platform-infra/dispatches \
+            -d '{"event_type": "manifest-update-prod", "client_payload": {"tag": "${{ needs.container-push.outputs.tag }}"}}'

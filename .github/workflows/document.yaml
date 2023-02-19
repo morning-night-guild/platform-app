@@ -1,0 +1,116 @@
+name: document
+run-name: ${{ github.ref_name }} by @${{ github.actor }} ${{ github.workflow }}
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/document.yaml
+      - api/openapi.yaml
+      - proto/**/*.proto
+      - pkg/ent/schema/*.go
+  pull_request:
+    paths:
+      - .github/workflows/document.yaml
+      - api/openapi.yaml
+      - proto/**/*.proto
+      - pkg/ent/schema/*.go
+jobs:
+  api:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Set up node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+      - name: Install widderchins
+        run: npm install -g widdershins
+      - name: Generate api document
+        run: |
+          mkdir -p public/api
+          npx widdershins --omitHeader --code true api/openapi.yaml public/api/README.md
+      - name: Upload
+        uses: actions/upload-artifact@v3
+        with:
+          name: document-api
+          path: public
+  proto:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Setup protoc
+        uses: arduino/setup-protoc@v1
+      - name: Generate proto document
+        run: |
+          go install github.com/pseudomuto/protoc-gen-doc/cmd/protoc-gen-doc@latest
+          mkdir -p public/proto
+          protoc --doc_out=./public/proto --doc_opt=markdown,README.md $(find proto -name '*.proto')
+      - name: Upload
+        uses: actions/upload-artifact@v3
+        with:
+          name: document-proto
+          path: public
+  database:
+    runs-on: ubuntu-22.04
+    services:
+      postgres:
+        image: postgres:14.7
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Setup Go
+        uses: actions/setup-go@v3
+        with:
+          go-version-file: go.mod
+      - name: Setup tbls
+        run: go install github.com/k1LoW/tbls@main
+      - name: Migrate
+        env:
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable
+        run: go run cmd/migrate/main.go
+      - name: Generate database document
+        run: tbls doc "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable" public/database
+      - name: Upload
+        uses: actions/upload-artifact@v3
+        with:
+          name: document-database
+          path: public
+  publish:
+    runs-on: ubuntu-22.04
+    needs: [api, proto, database]
+    # if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Download document api
+        uses: actions/download-artifact@v3
+        with:
+          name: document-api
+      - name: Download document proto
+        uses: actions/download-artifact@v3
+        with:
+          name: document-proto
+      - name: Download document database
+        uses: actions/download-artifact@v3
+        with:
+          name: document-database
+      - name: Copy
+        run: |
+          mkdir public
+          cp -r api/ public/
+          cp -r proto/ public/
+          cp -r database/ public/
+      - name: Publish
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./public

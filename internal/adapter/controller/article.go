@@ -7,7 +7,7 @@ import (
 	"github.com/morning-night-guild/platform-app/internal/domain/model/article"
 	"github.com/morning-night-guild/platform-app/internal/domain/repository"
 	"github.com/morning-night-guild/platform-app/internal/usecase/port"
-	articlev1 "github.com/morning-night-guild/platform-app/pkg/connect/proto/article/v1"
+	articlev1 "github.com/morning-night-guild/platform-app/pkg/connect/article/v1"
 )
 
 // Article.

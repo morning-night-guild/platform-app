@@ -1,0 +1,27 @@
+name: container build
+run-name: ${{ github.ref_name }} by @${{ github.actor }} ${{ github.workflow }}
+on:
+  pull_request:
+    paths:
+      - .github/workflows/container.build.yaml
+      - "**/**.go"
+      - go.mod
+      - go.sum
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Setup Go
+        uses: actions/setup-go@v3
+        with:
+          go-version-file: go.mod
+      - name: Install ko
+        run: go install github.com/google/ko@latest
+      - name: Build app api
+        working-directory: ./cmd/appapi
+        run: ko publish --local .
+      - name: Build app core
+        working-directory: ./cmd/appcore
+        run: ko publish --local .

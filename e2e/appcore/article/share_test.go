@@ -10,7 +10,7 @@ import (
 	"github.com/bufbuild/connect-go"
 	"github.com/google/uuid"
 	"github.com/morning-night-guild/platform-app/e2e/helper"
-	articlev1 "github.com/morning-night-guild/platform-app/pkg/connect/proto/article/v1"
+	articlev1 "github.com/morning-night-guild/platform-app/pkg/connect/article/v1"
 )
 
 func TestAppCoreE2EArticleShare(t *testing.T) {
