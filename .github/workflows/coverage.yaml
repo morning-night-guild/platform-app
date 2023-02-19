@@ -1,0 +1,35 @@
+name: coverage
+run-name: ${{ github.ref_name }} by @${{ github.actor }} ${{ github.workflow }}
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "**/*.go"
+      - go.mod
+      - go.sum
+  pull_request:
+    paths:
+      - .github/workflows/coverage.yaml
+      - "**/*.go"
+      - go.mod
+      - go.sum
+jobs:
+  coverage:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Setup Go
+        uses: actions/setup-go@v3
+        with:
+          go-version-file: go.mod
+      - name: Coverage
+        run: |
+          go test ./internal/...  -coverpkg=./... -coverprofile ./coverage_temp.txt
+          cat coverage_temp.txt | grep -v "/ent/" | grep -v "/driver/" | grep -v "/cmd/" > coverage.txt
+          rm coverage_temp.txt
+      - name: Upload coverage
+        uses: codecov/codecov-action@v3
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
