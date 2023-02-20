@@ -23,7 +23,7 @@ func TestAppAPIE2EArticleList(t *testing.T) {
 
 		db := helper.NewDatabase(t, helper.GetDSN(t))
 
-		ids := helper.GenerateIDs(t, int(size))
+		ids := helper.NewIDs(t, int(size))
 
 		db.BulkInsertArticles(ids)
 

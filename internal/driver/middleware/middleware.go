@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/morning-night-guild/platform-app/pkg/log"
+	"github.com/morning-night-guild/platform-app/pkg/trace"
 	"go.uber.org/zap"
 )
 
@@ -21,11 +22,13 @@ func (middle *Middleware) Handle(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		now := time.Now()
 
-		ctx := log.SetLogCtx(r.Context())
+		ctx := trace.WithTIDCtx(r.Context())
+
+		ctx = log.SetLogCtx(ctx, trace.GetTIDCtx(ctx))
 
 		logger := log.GetLogCtx(ctx)
 
-		next.ServeHTTP(w, r)
+		next.ServeHTTP(w, r.WithContext(ctx))
 
 		logger.Info(
 			"access log",

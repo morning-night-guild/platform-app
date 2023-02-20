@@ -6,7 +6,7 @@ import (
 	"github.com/google/uuid"
 )
 
-func GenerateIDs(t *testing.T, count int) []uuid.UUID {
+func NewIDs(t *testing.T, count int) []uuid.UUID {
 	t.Helper()
 
 	ids := make([]uuid.UUID, count)

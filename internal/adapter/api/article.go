@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/bufbuild/connect-go"
 	"github.com/google/uuid"
 	articlev1 "github.com/morning-night-guild/platform-app/pkg/connect/article/v1"
 	"github.com/morning-night-guild/platform-app/pkg/log"
@@ -13,19 +12,19 @@ import (
 )
 
 func (api *API) V1ListArticles(w http.ResponseWriter, r *http.Request, params openapi.V1ListArticlesParams) {
-	ctx := log.SetLogCtx(r.Context())
+	ctx := r.Context()
 
 	pageToken := ""
 	if params.PageToken != nil {
 		pageToken = *params.PageToken
 	}
 
-	req := &articlev1.ListRequest{
+	req := NewRequestWithTID(ctx, &articlev1.ListRequest{
 		PageToken:   pageToken,
 		MaxPageSize: uint32(params.MaxPageSize),
-	}
+	})
 
-	res, err := api.connect.Article.List(ctx, connect.NewRequest(req))
+	res, err := api.connect.Article.List(ctx, req)
 	if err != nil {
 		log.GetLogCtx(ctx).Error("failed to list articles", log.ErrorField(err))
 
@@ -63,7 +62,7 @@ func (api *API) V1ListArticles(w http.ResponseWriter, r *http.Request, params op
 }
 
 func (api *API) V1ShareArticle(w http.ResponseWriter, r *http.Request) {
-	ctx := log.SetLogCtx(r.Context())
+	ctx := r.Context()
 
 	log.GetLogCtx(ctx).Info(fmt.Sprintf("%+v", w.Header()))
 
@@ -87,14 +86,14 @@ func (api *API) V1ShareArticle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	req := &articlev1.ShareRequest{
+	req := NewRequestWithTID(ctx, &articlev1.ShareRequest{
 		Url:         body.Url,
 		Title:       api.PointerToString(body.Title),
 		Description: api.PointerToString(body.Description),
 		Thumbnail:   api.PointerToString(body.Thumbnail),
-	}
+	})
 
-	res, err := api.connect.Article.Share(ctx, connect.NewRequest(req))
+	res, err := api.connect.Article.Share(ctx, req)
 	if err != nil {
 		w.WriteHeader(api.HandleConnectError(ctx, err))
 

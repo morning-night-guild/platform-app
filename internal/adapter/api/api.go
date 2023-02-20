@@ -8,6 +8,7 @@ import (
 	"github.com/bufbuild/connect-go"
 	"github.com/morning-night-guild/platform-app/pkg/log"
 	"github.com/morning-night-guild/platform-app/pkg/openapi"
+	"github.com/morning-night-guild/platform-app/pkg/trace"
 )
 
 var _ openapi.ServerInterface = (*API)(nil)
@@ -48,4 +49,12 @@ func (api *API) PointerToString(s *string) string {
 	}
 
 	return *s
+}
+
+func NewRequestWithTID[T any](ctx context.Context, msg *T) *connect.Request[T] {
+	req := connect.NewRequest(msg)
+
+	req.Header().Set("tid", trace.GetTIDCtx(ctx))
+
+	return req
 }
