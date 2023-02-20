@@ -65,3 +65,45 @@ func TestAPIHandleConnectError(t *testing.T) {
 		})
 	}
 }
+
+func TestAPIPointerToString(t *testing.T) {
+	t.Parallel()
+
+	type args struct {
+		s *string
+	}
+
+	test := "test"
+
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{
+			name: "nil",
+			args: args{
+				s: nil,
+			},
+			want: "",
+		},
+		{
+			name: "not nil",
+			args: args{
+				s: &test,
+			},
+			want: "test",
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			api := api.New("", nil)
+			if got := api.PointerToString(tt.args.s); got != tt.want {
+				t.Errorf("API.PointerToString() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

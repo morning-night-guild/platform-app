@@ -2,6 +2,7 @@ package article_test
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"reflect"
 	"testing"
@@ -30,10 +31,100 @@ func TestAppAPIE2EArticleShare(t *testing.T) {
 		client := helper.NewOpenAPIClientWithAPIKey(t, url, helper.GetAPIKey(t))
 
 		res, err := client.Client.V1ShareArticle(context.Background(), openapi.V1ShareArticleRequest{
-			Url:         "https://example.com",
+			Url:         fmt.Sprintf("https://example.com/%s", title),
 			Title:       helper.ToStringPointer(title),
 			Description: helper.ToStringPointer("description"),
 			Thumbnail:   helper.ToStringPointer("https://example.com/thumbnail.jpg"),
+		})
+		if err != nil {
+			t.Fatalf("failed to share article: %s", err)
+		}
+
+		defer res.Body.Close()
+
+		if !reflect.DeepEqual(res.StatusCode, http.StatusOK) {
+			t.Errorf("StatusCode = %v, want %v", res.StatusCode, http.StatusOK)
+		}
+	})
+
+	t.Run("タイトルがない記事が共有できる", func(t *testing.T) {
+		t.Parallel()
+
+		title := ""
+
+		db := helper.NewDatabase(t, helper.GetDSN(t))
+
+		defer db.Close()
+
+		defer db.DeleteArticleByTitle(title)
+
+		client := helper.NewOpenAPIClientWithAPIKey(t, url, helper.GetAPIKey(t))
+
+		res, err := client.Client.V1ShareArticle(context.Background(), openapi.V1ShareArticleRequest{
+			Url:         fmt.Sprintf("https://example.com/%s", title),
+			Title:       nil,
+			Description: helper.ToStringPointer("description"),
+			Thumbnail:   helper.ToStringPointer("https://example.com/thumbnail.jpg"),
+		})
+		if err != nil {
+			t.Fatalf("failed to share article: %s", err)
+		}
+
+		defer res.Body.Close()
+
+		if !reflect.DeepEqual(res.StatusCode, http.StatusOK) {
+			t.Errorf("StatusCode = %v, want %v", res.StatusCode, http.StatusOK)
+		}
+	})
+
+	t.Run("詳細がない記事が共有できる", func(t *testing.T) {
+		t.Parallel()
+
+		title := uuid.NewString()
+
+		db := helper.NewDatabase(t, helper.GetDSN(t))
+
+		defer db.Close()
+
+		defer db.DeleteArticleByTitle(title)
+
+		client := helper.NewOpenAPIClientWithAPIKey(t, url, helper.GetAPIKey(t))
+
+		res, err := client.Client.V1ShareArticle(context.Background(), openapi.V1ShareArticleRequest{
+			Url:         fmt.Sprintf("https://example.com/%s", title),
+			Title:       helper.ToStringPointer(title),
+			Description: nil,
+			Thumbnail:   helper.ToStringPointer("https://example.com/thumbnail.jpg"),
+		})
+		if err != nil {
+			t.Fatalf("failed to share article: %s", err)
+		}
+
+		defer res.Body.Close()
+
+		if !reflect.DeepEqual(res.StatusCode, http.StatusOK) {
+			t.Errorf("StatusCode = %v, want %v", res.StatusCode, http.StatusOK)
+		}
+	})
+
+	t.Run("サムネイルがない記事が共有できる", func(t *testing.T) {
+		t.Parallel()
+
+		title := uuid.NewString()
+
+		db := helper.NewDatabase(t, helper.GetDSN(t))
+
+		defer db.Close()
+
+		defer db.DeleteArticleByTitle(title)
+
+		client := helper.NewOpenAPIClientWithAPIKey(t, url, helper.GetAPIKey(t))
+
+		res, err := client.Client.V1ShareArticle(context.Background(), openapi.V1ShareArticleRequest{
+			Url:         fmt.Sprintf("https://example.com/%s", title),
+			Title:       helper.ToStringPointer(title),
+			Description: helper.ToStringPointer("description"),
+			Thumbnail:   nil,
 		})
 		if err != nil {
 			t.Fatalf("failed to share article: %s", err)
@@ -71,10 +162,12 @@ func TestAppAPIE2EArticleShare(t *testing.T) {
 	t.Run("Api-Keyがなくて記事が共有できない", func(t *testing.T) {
 		t.Parallel()
 
+		title := uuid.NewString()
+
 		client := helper.NewOpenAPIClient(t, url)
 
 		res, err := client.Client.V1ShareArticle(context.Background(), openapi.V1ShareArticleRequest{
-			Url:         "",
+			Url:         fmt.Sprintf("https://example.com/%s", title),
 			Title:       helper.ToStringPointer("title"),
 			Description: helper.ToStringPointer("description"),
 			Thumbnail:   helper.ToStringPointer("https://example.com/thumbnail.jpg"),
