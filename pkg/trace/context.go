@@ -11,10 +11,6 @@ func WithTIDCtx(ctx context.Context) context.Context {
 }
 
 func SetTIDCtx(ctx context.Context, tid string) context.Context {
-	if tid == "" {
-		return WithTIDCtx(ctx)
-	}
-
 	return context.WithValue(ctx, key{}, tid)
 }
 
