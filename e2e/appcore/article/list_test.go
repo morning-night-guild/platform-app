@@ -23,7 +23,7 @@ func TestAppCoreE2EArticleList(t *testing.T) {
 
 		db := helper.NewDatabase(t, helper.GetDSN(t))
 
-		ids := helper.GenerateIDs(t, int(articleCount))
+		ids := helper.NewIDs(t, int(articleCount))
 
 		defer db.Close()
 

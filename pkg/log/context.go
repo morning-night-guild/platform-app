@@ -3,21 +3,18 @@ package log
 import (
 	"context"
 
-	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
 
 type key struct{}
 
-func SetLogCtx(ctx context.Context) context.Context {
+func SetLogCtx(ctx context.Context, tid string) context.Context {
 	// デフォルト値でロギング設定をしているので
 	// errorは発生しない
 	// -> errorはにぎりつぶしても問題ない
 	logger, _ := zap.NewProduction()
 
-	rid := uuid.NewString()
-
-	log := logger.With(zap.String("rid", rid))
+	log := logger.With(zap.String("tid", tid))
 
 	return context.WithValue(ctx, key{}, log)
 }

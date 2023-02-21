@@ -6,6 +6,7 @@ import (
 
 	"github.com/bufbuild/connect-go"
 	"github.com/morning-night-guild/platform-app/pkg/log"
+	"github.com/morning-night-guild/platform-app/pkg/trace"
 	"go.uber.org/zap"
 	"google.golang.org/grpc/status"
 )
@@ -19,7 +20,11 @@ func New() connect.UnaryInterceptorFunc {
 		) (connect.AnyResponse, error) {
 			now := time.Now()
 
-			ctx = log.SetLogCtx(ctx)
+			tid := req.Header().Get("tid")
+
+			ctx = trace.SetTIDCtx(ctx, tid)
+
+			ctx = log.SetLogCtx(ctx, trace.GetTIDCtx(ctx))
 
 			logger := log.GetLogCtx(ctx)
 
