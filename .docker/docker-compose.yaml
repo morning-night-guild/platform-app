@@ -56,7 +56,7 @@ services:
       NEWRELIC_APP_NAME: ${NEWRELIC_APP_NAME}
       NEWRELIC_LICENSE: ${NEWRELIC_LICENSE}
       CORS_ALLOW_ORIGINS: http://localhost:5173
-      CORS_DEBUG_ENABLE: true
+      CORS_DEBUG_ENABLE: false
     volumes:
       - ../:/app
     restart: always
