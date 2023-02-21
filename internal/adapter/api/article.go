@@ -64,8 +64,6 @@ func (api *API) V1ListArticles(w http.ResponseWriter, r *http.Request, params op
 func (api *API) V1ShareArticle(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	log.GetLogCtx(ctx).Info(fmt.Sprintf("%+v", w.Header()))
-
 	key := r.Header.Get("Api-Key")
 	if key != api.key {
 		log.GetLogCtx(ctx).Warn(fmt.Sprintf("invalid api key. api key = %s", key))
