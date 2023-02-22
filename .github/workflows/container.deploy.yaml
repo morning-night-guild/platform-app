@@ -1,12 +1,33 @@
 name: container deploy
 run-name: ${{ github.ref_name }} by @${{ github.actor }} ${{ github.workflow }}
 on:
-  schedule:
-    # 日曜24時(JST)
-    - cron: '0 15 * * 0'
   workflow_dispatch:
 jobs:
+  check:
+    runs-on: ubuntu-22.04
+    outputs:
+      diff: ${{ steps.check.outputs.diff }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 # Required to get tags 
+      - name: Check diff
+        id: check
+        run: |
+          latest_tag=$(git tag | sort -r | sed -n '1p')
+          echo "${latest_tag}"
+          latest_commit=$(git rev-parse HEAD)
+          echo "${latest_commit}"
+          files=$(git diff --name-only ${latest_tag} ${latest_commit} | wc -l)
+          if [[ ${files} -eq 0 ]]; then
+            echo "diff=false" >> $GITHUB_OUTPUT
+          else
+            echo "diff=true" >> $GITHUB_OUTPUT
+          fi
   container-push:
+    needs: check
+    if: needs.check.outputs.diff == 'true'
     runs-on: ubuntu-22.04
     outputs:
       tag: ${{ steps.create-tag.outputs.tag }}
@@ -30,15 +51,13 @@ jobs:
       - name: Build and push app api container
         working-directory: ./cmd/appapi
         run: |
-          IMAGE_NAME=platform-app-api
-          KO_DOCKER_REPO=${{ secrets.DOCKERHUB_USERNAME }}/${IMAGE_NAME} \
+          KO_DOCKER_REPO=${{ secrets.DOCKERHUB_USERNAME }}/platform-app-api \
           SOURCE_DATE_EPOCH=$(date +%s) \
           ko build --sbom=none --bare --tags=${{ env.TAG }},latest ./ --platform=linux/amd64
       - name: Build and push app core container
         working-directory: ./cmd/appcore
         run: |
-          IMAGE_NAME=platform-app-core
-          KO_DOCKER_REPO=${{ secrets.DOCKERHUB_USERNAME }}/${IMAGE_NAME} \
+          KO_DOCKER_REPO=${{ secrets.DOCKERHUB_USERNAME }}/platform-app-core \
           SOURCE_DATE_EPOCH=$(date +%s) \
           ko build --sbom=none --bare --tags=${{ env.TAG }},latest ./ --platform=linux/amd64
   create-tag:
