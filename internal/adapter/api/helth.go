@@ -21,7 +21,6 @@ func (api *API) V1HealthCore(w http.ResponseWriter, r *http.Request) {
 		log.GetLogCtx(ctx).Error("failed to check health core", log.ErrorField(err))
 
 		w.WriteHeader(http.StatusInternalServerError)
-		_, _ = w.Write([]byte(err.Error()))
 
 		return
 	}
