@@ -132,7 +132,9 @@ func TestAPIV1HealthCore(t *testing.T) {
 	}
 
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			rest := api.New(tt.fields.key, tt.fields.article, tt.fields.health)
 			got := httptest.NewRecorder()
 			rest.V1HealthCore(got, tt.args.r)
