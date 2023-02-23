@@ -17,7 +17,10 @@ type CoreArticleShare struct {
 
 const ID = "12345678-1234-1234-1234-1234567890ab"
 
-func (cas CoreArticleShare) Execute(ctx context.Context, input port.CoreArticleShareInput) (port.CoreArticleShareOutput, error) {
+func (cas CoreArticleShare) Execute(
+	ctx context.Context,
+	input port.CoreArticleShareInput,
+) (port.CoreArticleShareOutput, error) {
 	cas.T.Helper()
 
 	return port.CoreArticleShareOutput{
@@ -37,7 +40,10 @@ type CoreArticleList struct {
 	Err      error
 }
 
-func (cau CoreArticleList) Execute(ctx context.Context, input port.CoreArticleListInput) (port.CoreArticleListOutput, error) {
+func (cau CoreArticleList) Execute(
+	ctx context.Context,
+	input port.CoreArticleListInput,
+) (port.CoreArticleListOutput, error) {
 	cau.T.Helper()
 
 	return port.CoreArticleListOutput{
