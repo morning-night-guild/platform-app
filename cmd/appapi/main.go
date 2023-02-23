@@ -33,17 +33,17 @@ func main() {
 		panic(err)
 	}
 
-	articleGateway := gateway.NewCoreArticle(c)
+	articleRepo := gateway.NewCoreArticle(c)
 
-	healthGateway := gateway.NewCoreHealth(c)
+	healthRepo := gateway.NewCoreHealth(c)
 
-	articleListUsecase := interactor.NewAPIArticleList(articleGateway)
+	articleList := interactor.NewAPIArticleList(articleRepo)
 
-	articleShareUsecase := interactor.NewAPIArticleShare(articleGateway)
+	articleShare := interactor.NewAPIArticleShare(articleRepo)
 
-	healthUsecase := interactor.NewAPIHealthCheck(healthGateway)
+	healthUsecase := interactor.NewAPIHealthCheck(healthRepo)
 
-	article := api.NewArticle(articleListUsecase, articleShareUsecase)
+	article := api.NewArticle(articleList, articleShare)
 
 	health := api.NewHealth(healthUsecase)
 

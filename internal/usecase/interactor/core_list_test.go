@@ -1,4 +1,4 @@
-package article_test
+package interactor_test
 
 import (
 	"context"
@@ -9,12 +9,12 @@ import (
 	"github.com/morning-night-guild/platform-app/internal/domain/model"
 	"github.com/morning-night-guild/platform-app/internal/domain/model/article"
 	"github.com/morning-night-guild/platform-app/internal/domain/repository"
-	interactor "github.com/morning-night-guild/platform-app/internal/usecase/interactor/article"
+	"github.com/morning-night-guild/platform-app/internal/usecase/interactor"
 	"github.com/morning-night-guild/platform-app/internal/usecase/mock"
 	"github.com/morning-night-guild/platform-app/internal/usecase/port"
 )
 
-func TestListInteractorExecute(t *testing.T) {
+func TestCoreArticleListExecute(t *testing.T) {
 	t.Parallel()
 
 	type fields struct {
@@ -23,7 +23,7 @@ func TestListInteractorExecute(t *testing.T) {
 
 	type args struct {
 		ctx   context.Context
-		input port.ListArticleInput
+		input port.CoreArticleListInput
 	}
 
 	id := uuid.New()
@@ -32,7 +32,7 @@ func TestListInteractorExecute(t *testing.T) {
 		name    string
 		fields  fields
 		args    args
-		want    port.ListArticleOutput
+		want    port.CoreArticleListOutput
 		wantErr bool
 	}{
 		{
@@ -55,12 +55,12 @@ func TestListInteractorExecute(t *testing.T) {
 			},
 			args: args{
 				ctx: context.Background(),
-				input: port.ListArticleInput{
+				input: port.CoreArticleListInput{
 					Index: repository.Index(0),
 					Size:  repository.Size(1),
 				},
 			},
-			want: port.ListArticleOutput{
+			want: port.CoreArticleListOutput{
 				Articles: []model.Article{
 					{
 						ID:          article.ID(id),
@@ -80,7 +80,7 @@ func TestListInteractorExecute(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			l := interactor.NewListInteractor(tt.fields.articleRepository)
+			l := interactor.NewCoreArticleList(tt.fields.articleRepository)
 			got, err := l.Execute(tt.args.ctx, tt.args.input)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ListInteractor.Execute() error = %v, wantErr %v", err, tt.wantErr)

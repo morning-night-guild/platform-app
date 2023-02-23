@@ -1,4 +1,4 @@
-package article
+package interactor
 
 import (
 	"context"
@@ -9,31 +9,31 @@ import (
 	"github.com/morning-night-guild/platform-app/internal/usecase/port"
 )
 
-var _ port.ShareArticle = (*ShareInteractor)(nil)
+var _ port.CoreArticleShare = (*CoreArticleShare)(nil)
 
-// ShareInteractor 記事共有のインタラクター.
-type ShareInteractor struct {
+// CoreArticleShare 記事共有のインタラクター.
+type CoreArticleShare struct {
 	articleRepository repository.Article // 記事のリポジトリ
 }
 
-// NewShareInteractor 記事共有のインタラクターのファクトリ関数.
-func NewShareInteractor(
+// NewCoreArticleShare 記事共有のインタラクターのファクトリ関数.
+func NewCoreArticleShare(
 	articleRepository repository.Article,
-) *ShareInteractor {
-	return &ShareInteractor{
+) *CoreArticleShare {
+	return &CoreArticleShare{
 		articleRepository: articleRepository,
 	}
 }
 
 // Execute 記事共有のインタラクターを実行する.
-func (s *ShareInteractor) Execute(ctx context.Context, input port.ShareArticleInput) (port.ShareArticleOutput, error) {
+func (s *CoreArticleShare) Execute(ctx context.Context, input port.CoreArticleShareInput) (port.CoreArticleShareOutput, error) {
 	art := model.CreateArticle(input.URL, input.Title, input.Description, input.Thumbnail, []article.Tag{})
 
 	if err := s.articleRepository.Save(ctx, art); err != nil {
-		return port.ShareArticleOutput{}, err
+		return port.CoreArticleShareOutput{}, err
 	}
 
-	return port.ShareArticleOutput{
+	return port.CoreArticleShareOutput{
 		Article: art,
 	}, nil
 }

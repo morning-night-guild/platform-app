@@ -10,7 +10,7 @@ import (
 	"github.com/morning-night-guild/platform-app/internal/driver/interceptor"
 	"github.com/morning-night-guild/platform-app/internal/driver/newrelic"
 	"github.com/morning-night-guild/platform-app/internal/driver/server"
-	"github.com/morning-night-guild/platform-app/internal/usecase/interactor/article"
+	"github.com/morning-night-guild/platform-app/internal/usecase/interactor"
 )
 
 func main() {
@@ -27,13 +27,13 @@ func main() {
 
 	articleRepo := gateway.NewArticle(rdb)
 
-	articleShareItr := article.NewShareInteractor(articleRepo)
+	articleShare := interactor.NewCoreArticleShare(articleRepo)
 
-	articleListItr := article.NewListInteractor(articleRepo)
+	articleList := interactor.NewCoreArticleList(articleRepo)
 
 	ctl := controller.New()
 
-	articleCtr := controller.NewArticle(ctl, articleShareItr, articleListItr)
+	articleCtr := controller.NewArticle(ctl, articleShare, articleList)
 
 	healthCtr := controller.NewHealth()
 

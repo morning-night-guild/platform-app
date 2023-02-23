@@ -22,8 +22,8 @@ func TestArticleShare(t *testing.T) {
 	t.Parallel()
 
 	type fields struct {
-		share usecase.Usecase[port.ShareArticleInput, port.ShareArticleOutput]
-		list  usecase.Usecase[port.ListArticleInput, port.ListArticleOutput]
+		share usecase.Usecase[port.CoreArticleShareInput, port.CoreArticleShareOutput]
+		list  usecase.Usecase[port.CoreArticleListInput, port.CoreArticleListOutput]
 	}
 
 	type args struct {
@@ -41,11 +41,11 @@ func TestArticleShare(t *testing.T) {
 		{
 			name: "記事の共有ができる",
 			fields: fields{
-				share: mock.ShareUsecase{
+				share: mock.CoreArticleShare{
 					T:   t,
 					Err: nil,
 				},
-				list: mock.ListUsecase{},
+				list: mock.CoreArticleList{},
 			},
 			args: args{
 				ctx: context.Background(),
@@ -72,11 +72,11 @@ func TestArticleShare(t *testing.T) {
 		{
 			name: "URLが不正の時、バッドリクエストエラーになる",
 			fields: fields{
-				share: mock.ShareUsecase{
+				share: mock.CoreArticleShare{
 					T:   t,
 					Err: nil,
 				},
-				list: mock.ListUsecase{},
+				list: mock.CoreArticleList{},
 			},
 			args: args{
 				ctx: context.Background(),
@@ -95,11 +95,11 @@ func TestArticleShare(t *testing.T) {
 		{
 			name: "Thumbnailが不正の時、バッドリクエストエラーになる",
 			fields: fields{
-				share: mock.ShareUsecase{
+				share: mock.CoreArticleShare{
 					T:   t,
 					Err: nil,
 				},
-				list: mock.ListUsecase{},
+				list: mock.CoreArticleList{},
 			},
 			args: args{
 				ctx: context.Background(),
@@ -118,11 +118,11 @@ func TestArticleShare(t *testing.T) {
 		{
 			name: "ユースケースでバリデーションエラーが発生した際、バッドリクエストエラーになる",
 			fields: fields{
-				share: mock.ShareUsecase{
+				share: mock.CoreArticleShare{
 					T:   t,
 					Err: dme.NewValidationError("validation error"),
 				},
-				list: mock.ListUsecase{},
+				list: mock.CoreArticleList{},
 			},
 			args: args{
 				ctx: context.Background(),
@@ -141,7 +141,7 @@ func TestArticleShare(t *testing.T) {
 		{
 			name: "ユースケースでバリデーションエラー以外のエラーが発生した際、サーバーエラーになる",
 			fields: fields{
-				share: mock.ShareUsecase{
+				share: mock.CoreArticleShare{
 					T:   t,
 					Err: errors.New("unknown error"),
 				},
@@ -199,8 +199,8 @@ func TestArticleList(t *testing.T) {
 	t.Parallel()
 
 	type fields struct {
-		share usecase.Usecase[port.ShareArticleInput, port.ShareArticleOutput]
-		list  usecase.Usecase[port.ListArticleInput, port.ListArticleOutput]
+		share usecase.Usecase[port.CoreArticleShareInput, port.CoreArticleShareOutput]
+		list  usecase.Usecase[port.CoreArticleListInput, port.CoreArticleListOutput]
 	}
 
 	type args struct {
@@ -220,8 +220,8 @@ func TestArticleList(t *testing.T) {
 		{
 			name: "記事の一覧が取得できる（ネクストトークンあり）",
 			fields: fields{
-				share: mock.ShareUsecase{},
-				list: mock.ListUsecase{
+				share: mock.CoreArticleShare{},
+				list: mock.CoreArticleList{
 					T: t,
 					Articles: []model.Article{
 						{
@@ -262,8 +262,8 @@ func TestArticleList(t *testing.T) {
 		{
 			name: "記事の一覧が取得できる（ネクストトークンなし）",
 			fields: fields{
-				share: mock.ShareUsecase{},
-				list: mock.ListUsecase{
+				share: mock.CoreArticleShare{},
+				list: mock.CoreArticleList{
 					T: t,
 					Articles: []model.Article{
 						{
@@ -304,8 +304,8 @@ func TestArticleList(t *testing.T) {
 		{
 			name: "不正なサイズを指定して記事の一覧が取得できない",
 			fields: fields{
-				share: mock.ShareUsecase{},
-				list:  mock.ListUsecase{},
+				share: mock.CoreArticleShare{},
+				list:  mock.CoreArticleList{},
 			},
 			args: args{
 				ctx: context.Background(),

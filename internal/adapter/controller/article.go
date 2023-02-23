@@ -13,15 +13,15 @@ import (
 // Article.
 type Article struct {
 	ctl   *Controller
-	share port.ShareArticle
-	list  port.ListArticle
+	share port.CoreArticleShare
+	list  port.CoreArticleList
 }
 
 // NewArticle 記事のコントローラを新規作成する関数.
 func NewArticle(
 	ctl *Controller,
-	share port.ShareArticle,
-	list port.ListArticle,
+	share port.CoreArticleShare,
+	list port.CoreArticleList,
 ) *Article {
 	return &Article{
 		ctl:   ctl,
@@ -55,7 +55,7 @@ func (a *Article) Share(
 		return nil, a.ctl.HandleConnectError(ctx, err)
 	}
 
-	input := port.ShareArticleInput{
+	input := port.CoreArticleShareInput{
 		URL:         url,
 		Title:       title,
 		Description: description,
@@ -93,7 +93,7 @@ func (a *Article) List(
 		return nil, a.ctl.HandleConnectError(ctx, err)
 	}
 
-	input := port.ListArticleInput{
+	input := port.CoreArticleListInput{
 		Index: index,
 		Size:  size,
 	}

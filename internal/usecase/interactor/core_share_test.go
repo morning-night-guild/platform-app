@@ -1,4 +1,4 @@
-package article_test
+package interactor_test
 
 import (
 	"context"
@@ -9,12 +9,12 @@ import (
 	"github.com/morning-night-guild/platform-app/internal/domain/model"
 	"github.com/morning-night-guild/platform-app/internal/domain/model/article"
 	"github.com/morning-night-guild/platform-app/internal/domain/repository"
-	interactor "github.com/morning-night-guild/platform-app/internal/usecase/interactor/article"
+	"github.com/morning-night-guild/platform-app/internal/usecase/interactor"
 	"github.com/morning-night-guild/platform-app/internal/usecase/mock"
 	"github.com/morning-night-guild/platform-app/internal/usecase/port"
 )
 
-func TestShareInteractorExecute(t *testing.T) {
+func TestCoreArticleShareExecute(t *testing.T) {
 	t.Parallel()
 
 	type fields struct {
@@ -23,14 +23,14 @@ func TestShareInteractorExecute(t *testing.T) {
 
 	type args struct {
 		ctx   context.Context
-		input port.ShareArticleInput
+		input port.CoreArticleShareInput
 	}
 
 	tests := []struct {
 		name    string
 		fields  fields
 		args    args
-		want    port.ShareArticleOutput
+		want    port.CoreArticleShareOutput
 		wantErr bool
 	}{
 		{
@@ -43,14 +43,14 @@ func TestShareInteractorExecute(t *testing.T) {
 			},
 			args: args{
 				ctx: context.Background(),
-				input: port.ShareArticleInput{
+				input: port.CoreArticleShareInput{
 					URL:         article.URL("https://example.com"),
 					Title:       article.Title("title"),
 					Description: article.Description("description"),
 					Thumbnail:   article.Thumbnail("https://example.com"),
 				},
 			},
-			want: port.ShareArticleOutput{
+			want: port.CoreArticleShareOutput{
 				Article: model.Article{
 					ID:          article.ID{},
 					URL:         article.URL("https://example.com"),
@@ -71,14 +71,14 @@ func TestShareInteractorExecute(t *testing.T) {
 			},
 			args: args{
 				ctx: context.Background(),
-				input: port.ShareArticleInput{
+				input: port.CoreArticleShareInput{
 					URL:         article.URL("https://example.com"),
 					Title:       article.Title("title"),
 					Description: article.Description("description"),
 					Thumbnail:   article.Thumbnail("https://example.com"),
 				},
 			},
-			want:    port.ShareArticleOutput{},
+			want:    port.CoreArticleShareOutput{},
 			wantErr: true,
 		},
 	}
@@ -87,7 +87,7 @@ func TestShareInteractorExecute(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			s := interactor.NewShareInteractor(tt.fields.articleRepository)
+			s := interactor.NewCoreArticleShare(tt.fields.articleRepository)
 			got, err := s.Execute(tt.args.ctx, tt.args.input)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ShareInteractor.Execute() error = %v, wantErr %v", err, tt.wantErr)

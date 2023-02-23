@@ -7,8 +7,8 @@ import (
 	"github.com/morning-night-guild/platform-app/internal/usecase"
 )
 
-// ShareArticleInput.
-type ShareArticleInput struct {
+// CoreArticleShareInput.
+type CoreArticleShareInput struct {
 	usecase.Input
 	URL         article.URL
 	Title       article.Title
@@ -16,31 +16,31 @@ type ShareArticleInput struct {
 	Thumbnail   article.Thumbnail
 }
 
-// ShareArticleOutput.
-type ShareArticleOutput struct {
+// CoreArticleShareOutput.
+type CoreArticleShareOutput struct {
 	usecase.Output
 	Article model.Article
 }
 
-// ShareArticle.
-type ShareArticle interface {
-	usecase.Usecase[ShareArticleInput, ShareArticleOutput]
+// CoreArticleShare.
+type CoreArticleShare interface {
+	usecase.Usecase[CoreArticleShareInput, CoreArticleShareOutput]
 }
 
-// ListArticleInput.
-type ListArticleInput struct {
+// CoreArticleListInput.
+type CoreArticleListInput struct {
 	usecase.Input
 	Index repository.Index
 	Size  repository.Size
 }
 
-// ListArticleOutput.
-type ListArticleOutput struct {
+// CoreArticleListOutput.
+type CoreArticleListOutput struct {
 	usecase.Output
 	Articles []model.Article
 }
 
-// ListArticle.
-type ListArticle interface {
-	usecase.Usecase[ListArticleInput, ListArticleOutput]
+// CoreArticleList.
+type CoreArticleList interface {
+	usecase.Usecase[CoreArticleListInput, CoreArticleListOutput]
 }

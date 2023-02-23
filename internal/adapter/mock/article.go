@@ -10,17 +10,17 @@ import (
 	"github.com/morning-night-guild/platform-app/internal/usecase/port"
 )
 
-type ShareUsecase struct {
+type CoreArticleShare struct {
 	T   *testing.T
 	Err error
 }
 
 const ID = "12345678-1234-1234-1234-1234567890ab"
 
-func (su ShareUsecase) Execute(ctx context.Context, input port.ShareArticleInput) (port.ShareArticleOutput, error) {
-	su.T.Helper()
+func (cas CoreArticleShare) Execute(ctx context.Context, input port.CoreArticleShareInput) (port.CoreArticleShareOutput, error) {
+	cas.T.Helper()
 
-	return port.ShareArticleOutput{
+	return port.CoreArticleShareOutput{
 		Article: model.Article{
 			ID:          article.ID(uuid.MustParse(ID)),
 			URL:         input.URL,
@@ -28,19 +28,19 @@ func (su ShareUsecase) Execute(ctx context.Context, input port.ShareArticleInput
 			Description: input.Description,
 			Thumbnail:   input.Thumbnail,
 		},
-	}, su.Err
+	}, cas.Err
 }
 
-type ListUsecase struct {
+type CoreArticleList struct {
 	T        *testing.T
 	Articles []model.Article
 	Err      error
 }
 
-func (lu ListUsecase) Execute(ctx context.Context, input port.ListArticleInput) (port.ListArticleOutput, error) {
-	lu.T.Helper()
+func (cau CoreArticleList) Execute(ctx context.Context, input port.CoreArticleListInput) (port.CoreArticleListOutput, error) {
+	cau.T.Helper()
 
-	return port.ListArticleOutput{
-		Articles: lu.Articles,
-	}, lu.Err
+	return port.CoreArticleListOutput{
+		Articles: cau.Articles,
+	}, cau.Err
 }
