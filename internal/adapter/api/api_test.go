@@ -13,28 +13,18 @@ import (
 func TestAPIHandleConnectError(t *testing.T) {
 	t.Parallel()
 
-	type fields struct {
-		key     string
-		connect *api.Connect
-	}
-
 	type args struct {
 		ctx context.Context
 		err error
 	}
 
 	tests := []struct {
-		name   string
-		fields fields
-		args   args
-		want   int
+		name string
+		args args
+		want int
 	}{
 		{
 			name: "400",
-			fields: fields{
-				key:     "",
-				connect: nil,
-			},
 			args: args{
 				ctx: context.Background(),
 				err: connect.NewError(connect.CodeInvalidArgument, errors.New("invalid argument")),
@@ -43,10 +33,6 @@ func TestAPIHandleConnectError(t *testing.T) {
 		},
 		{
 			name: "500",
-			fields: fields{
-				key:     "",
-				connect: nil,
-			},
 			args: args{
 				ctx: context.Background(),
 				err: errors.New("unknown error"),
@@ -58,7 +44,7 @@ func TestAPIHandleConnectError(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			api := api.New(tt.fields.key, tt.fields.connect)
+			api := api.New("", nil, nil)
 			if got := api.HandleConnectError(tt.args.ctx, tt.args.err); got != tt.want {
 				t.Errorf("API.HandleConnectError() = %v, want %v", got, tt.want)
 			}
@@ -100,7 +86,7 @@ func TestAPIPointerToString(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			api := api.New("", nil)
+			api := api.New("", nil, nil)
 			if got := api.PointerToString(tt.args.s); got != tt.want {
 				t.Errorf("API.PointerToString() = %v, want %v", got, tt.want)
 			}

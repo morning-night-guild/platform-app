@@ -6,7 +6,9 @@ import (
 	"net/http"
 
 	"github.com/google/uuid"
-	articlev1 "github.com/morning-night-guild/platform-app/pkg/connect/article/v1"
+	"github.com/morning-night-guild/platform-app/internal/domain/model/article"
+	"github.com/morning-night-guild/platform-app/internal/domain/repository"
+	"github.com/morning-night-guild/platform-app/internal/usecase/port"
 	"github.com/morning-night-guild/platform-app/pkg/log"
 	"github.com/morning-night-guild/platform-app/pkg/openapi"
 )
@@ -19,14 +21,26 @@ func (api *API) V1ListArticles(w http.ResponseWriter, r *http.Request, params op
 		pageToken = *params.PageToken
 	}
 
-	req := NewRequestWithTID(ctx, &articlev1.ListRequest{
-		PageToken:   pageToken,
-		MaxPageSize: uint32(params.MaxPageSize),
-	})
+	token := repository.NewNextToken(pageToken)
 
-	res, err := api.connect.Article.List(ctx, req)
+	size, err := repository.NewSize(params.MaxPageSize)
 	if err != nil {
-		log.GetLogCtx(ctx).Error("failed to list articles", log.ErrorField(err))
+		log.GetLogCtx(ctx).Warn("failed to list articles", log.ErrorField(err))
+
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte(err.Error()))
+
+		return
+	}
+
+	input := port.APIArticleListInput{
+		Index: token.ToIndex(),
+		Size:  size,
+	}
+
+	res, err := api.article.list.Execute(ctx, input)
+	if err != nil {
+		log.GetLogCtx(ctx).Warn("failed to list articles", log.ErrorField(err))
 
 		w.WriteHeader(http.StatusInternalServerError)
 		_, _ = w.Write([]byte(err.Error()))
@@ -34,28 +48,35 @@ func (api *API) V1ListArticles(w http.ResponseWriter, r *http.Request, params op
 		return
 	}
 
-	articles := make([]openapi.Article, len(res.Msg.Articles))
+	articles := make([]openapi.Article, len(res.Articles))
 
-	for i, article := range res.Msg.Articles {
-		uid, _ := uuid.Parse(article.Id)
+	for i, article := range res.Articles {
+		id := uuid.MustParse(article.ID.String())
+		title := article.Title.String()
+		url := article.URL.String()
+		description := article.Description.String()
+		thumbnail := article.Thumbnail.String()
+		tags := article.TagList.StringSlice()
 
 		articles[i] = openapi.Article{
-			Id:          &uid,
-			Title:       &article.Title,
-			Url:         &article.Url,
-			Description: &article.Description,
-			Thumbnail:   &article.Thumbnail,
-			Tags:        &article.Tags,
+			Id:          &id,
+			Title:       &title,
+			Url:         &url,
+			Description: &description,
+			Thumbnail:   &thumbnail,
+			Tags:        &tags,
 		}
 	}
 
+	next := token.CreateNextToken(size).String()
+
 	rs := openapi.ListArticleResponse{
 		Articles:      &articles,
-		NextPageToken: &res.Msg.NextPageToken,
+		NextPageToken: &next,
 	}
 
 	if err := json.NewEncoder(w).Encode(rs); err != nil {
-		log.GetLogCtx(ctx).Error("failed to encode response", log.ErrorField(err))
+		log.GetLogCtx(ctx).Warn("failed to encode response", log.ErrorField(err))
 
 		w.WriteHeader(http.StatusInternalServerError)
 	}
@@ -77,26 +98,23 @@ func (api *API) V1ShareArticle(w http.ResponseWriter, r *http.Request) {
 	var body openapi.V1ShareArticleRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		log.GetLogCtx(ctx).Error("failed to decode request body", log.ErrorField(err))
+		log.GetLogCtx(ctx).Warn("failed to decode request body", log.ErrorField(err))
 
 		w.WriteHeader(http.StatusInternalServerError)
 
 		return
 	}
 
-	req := NewRequestWithTID(ctx, &articlev1.ShareRequest{
-		Url:         body.Url,
-		Title:       api.PointerToString(body.Title),
-		Description: api.PointerToString(body.Description),
-		Thumbnail:   api.PointerToString(body.Thumbnail),
-	})
+	input := port.APIArticleShareInput{
+		URL:         article.URL(body.Url),
+		Title:       article.Title(api.PointerToString(body.Title)),
+		Description: article.Description(api.PointerToString(body.Description)),
+		Thumbnail:   article.Thumbnail(api.PointerToString(body.Thumbnail)),
+	}
 
-	res, err := api.connect.Article.Share(ctx, req)
-	if err != nil {
+	if _, err := api.article.share.Execute(ctx, input); err != nil {
 		w.WriteHeader(api.HandleConnectError(ctx, err))
 
 		return
 	}
-
-	log.GetLogCtx(ctx).Debug(fmt.Sprintf("article shared id = %s", res.Msg.Article.Id))
 }

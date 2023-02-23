@@ -3,7 +3,7 @@ package api
 import (
 	"net/http"
 
-	healthv1 "github.com/morning-night-guild/platform-app/pkg/connect/health/v1"
+	"github.com/morning-night-guild/platform-app/internal/usecase/port"
 	"github.com/morning-night-guild/platform-app/pkg/log"
 )
 
@@ -15,9 +15,9 @@ func (api *API) V1HealthAPI(w http.ResponseWriter, r *http.Request) {
 func (api *API) V1HealthCore(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	req := NewRequestWithTID(ctx, &healthv1.CheckRequest{})
+	input := port.APIHealthCheckInput{}
 
-	if _, err := api.connect.Health.Check(ctx, req); err != nil {
+	if _, err := api.health.check.Execute(ctx, input); err != nil {
 		log.GetLogCtx(ctx).Error("failed to check health core", log.ErrorField(err))
 
 		w.WriteHeader(http.StatusInternalServerError)

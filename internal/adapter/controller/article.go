@@ -84,7 +84,7 @@ func (a *Article) List(
 	ctx context.Context,
 	req *connect.Request[articlev1.ListRequest],
 ) (*connect.Response[articlev1.ListResponse], error) {
-	token := NewNextToken(req.Msg.PageToken)
+	token := repository.NewNextToken(req.Msg.PageToken)
 
 	index := token.ToIndex()
 
