@@ -11,12 +11,12 @@ var _ port.APIArticleList = (*APIArticleList)(nil)
 
 // APIArticleList 記事一覧のインタラクター.
 type APIArticleList struct {
-	articleRepository repository.Article // 記事のリポジトリ
+	articleRepository repository.APIArticle // 記事のリポジトリ
 }
 
 // NewAPIArticleList 記事一覧のインタラクターのファクトリ関数.
 func NewAPIArticleList(
-	articleRepository repository.Article,
+	articleRepository repository.APIArticle,
 ) *APIArticleList {
 	return &APIArticleList{
 		articleRepository: articleRepository,

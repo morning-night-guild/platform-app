@@ -8,29 +8,29 @@ import (
 	"github.com/morning-night-guild/platform-app/internal/domain/repository"
 )
 
-var _ repository.Article = (*Article)(nil)
+var _ repository.CoreArticle = (*CoreArticle)(nil)
 
 // Article 記事リポジトリのモック.
-type Article struct {
+type CoreArticle struct {
 	T        *testing.T
 	Articles []model.Article
 	Err      error
 }
 
 // Save 記事を保存するモックメソッド.
-func (a *Article) Save(ctx context.Context, article model.Article) error {
-	a.T.Helper()
+func (ca *CoreArticle) Save(ctx context.Context, article model.Article) error {
+	ca.T.Helper()
 
-	return a.Err
+	return ca.Err
 }
 
 // FindAll 記事を一覧取得するモックメソッド.
-func (a *Article) FindAll(
+func (ca *CoreArticle) FindAll(
 	ctx context.Context,
 	index repository.Index,
 	size repository.Size,
 ) ([]model.Article, error) {
-	a.T.Helper()
+	ca.T.Helper()
 
-	return a.Articles, a.Err
+	return ca.Articles, ca.Err
 }

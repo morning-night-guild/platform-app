@@ -33,9 +33,9 @@ func main() {
 		panic(err)
 	}
 
-	articleRepo := gateway.NewCoreArticle(c)
+	articleRepo := gateway.NewAPIArticle(c)
 
-	healthRepo := gateway.NewCoreHealth(c)
+	healthRepo := gateway.NewAPIHealth(c)
 
 	articleList := interactor.NewAPIArticleList(articleRepo)
 

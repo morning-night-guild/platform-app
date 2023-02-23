@@ -13,12 +13,12 @@ var _ port.CoreArticleShare = (*CoreArticleShare)(nil)
 
 // CoreArticleShare 記事共有のインタラクター.
 type CoreArticleShare struct {
-	articleRepository repository.Article // 記事のリポジトリ
+	articleRepository repository.CoreArticle // 記事のリポジトリ
 }
 
 // NewCoreArticleShare 記事共有のインタラクターのファクトリ関数.
 func NewCoreArticleShare(
-	articleRepository repository.Article,
+	articleRepository repository.CoreArticle,
 ) *CoreArticleShare {
 	return &CoreArticleShare{
 		articleRepository: articleRepository,

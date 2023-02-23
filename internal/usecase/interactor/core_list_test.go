@@ -18,7 +18,7 @@ func TestCoreArticleListExecute(t *testing.T) {
 	t.Parallel()
 
 	type fields struct {
-		articleRepository repository.Article
+		articleRepository repository.CoreArticle
 	}
 
 	type args struct {
@@ -38,7 +38,7 @@ func TestCoreArticleListExecute(t *testing.T) {
 		{
 			name: "記事一覧を取得できる",
 			fields: fields{
-				articleRepository: &mock.Article{
+				articleRepository: &mock.CoreArticle{
 					T: t,
 					Articles: []model.Article{
 						{

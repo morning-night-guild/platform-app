@@ -10,11 +10,11 @@ import (
 var _ port.APIHealthCheck = (*APIHealthCheck)(nil)
 
 type APIHealthCheck struct {
-	healthRepository repository.Health
+	healthRepository repository.APIHealth
 }
 
 func NewAPIHealthCheck(
-	healthRepository repository.Health,
+	healthRepository repository.APIHealth,
 ) *APIHealthCheck {
 	return &APIHealthCheck{
 		healthRepository: healthRepository,

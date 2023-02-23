@@ -2,6 +2,6 @@ package repository
 
 import "context"
 
-type Health interface {
+type APIHealth interface {
 	Check(context.Context) error
 }

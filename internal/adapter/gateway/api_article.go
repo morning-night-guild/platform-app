@@ -5,42 +5,58 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/morning-night-guild/platform-app/internal/domain/model"
+	"github.com/morning-night-guild/platform-app/internal/domain/model/article"
 	"github.com/morning-night-guild/platform-app/internal/domain/repository"
 	articlev1 "github.com/morning-night-guild/platform-app/pkg/connect/article/v1"
-	healthv1 "github.com/morning-night-guild/platform-app/pkg/connect/health/v1"
 	"github.com/morning-night-guild/platform-app/pkg/log"
 )
 
-var _ repository.Article = (*CoreArticle)(nil)
+var _ repository.APIArticle = (*APIArticle)(nil)
 
-type CoreArticle struct {
+type APIArticle struct {
 	connect *Connect
 }
 
-func NewCoreArticle(connect *Connect) *CoreArticle {
-	return &CoreArticle{
+func NewAPIArticle(connect *Connect) *APIArticle {
+	return &APIArticle{
 		connect: connect,
 	}
 }
 
-func (ca *CoreArticle) Save(ctx context.Context, item model.Article) error {
+func (ca *APIArticle) Save(
+	ctx context.Context,
+	url article.URL,
+	title article.Title,
+	description article.Description,
+	thumbnail article.Thumbnail,
+) (model.Article, error) {
 	req := NewRequestWithTID(ctx, &articlev1.ShareRequest{
-		Url:         item.URL.String(),
-		Title:       item.Title.String(),
-		Description: item.Description.String(),
-		Thumbnail:   item.Thumbnail.String(),
+		Url:         url.String(),
+		Title:       title.String(),
+		Description: description.String(),
+		Thumbnail:   thumbnail.String(),
 	})
 
-	if _, err := ca.connect.Article.Share(ctx, req); err != nil {
+	res, err := ca.connect.Article.Share(ctx, req)
+	if err != nil {
 		log.GetLogCtx(ctx).Warn("failed to share article", log.ErrorField(err))
 
-		return err
+		return model.Article{}, err
 	}
 
-	return nil
+	article := model.ReconstructArticle(
+		uuid.MustParse(res.Msg.Article.Id),
+		res.Msg.Article.Url,
+		res.Msg.Article.Title,
+		res.Msg.Article.Description,
+		res.Msg.Article.Thumbnail,
+		[]string{},
+	)
+
+	return article, nil
 }
 
-func (ca *CoreArticle) FindAll(
+func (ca *APIArticle) FindAll(
 	ctx context.Context,
 	index repository.Index,
 	size repository.Size,
@@ -71,28 +87,4 @@ func (ca *CoreArticle) FindAll(
 	}
 
 	return articles, nil
-}
-
-var _ repository.Health = (*CoreHealth)(nil)
-
-type CoreHealth struct {
-	connect *Connect
-}
-
-func NewCoreHealth(connect *Connect) *CoreHealth {
-	return &CoreHealth{
-		connect: connect,
-	}
-}
-
-func (ch *CoreHealth) Check(ctx context.Context) error {
-	req := NewRequestWithTID(ctx, &healthv1.CheckRequest{})
-
-	if _, err := ch.connect.Health.Check(ctx, req); err != nil {
-		log.GetLogCtx(ctx).Warn("failed to check health core", log.ErrorField(err))
-
-		return err
-	}
-
-	return nil
 }

@@ -47,7 +47,7 @@ func (rm *RDBClientMock) Of(dsn string) (*gateway.RDB, error) {
 	}, nil
 }
 
-func TestArticleSave(t *testing.T) {
+func TestCoreArticleSave(t *testing.T) {
 	t.Parallel()
 
 	t.Run("記事を保存できる", func(t *testing.T) {
@@ -58,7 +58,7 @@ func TestArticleSave(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		ag := gateway.NewArticle(rdb)
+		ag := gateway.NewCoreArticle(rdb)
 
 		ctx := context.Background()
 
@@ -112,7 +112,7 @@ func TestArticleSave(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		ag := gateway.NewArticle(rdb)
+		ag := gateway.NewCoreArticle(rdb)
 
 		ctx := context.Background()
 
@@ -141,7 +141,7 @@ func TestArticleSave(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		ag := gateway.NewArticle(rdb)
+		ag := gateway.NewCoreArticle(rdb)
 
 		ctx := context.Background()
 
@@ -188,7 +188,7 @@ func TestArticleSave(t *testing.T) {
 		}
 
 		if !reflect.DeepEqual(a1.TagList, got) {
-			t.Errorf("NewArticle() = %v, want %v", got, a1.TagList)
+			t.Errorf("NewCoreArticle() = %v, want %v", got, a1.TagList)
 		}
 	})
 }
@@ -204,7 +204,7 @@ func TestArticleList(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		ag := gateway.NewArticle(rdb)
+		ag := gateway.NewCoreArticle(rdb)
 
 		ctx := context.Background()
 
@@ -258,7 +258,7 @@ func TestArticleList(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		ag := gateway.NewArticle(rdb)
+		ag := gateway.NewCoreArticle(rdb)
 
 		ctx := context.Background()
 
@@ -312,7 +312,7 @@ func TestArticleList(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		ag := gateway.NewArticle(rdb)
+		ag := gateway.NewCoreArticle(rdb)
 
 		ctx := context.Background()
 
@@ -366,7 +366,7 @@ func TestArticleList(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		ag := gateway.NewArticle(rdb)
+		ag := gateway.NewCoreArticle(rdb)
 
 		ctx := context.Background()
 
@@ -405,7 +405,7 @@ func TestArticleList(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		ag := gateway.NewArticle(rdb)
+		ag := gateway.NewCoreArticle(rdb)
 
 		ctx := context.Background()
 
