@@ -10,12 +10,14 @@ import (
 	"github.com/morning-night-guild/platform-app/internal/usecase/port"
 )
 
+const ID = "12345678-1234-1234-1234-1234567890ab"
+
+var _ port.CoreArticleShare = (*CoreArticleShare)(nil)
+
 type CoreArticleShare struct {
 	T   *testing.T
 	Err error
 }
-
-const ID = "12345678-1234-1234-1234-1234567890ab"
 
 func (cas CoreArticleShare) Execute(
 	ctx context.Context,
@@ -33,6 +35,8 @@ func (cas CoreArticleShare) Execute(
 		},
 	}, cas.Err
 }
+
+var _ port.CoreArticleList = (*CoreArticleList)(nil)
 
 type CoreArticleList struct {
 	T        *testing.T
