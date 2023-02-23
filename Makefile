@@ -24,6 +24,11 @@ tool: ## Install tool.
 dev: ## Make development.
 	@docker compose --project-name ${APP_NAME} --file ./.docker/docker-compose.yaml up -d
 
+.PHONY: redev
+redev: ## restart dev container
+	@touch cmd/appcore/main.go
+	@touch cmd/appapi/main.go
+
 .PHONY: down
 down: ## Down development.
 	@docker compose --project-name ${APP_NAME} down
