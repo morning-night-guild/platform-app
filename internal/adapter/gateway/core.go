@@ -40,7 +40,11 @@ func (ca *CoreArticle) Save(ctx context.Context, item model.Article) error {
 	return nil
 }
 
-func (ca *CoreArticle) FindAll(ctx context.Context, index repository.Index, size repository.Size) ([]model.Article, error) {
+func (ca *CoreArticle) FindAll(
+	ctx context.Context,
+	index repository.Index,
+	size repository.Size,
+) ([]model.Article, error) {
 	req := NewRequestWithTID(ctx, &articlev1.ListRequest{
 		PageToken:   string(repository.CreateNextTokenFromIndex(index)),
 		MaxPageSize: uint32(size),

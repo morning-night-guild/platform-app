@@ -24,8 +24,11 @@ func NewAPIArticleList(
 }
 
 // Execute 記事一覧のインタラクターを実行する.
-func (l *APIArticleList) Execute(ctx context.Context, input port.APIArticleListInput) (port.APIArticleListOutput, error) {
-	articles, err := l.articleRepository.FindAll(ctx, input.Index, input.Size)
+func (aal *APIArticleList) Execute(
+	ctx context.Context,
+	input port.APIArticleListInput,
+) (port.APIArticleListOutput, error) {
+	articles, err := aal.articleRepository.FindAll(ctx, input.Index, input.Size)
 	if err != nil {
 		return port.APIArticleListOutput{}, err
 	}

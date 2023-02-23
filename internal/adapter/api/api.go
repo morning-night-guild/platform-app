@@ -82,6 +82,10 @@ func (api *API) PointerToString(s *string) string {
 	return *s
 }
 
+func (api *API) StringToPointer(s string) *string {
+	return &s
+}
+
 func NewRequestWithTID[T any](ctx context.Context, msg *T) *connect.Request[T] {
 	req := connect.NewRequest(msg)
 

@@ -21,6 +21,13 @@ func NewAPIHealthCheck(
 	}
 }
 
-func (l *APIHealthCheck) Execute(ctx context.Context, input port.APIHealthCheckInput) (port.APIHealthCheckOutput, error) {
+func (ahc *APIHealthCheck) Execute(
+	ctx context.Context,
+	input port.APIHealthCheckInput,
+) (port.APIHealthCheckOutput, error) {
+	if err := ahc.healthRepository.Check(ctx); err != nil {
+		return port.APIHealthCheckOutput{}, err
+	}
+
 	return port.APIHealthCheckOutput{}, nil
 }

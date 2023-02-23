@@ -26,10 +26,13 @@ func NewAPIArticleShare(
 }
 
 // Execute 記事共有のインタラクターを実行する.
-func (s *APIArticleShare) Execute(ctx context.Context, input port.APIArticleShareInput) (port.APIArticleShareOutput, error) {
+func (aas *APIArticleShare) Execute(
+	ctx context.Context,
+	input port.APIArticleShareInput,
+) (port.APIArticleShareOutput, error) {
 	art := model.CreateArticle(input.URL, input.Title, input.Description, input.Thumbnail, []article.Tag{})
 
-	if err := s.articleRepository.Save(ctx, art); err != nil {
+	if err := aas.articleRepository.Save(ctx, art); err != nil {
 		return port.APIArticleShareOutput{}, err
 	}
 

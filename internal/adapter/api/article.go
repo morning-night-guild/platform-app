@@ -28,7 +28,6 @@ func (api *API) V1ListArticles(w http.ResponseWriter, r *http.Request, params op
 		log.GetLogCtx(ctx).Warn("failed to list articles", log.ErrorField(err))
 
 		w.WriteHeader(http.StatusBadRequest)
-		_, _ = w.Write([]byte(err.Error()))
 
 		return
 	}
@@ -43,7 +42,6 @@ func (api *API) V1ListArticles(w http.ResponseWriter, r *http.Request, params op
 		log.GetLogCtx(ctx).Warn("failed to list articles", log.ErrorField(err))
 
 		w.WriteHeader(http.StatusInternalServerError)
-		_, _ = w.Write([]byte(err.Error()))
 
 		return
 	}
@@ -52,18 +50,13 @@ func (api *API) V1ListArticles(w http.ResponseWriter, r *http.Request, params op
 
 	for i, article := range res.Articles {
 		id := uuid.MustParse(article.ID.String())
-		title := article.Title.String()
-		url := article.URL.String()
-		description := article.Description.String()
-		thumbnail := article.Thumbnail.String()
 		tags := article.TagList.StringSlice()
-
 		articles[i] = openapi.Article{
 			Id:          &id,
-			Title:       &title,
-			Url:         &url,
-			Description: &description,
-			Thumbnail:   &thumbnail,
+			Title:       api.StringToPointer(article.Title.String()),
+			Url:         api.StringToPointer(article.URL.String()),
+			Description: api.StringToPointer(article.Description.String()),
+			Thumbnail:   api.StringToPointer(article.Thumbnail.String()),
 			Tags:        &tags,
 		}
 	}
@@ -90,7 +83,6 @@ func (api *API) V1ShareArticle(w http.ResponseWriter, r *http.Request) {
 		log.GetLogCtx(ctx).Warn(fmt.Sprintf("invalid api key. api key = %s", key))
 
 		w.WriteHeader(http.StatusUnauthorized)
-		_, _ = w.Write([]byte("unauthorized"))
 
 		return
 	}
