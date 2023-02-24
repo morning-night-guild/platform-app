@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/morning-night-guild/platform-app/internal/adapter/api"
+	"github.com/morning-night-guild/platform-app/internal/adapter/gateway"
 	"github.com/morning-night-guild/platform-app/internal/driver/config"
 	"github.com/morning-night-guild/platform-app/internal/driver/connect"
 	"github.com/morning-night-guild/platform-app/internal/driver/cors"
@@ -9,6 +10,7 @@ import (
 	"github.com/morning-night-guild/platform-app/internal/driver/handler"
 	"github.com/morning-night-guild/platform-app/internal/driver/middleware"
 	"github.com/morning-night-guild/platform-app/internal/driver/server"
+	"github.com/morning-night-guild/platform-app/internal/usecase/interactor"
 )
 
 func main() {
@@ -31,8 +33,22 @@ func main() {
 		panic(err)
 	}
 
+	articleRepo := gateway.NewAPIArticle(c)
+
+	healthRepo := gateway.NewAPIHealth(c)
+
+	articleList := interactor.NewAPIArticleList(articleRepo)
+
+	articleShare := interactor.NewAPIArticleShare(articleRepo)
+
+	healthUsecase := interactor.NewAPIHealthCheck(healthRepo)
+
+	article := api.NewArticle(articleList, articleShare)
+
+	health := api.NewHealth(healthUsecase)
+
 	hd := handler.NewOpenAPIHandler(
-		api.New(cfg.APIKey, c),
+		api.New(cfg.APIKey, article, health),
 		cs,
 		middleware.New(),
 	)
