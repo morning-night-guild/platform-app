@@ -30,8 +30,12 @@ redev: ## restart dev container
 	@touch cmd/appapi/main.go
 
 .PHONY: down
-down: ## Down development.
-	@docker compose --project-name ${APP_NAME} down
+down: ## Down development. (retain containers and delete volumes.)
+	@docker compose --project-name ${APP_NAME} down --volumes
+
+.PHONY: balus
+balus: ## Destroy everything about docker. (containers, images, volumes, networks.)
+	@docker compose --project-name ${APP_NAME} down --rmi all --volumes
 
 .PHONY: psql
 psql: ## Connect to postgres.

@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/morning-night-guild/platform-app/internal/domain/model"
 	"github.com/morning-night-guild/platform-app/internal/domain/model/article"
 	"github.com/morning-night-guild/platform-app/internal/domain/repository"
@@ -87,12 +88,15 @@ func TestCoreArticleShareExecute(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			s := interactor.NewCoreArticleShare(tt.fields.articleRepository)
-			got, err := s.Execute(tt.args.ctx, tt.args.input)
+			cas := interactor.NewCoreArticleShare(tt.fields.articleRepository)
+			got, err := cas.Execute(tt.args.ctx, tt.args.input)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ShareInteractor.Execute() error = %v, wantErr %v", err, tt.wantErr)
 
 				return
+			}
+			if _, err := uuid.Parse(got.Article.ID.String()); err != nil {
+				t.Errorf("ShareInteractor.Execute() got Article.ID = %v, err %v", got.Article.ID, err)
 			}
 			if !reflect.DeepEqual(got.Article.URL, tt.want.Article.URL) {
 				t.Errorf("ShareInteractor.Execute() got Article.URL = %v, want %v", got.Article.URL, tt.want.Article.URL)
