@@ -80,8 +80,8 @@ func TestCoreArticleListExecute(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			l := interactor.NewCoreArticleList(tt.fields.articleRepository)
-			got, err := l.Execute(tt.args.ctx, tt.args.input)
+			cal := interactor.NewCoreArticleList(tt.fields.articleRepository)
+			got, err := cal.Execute(tt.args.ctx, tt.args.input)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ListInteractor.Execute() error = %v, wantErr %v", err, tt.wantErr)
 
