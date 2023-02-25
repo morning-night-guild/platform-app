@@ -102,6 +102,7 @@ func TestAPIArticleListExecute(t *testing.T) {
 			got, err := aal.Execute(tt.args.ctx, tt.args.input)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("APIArticleList.Execute() error = %v, wantErr %v", err, tt.wantErr)
+
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
