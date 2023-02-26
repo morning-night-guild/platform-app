@@ -9,6 +9,8 @@ import (
 	"github.com/morning-night-guild/platform-app/internal/usecase/port"
 )
 
+var _ port.CoreArticleShare = (*CoreArticleShare)(nil)
+
 // CoreArticleShare 記事共有のインタラクター.
 type CoreArticleShare struct {
 	articleRepository repository.CoreArticle // 記事のリポジトリ
@@ -17,7 +19,7 @@ type CoreArticleShare struct {
 // NewCoreArticleShare 記事共有のインタラクターのファクトリ関数.
 func NewCoreArticleShare(
 	articleRepository repository.CoreArticle,
-) port.CoreArticleShare {
+) *CoreArticleShare {
 	return &CoreArticleShare{
 		articleRepository: articleRepository,
 	}

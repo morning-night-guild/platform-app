@@ -7,6 +7,8 @@ import (
 	"github.com/morning-night-guild/platform-app/internal/usecase/port"
 )
 
+var _ port.APIArticleList = (*APIArticleList)(nil)
+
 // APIArticleList 記事一覧のインタラクター.
 type APIArticleList struct {
 	articleRepository repository.APIArticle // 記事のリポジトリ
@@ -15,7 +17,7 @@ type APIArticleList struct {
 // NewAPIArticleList 記事一覧のインタラクターのファクトリ関数.
 func NewAPIArticleList(
 	articleRepository repository.APIArticle,
-) port.APIArticleList {
+) *APIArticleList {
 	return &APIArticleList{
 		articleRepository: articleRepository,
 	}

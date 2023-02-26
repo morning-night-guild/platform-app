@@ -7,6 +7,8 @@ import (
 	"github.com/morning-night-guild/platform-app/internal/usecase/port"
 )
 
+var _ port.APIArticleShare = (*APIArticleShare)(nil)
+
 // APIArticleShare 記事共有のインタラクター.
 type APIArticleShare struct {
 	articleRepository repository.APIArticle // 記事のリポジトリ
@@ -15,7 +17,7 @@ type APIArticleShare struct {
 // NewAPIArticleShare 記事共有のインタラクターのファクトリ関数.
 func NewAPIArticleShare(
 	articleRepository repository.APIArticle,
-) port.APIArticleShare {
+) *APIArticleShare {
 	return &APIArticleShare{
 		articleRepository: articleRepository,
 	}
