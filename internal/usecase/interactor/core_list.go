@@ -7,8 +7,6 @@ import (
 	"github.com/morning-night-guild/platform-app/internal/usecase/port"
 )
 
-var _ port.CoreArticleList = (*CoreArticleList)(nil)
-
 // CoreArticleList 記事一覧のインタラクター.
 type CoreArticleList struct {
 	articleRepository repository.CoreArticle // 記事のリポジトリ
@@ -17,7 +15,7 @@ type CoreArticleList struct {
 // NewCoreArticleList 記事一覧のインタラクターのファクトリ関数.
 func NewCoreArticleList(
 	articleRepository repository.CoreArticle,
-) *CoreArticleList {
+) port.CoreArticleList {
 	return &CoreArticleList{
 		articleRepository: articleRepository,
 	}

@@ -7,15 +7,13 @@ import (
 	"github.com/morning-night-guild/platform-app/internal/usecase/port"
 )
 
-var _ port.APIHealthCheck = (*APIHealthCheck)(nil)
-
 type APIHealthCheck struct {
 	healthRepository repository.APIHealth
 }
 
 func NewAPIHealthCheck(
 	healthRepository repository.APIHealth,
-) *APIHealthCheck {
+) port.APIHealthCheck {
 	return &APIHealthCheck{
 		healthRepository: healthRepository,
 	}
