@@ -23,7 +23,7 @@ func NewAPIArticle(connect *Connect) *APIArticle {
 	}
 }
 
-func (ca *APIArticle) Save(
+func (aa *APIArticle) Save(
 	ctx context.Context,
 	url article.URL,
 	title article.Title,
@@ -37,7 +37,7 @@ func (ca *APIArticle) Save(
 		Thumbnail:   thumbnail.String(),
 	})
 
-	res, err := ca.connect.Article.Share(ctx, req)
+	res, err := aa.connect.Article.Share(ctx, req)
 	if err != nil {
 		log.GetLogCtx(ctx).Warn("failed to share article", log.ErrorField(err))
 
@@ -56,7 +56,7 @@ func (ca *APIArticle) Save(
 	return article, nil
 }
 
-func (ca *APIArticle) FindAll(
+func (aa *APIArticle) FindAll(
 	ctx context.Context,
 	index repository.Index,
 	size repository.Size,
@@ -66,7 +66,7 @@ func (ca *APIArticle) FindAll(
 		MaxPageSize: uint32(size),
 	})
 
-	res, err := ca.connect.Article.List(ctx, req)
+	res, err := aa.connect.Article.List(ctx, req)
 	if err != nil {
 		log.GetLogCtx(ctx).Warn("failed to list articles", log.ErrorField(err))
 

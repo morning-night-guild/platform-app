@@ -26,13 +26,13 @@ func NewCoreArticleShare(
 }
 
 // Execute 記事共有のインタラクターを実行する.
-func (s *CoreArticleShare) Execute(
+func (cas *CoreArticleShare) Execute(
 	ctx context.Context,
 	input port.CoreArticleShareInput,
 ) (port.CoreArticleShareOutput, error) {
 	art := model.CreateArticle(input.URL, input.Title, input.Description, input.Thumbnail, []article.Tag{})
 
-	if err := s.articleRepository.Save(ctx, art); err != nil {
+	if err := cas.articleRepository.Save(ctx, art); err != nil {
 		return port.CoreArticleShareOutput{}, err
 	}
 
