@@ -22,11 +22,11 @@ func NewCoreArticleList(
 }
 
 // Execute 記事一覧のインタラクターを実行する.
-func (l *CoreArticleList) Execute(
+func (cal *CoreArticleList) Execute(
 	ctx context.Context,
 	input port.CoreArticleListInput,
 ) (port.CoreArticleListOutput, error) {
-	articles, err := l.articleRepository.FindAll(ctx, input.Index, input.Size)
+	articles, err := cal.articleRepository.FindAll(ctx, input.Index, input.Size)
 	if err != nil {
 		return port.CoreArticleListOutput{}, err
 	}
