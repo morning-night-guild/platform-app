@@ -11,12 +11,12 @@ import (
 	"github.com/google/uuid"
 	"github.com/morning-night-guild/platform-app/pkg/ent/migrate"
 
-	"github.com/morning-night-guild/platform-app/pkg/ent/article"
-	"github.com/morning-night-guild/platform-app/pkg/ent/articletag"
-
+	"entgo.io/ent"
 	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"github.com/morning-night-guild/platform-app/pkg/ent/article"
+	"github.com/morning-night-guild/platform-app/pkg/ent/articletag"
 )
 
 // Client is the client that holds all ent builders.
@@ -43,6 +43,55 @@ func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
 	c.Article = NewArticleClient(c.config)
 	c.ArticleTag = NewArticleTagClient(c.config)
+}
+
+type (
+	// config is the configuration for the client and its builder.
+	config struct {
+		// driver used for executing database requests.
+		driver dialect.Driver
+		// debug enable a debug logging.
+		debug bool
+		// log used for logging on debug mode.
+		log func(...any)
+		// hooks to execute on mutations.
+		hooks *hooks
+		// interceptors to execute on queries.
+		inters *inters
+	}
+	// Option function to configure the client.
+	Option func(*config)
+)
+
+// options applies the options on the config object.
+func (c *config) options(opts ...Option) {
+	for _, opt := range opts {
+		opt(c)
+	}
+	if c.debug {
+		c.driver = dialect.Debug(c.driver, c.log)
+	}
+}
+
+// Debug enables debug logging on the ent.Driver.
+func Debug() Option {
+	return func(c *config) {
+		c.debug = true
+	}
+}
+
+// Log sets the logging function for debug mode.
+func Log(fn func(...any)) Option {
+	return func(c *config) {
+		c.log = fn
+	}
+}
+
+// Driver configures the client driver.
+func Driver(driver dialect.Driver) Option {
+	return func(c *config) {
+		c.driver = driver
+	}
 }
 
 // Open opens a database/sql.DB specified by the driver name and
@@ -417,3 +466,13 @@ func (c *ArticleTagClient) mutate(ctx context.Context, m *ArticleTagMutation) (V
 		return nil, fmt.Errorf("ent: unknown ArticleTag mutation op: %q", m.Op())
 	}
 }
+
+// hooks and interceptors per client, for fast access.
+type (
+	hooks struct {
+		Article, ArticleTag []ent.Hook
+	}
+	inters struct {
+		Article, ArticleTag []ent.Interceptor
+	}
+)
