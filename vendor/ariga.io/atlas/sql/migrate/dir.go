@@ -18,6 +18,7 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+	"sync"
 	"text/template"
 	"time"
 )
@@ -179,33 +180,101 @@ func (f LocalFile) Bytes() []byte {
 	return f.b
 }
 
-// MemDir provides an in-memory Dir implementation.
-type MemDir struct {
-	files map[string]File
+// Directive returns the (global) file directives that match the provided name.
+// File directives are located at the top of the file and should not be associated with any
+// statement. Hence, double new lines are used to separate file directives from its content.
+func (f LocalFile) Directive(name string) (ds []string) {
+	var (
+		comments []string
+		content  = string(f.b)
+	)
+	for strings.HasPrefix(content, "#") || strings.HasPrefix(content, "--") {
+		idx := strings.IndexByte(content, '\n')
+		if idx == -1 {
+			// Comments-only file.
+			comments = append(comments, content)
+			break
+		}
+		comments = append(comments, strings.TrimSpace(content[:idx]))
+		content = content[idx+1:]
+	}
+	// File directives are separated by
+	// double newlines from file content.
+	if !strings.HasPrefix(content, "\n") {
+		return nil
+	}
+	for _, c := range comments {
+		if d, ok := directive(c, name); ok {
+			ds = append(ds, d)
+		}
+	}
+	return ds
+}
+
+type (
+	// MemDir provides an in-memory Dir implementation.
+	MemDir struct {
+		files map[string]File
+	}
+	// An opened MemDir.
+	openedMem struct {
+		dir    *MemDir
+		numUse int
+	}
+)
+
+// A list of the opened memory-based directories.
+var memDirs struct {
+	sync.Mutex
+	opened map[string]*openedMem
+}
+
+// OpenMemDir opens an in-memory directory and registers it in the process namespace
+// with the given name. Hence, calling OpenMemDir with the same name will return the
+// same directory. The directory is deleted when the last reference of it is closed.
+func OpenMemDir(name string) *MemDir {
+	memDirs.Lock()
+	defer memDirs.Unlock()
+	if m, ok := memDirs.opened[name]; ok {
+		m.numUse++
+		return m.dir
+	}
+	if memDirs.opened == nil {
+		memDirs.opened = make(map[string]*openedMem)
+	}
+	memDirs.opened[name] = &openedMem{dir: &MemDir{}, numUse: 1}
+	return memDirs.opened[name].dir
 }
 
 // Open implements fs.FS.
 func (d *MemDir) Open(name string) (fs.File, error) {
-	var b []byte
-	switch name {
-	case HashFileName:
-		h, err := d.Checksum()
-		if err != nil {
-			return nil, err
-		}
-		if b, err = h.MarshalText(); err != nil {
-			return nil, err
-		}
-	default:
-		f, ok := d.files[name]
-		if !ok {
-			return nil, fs.ErrNotExist
-		}
-		b = f.Bytes()
+	f, ok := d.files[name]
+	if !ok {
+		return nil, fs.ErrNotExist
 	}
 	return &memFile{
-		ReadCloser: io.NopCloser(bytes.NewReader(b)),
+		ReadCloser: io.NopCloser(bytes.NewReader(f.Bytes())),
 	}, nil
+}
+
+// Close implements the io.Closer interface.
+func (d *MemDir) Close() error {
+	memDirs.Lock()
+	defer memDirs.Unlock()
+	var opened string
+	for name, m := range memDirs.opened {
+		switch {
+		case m.dir != d:
+		case opened != "":
+			return fmt.Errorf("dir was opened with different names: %q and %q", opened, name)
+		default:
+			opened = name
+			if m.numUse--; m.numUse == 0 {
+				delete(memDirs.opened, name)
+			}
+		}
+	}
+	return nil
 }
 
 // WriteFile adds a new file in-memory.
@@ -221,7 +290,9 @@ func (d *MemDir) WriteFile(name string, data []byte) error {
 func (d *MemDir) Files() ([]File, error) {
 	files := make([]File, 0, len(d.files))
 	for _, f := range d.files {
-		files = append(files, f)
+		if filepath.Ext(f.Name()) == ".sql" {
+			files = append(files, f)
+		}
 	}
 	sort.Slice(files, func(i, j int) bool {
 		return files[i].Name() < files[j].Name()
@@ -242,24 +313,20 @@ var (
 	// templateFuncs contains the template.FuncMap for the DefaultFormatter.
 	templateFuncs = template.FuncMap{"now": func() string { return time.Now().UTC().Format("20060102150405") }}
 	// DefaultFormatter is a default implementation for Formatter.
-	DefaultFormatter = &TemplateFormatter{
-		templates: []struct{ N, C *template.Template }{
-			{
-				N: template.Must(template.New("").Funcs(templateFuncs).Parse(
-					"{{ with .Version }}{{ . }}{{ else }}{{ now }}{{ end }}{{ with .Name }}_{{ . }}{{ end }}.sql",
-				)),
-				C: template.Must(template.New("").Parse(
-					`{{ range .Changes }}{{ with .Comment }}-- {{ println . }}{{ end }}{{ printf "%s;\n" .Cmd }}{{ end }}`,
-				)),
-			},
+	DefaultFormatter = TemplateFormatter{
+		{
+			N: template.Must(template.New("").Funcs(templateFuncs).Parse(
+				"{{ with .Version }}{{ . }}{{ else }}{{ now }}{{ end }}{{ with .Name }}_{{ . }}{{ end }}.sql",
+			)),
+			C: template.Must(template.New("").Parse(
+				`{{ range .Changes }}{{ with .Comment }}-- {{ println . }}{{ end }}{{ printf "%s;\n" .Cmd }}{{ end }}`,
+			)),
 		},
 	}
 )
 
 // TemplateFormatter implements Formatter by using templates.
-type TemplateFormatter struct {
-	templates []struct{ N, C *template.Template }
-}
+type TemplateFormatter []struct{ N, C *template.Template }
 
 // NewTemplateFormatter creates a new Formatter working with the given templates.
 //
@@ -267,21 +334,21 @@ type TemplateFormatter struct {
 //		template.Must(template.New("").Parse("{{now.Unix}}{{.Name}}.sql")),                 // name template
 //		template.Must(template.New("").Parse("{{range .Changes}}{{println .Cmd}}{{end}}")), // content template
 //	)
-func NewTemplateFormatter(templates ...*template.Template) (*TemplateFormatter, error) {
+func NewTemplateFormatter(templates ...*template.Template) (TemplateFormatter, error) {
 	if n := len(templates); n == 0 || n%2 == 1 {
-		return nil, fmt.Errorf("zero or odd number of templates given")
+		return nil, fmt.Errorf("zero or odd number of templates given: %d", n)
 	}
-	t := new(TemplateFormatter)
+	t := make(TemplateFormatter, 0, len(templates))
 	for i := 0; i < len(templates); i += 2 {
-		t.templates = append(t.templates, struct{ N, C *template.Template }{templates[i], templates[i+1]})
+		t = append(t, struct{ N, C *template.Template }{templates[i], templates[i+1]})
 	}
 	return t, nil
 }
 
 // Format implements the Formatter interface.
-func (t *TemplateFormatter) Format(plan *Plan) ([]File, error) {
-	files := make([]File, 0, len(t.templates))
-	for _, tpl := range t.templates {
+func (t TemplateFormatter) Format(plan *Plan) ([]File, error) {
+	files := make([]File, 0, len(t))
+	for _, tpl := range t {
 		var n, b bytes.Buffer
 		if err := tpl.N.Execute(&n, plan); err != nil {
 			return nil, err
@@ -394,11 +461,17 @@ var (
 // Validate checks if the migration dir is in sync with its sum file.
 // If they don't match ErrChecksumMismatch is returned.
 func Validate(dir Dir) error {
+	// If a migration directory implements the Validate() method,
+	// it will be used to determine the validity instead.
+	if v, ok := dir.(interface{ Validate() error }); ok {
+		return v.Validate()
+	}
 	fh, err := readHashFile(dir)
 	if errors.Is(err, fs.ErrNotExist) {
 		// If there are no migration files yet this is okay.
-		files, err := fs.ReadDir(dir, "/")
-		if err != nil || len(files) > 0 {
+		if files, err := dir.Files(); err != nil {
+			return err
+		} else if len(files) > 0 {
 			return ErrChecksumNotFound
 		}
 		return nil

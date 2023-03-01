@@ -33,6 +33,7 @@ type Atlas struct {
 	withFixture bool // deprecated: with fks rename fixture
 	sum         bool // deprecated: sum file generation will be required
 
+	errNoPlan       bool // no plan error enabled
 	universalID     bool // global unique ids
 	dropColumns     bool // drop deleted columns
 	dropIndexes     bool // drop deleted indexes
@@ -141,7 +142,7 @@ func (a *Atlas) NamedDiff(ctx context.Context, name string, tables ...*Table) er
 	// Set up connections.
 	if a.driver != nil {
 		var err error
-		a.sqlDialect, err = a.entDialect(a.driver)
+		a.sqlDialect, err = a.entDialect(ctx, a.driver)
 		if err != nil {
 			return err
 		}
@@ -155,7 +156,7 @@ func (a *Atlas) NamedDiff(ctx context.Context, name string, tables ...*Table) er
 			return err
 		}
 		defer c.Close()
-		a.sqlDialect, err = a.entDialect(entsql.OpenDB(a.dialect, c.DB))
+		a.sqlDialect, err = a.entDialect(ctx, entsql.OpenDB(a.dialect, c.DB))
 		if err != nil {
 			return err
 		}
@@ -169,10 +170,7 @@ func (a *Atlas) NamedDiff(ctx context.Context, name string, tables ...*Table) er
 		return err
 	}
 	if a.universalID {
-		tables = append(tables, NewTable(TypeTable).
-			AddPrimary(&Column{Name: "id", Type: field.TypeUint, Increment: true}).
-			AddColumn(&Column{Name: "type", Type: field.TypeString, Unique: true}),
-		)
+		tables = append(tables, NewTypesTable())
 	}
 	var (
 		err  error
@@ -186,14 +184,17 @@ func (a *Atlas) NamedDiff(ctx context.Context, name string, tables ...*Table) er
 	default:
 		return fmt.Errorf("unknown migration mode: %q", a.mode)
 	}
-	if err != nil {
+	switch {
+	case err != nil:
 		return err
-	}
-	// Skip if the plan has no changes.
-	if len(plan.Changes) == 0 {
+	case len(plan.Changes) == 0:
+		if a.errNoPlan {
+			return migrate.ErrNoPlan
+		}
 		return nil
+	default:
+		return migrate.NewPlanner(nil, a.dir, opts...).WritePlan(plan)
 	}
-	return migrate.NewPlanner(nil, a.dir, opts...).WritePlan(plan)
 }
 
 func (a *Atlas) cleanSchema(ctx context.Context, name string, err0 error) (err error) {
@@ -222,7 +223,7 @@ func (a *Atlas) cleanSchema(ctx context.Context, name string, err0 error) (err e
 func (a *Atlas) VerifyTableRange(ctx context.Context, tables []*Table) error {
 	if a.driver != nil {
 		var err error
-		a.sqlDialect, err = a.entDialect(a.driver)
+		a.sqlDialect, err = a.entDialect(ctx, a.driver)
 		if err != nil {
 			return err
 		}
@@ -232,7 +233,7 @@ func (a *Atlas) VerifyTableRange(ctx context.Context, tables []*Table) error {
 			return err
 		}
 		defer c.Close()
-		a.sqlDialect, err = a.entDialect(entsql.OpenDB(a.dialect, c.DB))
+		a.sqlDialect, err = a.entDialect(ctx, entsql.OpenDB(a.dialect, c.DB))
 		if err != nil {
 			return err
 		}
@@ -550,7 +551,14 @@ const (
 
 // StateReader returns an atlas migrate.StateReader returning the state as described by the Ent table slice.
 func (a *Atlas) StateReader(tables ...*Table) migrate.StateReaderFunc {
-	return func(context.Context) (*schema.Realm, error) {
+	return func(ctx context.Context) (*schema.Realm, error) {
+		if a.sqlDialect == nil {
+			drv, err := a.entDialect(ctx, a.driver)
+			if err != nil {
+				return nil, err
+			}
+			a.sqlDialect = drv
+		}
 		ts, err := a.tables(tables)
 		if err != nil {
 			return nil, err
@@ -621,13 +629,10 @@ func (a *Atlas) init() error {
 // create is the Atlas engine based online migration.
 func (a *Atlas) create(ctx context.Context, tables ...*Table) (err error) {
 	if a.universalID {
-		tables = append(tables, NewTable(TypeTable).
-			AddPrimary(&Column{Name: "id", Type: field.TypeUint, Increment: true}).
-			AddColumn(&Column{Name: "type", Type: field.TypeString, Unique: true}),
-		)
+		tables = append(tables, NewTypesTable())
 	}
 	if a.driver != nil {
-		a.sqlDialect, err = a.entDialect(a.driver)
+		a.sqlDialect, err = a.entDialect(ctx, a.driver)
 		if err != nil {
 			return err
 		}
@@ -637,7 +642,7 @@ func (a *Atlas) create(ctx context.Context, tables ...*Table) (err error) {
 			return err
 		}
 		defer c.Close()
-		a.sqlDialect, err = a.entDialect(entsql.OpenDB(a.dialect, c.DB))
+		a.sqlDialect, err = a.entDialect(ctx, entsql.OpenDB(a.dialect, c.DB))
 		if err != nil {
 			return err
 		}
@@ -1055,17 +1060,22 @@ func (a *Atlas) symbol(name string) string {
 }
 
 // entDialect returns the Ent dialect as configured by the dialect option.
-func (a *Atlas) entDialect(drv dialect.Driver) (sqlDialect, error) {
+func (a *Atlas) entDialect(ctx context.Context, drv dialect.Driver) (sqlDialect, error) {
+	var d sqlDialect
 	switch a.dialect {
 	case dialect.MySQL:
-		return &MySQL{Driver: drv}, nil
+		d = &MySQL{Driver: drv}
 	case dialect.SQLite:
-		return &SQLite{Driver: drv, WithForeignKeys: a.withForeignKeys}, nil
+		d = &SQLite{Driver: drv, WithForeignKeys: a.withForeignKeys}
 	case dialect.Postgres:
-		return &Postgres{Driver: drv}, nil
+		d = &Postgres{Driver: drv}
 	default:
 		return nil, fmt.Errorf("sql/schema: unsupported dialect %q", a.dialect)
 	}
+	if err := d.init(ctx); err != nil {
+		return nil, err
+	}
+	return d, nil
 }
 
 func (a *Atlas) pkRange(et *Table) (int64, error) {
