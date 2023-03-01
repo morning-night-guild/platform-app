@@ -117,7 +117,7 @@ func MarshalSpec(v any, marshaler schemahcl.Marshaler) ([]byte, error) {
 
 var (
 	hclState = schemahcl.New(
-		schemahcl.WithTypes(TypeRegistry.Specs()),
+		schemahcl.WithTypes("table.column.type", TypeRegistry.Specs()),
 		schemahcl.WithScopedEnums("table.index.type", IndexTypeBTree, IndexTypeBRIN, IndexTypeHash, IndexTypeGIN, IndexTypeGiST, "GiST", IndexTypeSPGiST, "SPGiST"),
 		schemahcl.WithScopedEnums("table.partition.type", PartitionTypeRange, PartitionTypeList, PartitionTypeHash),
 		schemahcl.WithScopedEnums("table.column.identity.generated", GeneratedTypeAlways, GeneratedTypeByDefault),
@@ -734,6 +734,16 @@ var TypeRegistry = schemahcl.NewRegistry(
 		schemahcl.NewTypeSpec("hstore"),
 		schemahcl.NewTypeSpec("sql", schemahcl.WithAttributes(&schemahcl.TypeAttr{Name: "def", Required: true, Kind: reflect.String})),
 	),
+	// PostgreSQL internal and special types.
+	schemahcl.WithSpecs(func() (specs []*schemahcl.TypeSpec) {
+		for _, t := range []string{
+			typeOID, typeRegClass, typeRegCollation, typeRegConfig, typeRegDictionary, typeRegNamespace,
+			typeName, typeRegOper, typeRegOperator, typeRegProc, typeRegProcedure, typeRegRole, typeRegType,
+		} {
+			specs = append(specs, schemahcl.NewTypeSpec(t))
+		}
+		return specs
+	}()...),
 	schemahcl.WithSpecs(func() (specs []*schemahcl.TypeSpec) {
 		opts := []schemahcl.TypeSpecOption{
 			schemahcl.WithToSpec(func(t schema.Type) (*schemahcl.Type, error) {

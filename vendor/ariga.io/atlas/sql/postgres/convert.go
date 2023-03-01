@@ -62,7 +62,7 @@ func FormatType(t schema.Type) (string, error) {
 		}
 	case *schema.StringType:
 		switch f = strings.ToLower(t.T); f {
-		case TypeText:
+		case TypeText, typeName:
 		// CHAR(n) is alias for CHARACTER(n). If not length was
 		// specified, the definition is equivalent to CHARACTER(1).
 		case TypeChar, TypeCharacter:
@@ -149,6 +149,13 @@ func FormatType(t schema.Type) (string, error) {
 		default:
 			return "", fmt.Errorf("postgres: unsupported range type: %q", t.T)
 		}
+	case *OIDType:
+		switch f = strings.ToLower(t.T); f {
+		case typeOID, typeRegClass, typeRegCollation, typeRegConfig, typeRegDictionary, typeRegNamespace,
+			typeRegOper, typeRegOperator, typeRegProc, typeRegProcedure, typeRegRole, typeRegType:
+		default:
+			return "", fmt.Errorf("postgres: unsupported object identfier type: %q", t.T)
+		}
 	case *TextSearchType:
 		if f = strings.ToLower(t.T); f != TypeTSVector && f != TypeTSQuery {
 			return "", fmt.Errorf("postgres: unsupported text search type: %q", t.T)
@@ -203,7 +210,7 @@ func columnType(c *columnDesc) (schema.Type, error) {
 		typ = &schema.BoolType{T: t}
 	case TypeBytea:
 		typ = &schema.BinaryType{T: t}
-	case TypeCharacter, TypeChar, TypeCharVar, TypeVarChar, TypeText:
+	case TypeCharacter, TypeChar, TypeCharVar, TypeVarChar, TypeText, typeName:
 		// A `character` column without length specifier is equivalent to `character(1)`,
 		// but `varchar` without length accepts strings of any size (same as `text`).
 		typ = &schema.StringType{T: t, Size: int(c.size)}
@@ -268,6 +275,9 @@ func columnType(c *columnDesc) (schema.Type, error) {
 	case TypeInt4Range, TypeInt4MultiRange, TypeInt8Range, TypeInt8MultiRange, TypeNumRange, TypeNumMultiRange,
 		TypeTSRange, TypeTSMultiRange, TypeTSTZRange, TypeTSTZMultiRange, TypeDateRange, TypeDateMultiRange:
 		typ = &RangeType{T: t}
+	case typeOID, typeRegClass, typeRegCollation, typeRegConfig, typeRegDictionary, typeRegNamespace,
+		typeRegOper, typeRegOperator, typeRegProc, typeRegProcedure, typeRegRole, typeRegType:
+		typ = &OIDType{T: t}
 	case TypeUserDefined:
 		typ = &UserDefinedType{T: c.fmtype}
 	default:

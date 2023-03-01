@@ -1,4 +1,4 @@
-# ariga.io/atlas v0.9.1-0.20230119145809-92243f7c55cb
+# ariga.io/atlas v0.9.1
 ## explicit; go 1.19
 ariga.io/atlas/schemahcl
 ariga.io/atlas/sql/internal/specutil
@@ -13,7 +13,7 @@ ariga.io/atlas/sql/sqlclient
 ariga.io/atlas/sql/sqlite
 ariga.io/atlas/sql/sqlspec
 ariga.io/atlas/sql/sqltool
-# entgo.io/ent v0.11.8
+# entgo.io/ent v0.11.9
 ## explicit; go 1.19
 entgo.io/ent
 entgo.io/ent/dialect

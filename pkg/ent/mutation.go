@@ -9,13 +9,12 @@ import (
 	"sync"
 	"time"
 
+	"entgo.io/ent"
+	"entgo.io/ent/dialect/sql"
 	"github.com/google/uuid"
 	"github.com/morning-night-guild/platform-app/pkg/ent/article"
 	"github.com/morning-night-guild/platform-app/pkg/ent/articletag"
 	"github.com/morning-night-guild/platform-app/pkg/ent/predicate"
-
-	"entgo.io/ent"
-	"entgo.io/ent/dialect/sql"
 )
 
 const (

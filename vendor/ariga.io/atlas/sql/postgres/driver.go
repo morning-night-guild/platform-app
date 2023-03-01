@@ -28,12 +28,13 @@ type (
 		schema.Differ
 		schema.Inspector
 		migrate.PlanApplier
-		schema string // the schema given in the `search_path` parameter (if given)
 	}
 
 	// database connection and its information.
 	conn struct {
 		schema.ExecQuerier
+		// The schema in the `search_path` parameter (if given).
+		schema string
 		// System variables that are set on `Open`.
 		collate string
 		ctype   string
@@ -69,7 +70,12 @@ func opener(_ context.Context, u *url.URL) (*sqlclient.Client, error) {
 		}
 		return nil, err
 	}
-	drv.(*Driver).schema = ur.Schema
+	switch drv := drv.(type) {
+	case *Driver:
+		drv.schema = ur.Schema
+	case noLockDriver:
+		drv.noLocker.(*Driver).schema = ur.Schema
+	}
 	return &sqlclient.Client{
 		Name:   DriverName,
 		DB:     db,
@@ -101,11 +107,13 @@ func Open(db schema.ExecQuerier) (migrate.Driver, error) {
 	}
 	// Means we are connected to CockroachDB because we have a result for name='crdb_version'. see `paramsQuery`.
 	if c.crdb = len(params) == 4; c.crdb {
-		return &Driver{
-			conn:        c,
-			Differ:      &sqlx.Diff{DiffDriver: &crdbDiff{diff{c}}},
-			Inspector:   &crdbInspect{inspect{c}},
-			PlanApplier: &planApply{c},
+		return noLockDriver{
+			&Driver{
+				conn:        c,
+				Differ:      &sqlx.Diff{DiffDriver: &crdbDiff{diff{c}}},
+				Inspector:   &crdbInspect{inspect{c}},
+				PlanApplier: &planApply{c},
+			},
 		}, nil
 	}
 	return &Driver{
@@ -177,7 +185,7 @@ func (d *Driver) Snapshot(ctx context.Context) (migrate.RestoreFunc, error) {
 			return nil, err
 		}
 		if len(s.Tables) > 0 {
-			return nil, migrate.NotCleanError{Reason: fmt.Sprintf("found table %q in connected schema", s.Tables[0].Name)}
+			return nil, &migrate.NotCleanError{Reason: fmt.Sprintf("found table %q in connected schema", s.Tables[0].Name)}
 		}
 		return func(ctx context.Context) error {
 			current, err := d.InspectSchema(ctx, s.Name, nil)
@@ -213,20 +221,23 @@ func (d *Driver) Snapshot(ctx context.Context) (migrate.RestoreFunc, error) {
 	}
 	if s, ok := realm.Schema("public"); len(realm.Schemas) == 1 && ok {
 		if len(s.Tables) > 0 {
-			return nil, migrate.NotCleanError{Reason: fmt.Sprintf("found table %q in schema %q", s.Tables[0].Name, s.Name)}
+			return nil, &migrate.NotCleanError{Reason: fmt.Sprintf("found table %q in schema %q", s.Tables[0].Name, s.Name)}
 		}
 		return restore, nil
 	}
-	return nil, migrate.NotCleanError{Reason: fmt.Sprintf("found schema %q", realm.Schemas[0].Name)}
+	return nil, &migrate.NotCleanError{Reason: fmt.Sprintf("found schema %q", realm.Schemas[0].Name)}
 }
 
 // CheckClean implements migrate.CleanChecker.
 func (d *Driver) CheckClean(ctx context.Context, revT *migrate.TableIdent) error {
+	if revT == nil { // accept nil values
+		revT = &migrate.TableIdent{}
+	}
 	if d.schema != "" {
 		switch s, err := d.InspectSchema(ctx, d.schema, nil); {
 		case err != nil:
 			return err
-		case len(s.Tables) == 0, (revT != nil && revT.Schema == "" || s.Name == revT.Schema) && len(s.Tables) == 1 && s.Tables[0].Name == revT.Name:
+		case len(s.Tables) == 0, (revT.Schema == "" || s.Name == revT.Schema) && len(s.Tables) == 1 && s.Tables[0].Name == revT.Name:
 			return nil
 		default:
 			return &migrate.NotCleanError{Reason: fmt.Sprintf("found table %q in schema %q", s.Tables[0].Name, s.Name)}
@@ -325,6 +336,7 @@ const (
 	TypeCharVar   = "character varying"
 	TypeVarChar   = "varchar" // character varying
 	TypeText      = "text"
+	typeName      = "name" // internal type for object names
 
 	TypeSmallInt = "smallint"
 	TypeInteger  = "integer"
@@ -396,6 +408,20 @@ const (
 	TypeTSTZMultiRange = "tstzmultirange"
 	TypeDateRange      = "daterange"
 	TypeDateMultiRange = "datemultirange"
+
+	// PostgreSQL internal object types and their aliases.
+	typeOID           = "oid"
+	typeRegClass      = "regclass"
+	typeRegCollation  = "regcollation"
+	typeRegConfig     = "regconfig"
+	typeRegDictionary = "regdictionary"
+	typeRegNamespace  = "regnamespace"
+	typeRegOper       = "regoper"
+	typeRegOperator   = "regoperator"
+	typeRegProc       = "regproc"
+	typeRegProcedure  = "regprocedure"
+	typeRegRole       = "regrole"
+	typeRegType       = "regtype"
 )
 
 // List of supported index types.
