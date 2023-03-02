@@ -1,0 +1,29 @@
+name: pr auto merge
+run-name: ${{ github.ref_name }} by @${{ github.actor }} ${{ github.workflow }}
+on:
+  pull_request:
+    types:
+      - opened
+jobs:
+  aqua:
+    runs-on: ubuntu-latest
+    if: "startsWith( github.head_ref , 'renovate/aquaproj')"
+    steps:
+      - name: Check branch
+        run: echo "${{ github.head_ref }}"
+      - name: Generate token
+        id: generate-token
+        uses: tibdex/github-app-token@v1
+        with:
+          app_id: ${{ secrets.BOT_GITHUB_APP_ID }}
+          private_key: ${{ secrets.BOT_GITHUB_APP_PRIVATE_KEY }}
+      - name: Auto merge
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          GITHUB_TOKEN: ${{ steps.generate-token.outputs.token }}
+        run: |
+          gh pr edit "${PR_URL}" --add-label "renovate"
+          gh pr review --approve "${PR_URL}"
+          gh pr edit "${PR_URL}" --title "(auto merged) ${PR_TITLE}"
+          gh pr merge --auto --merge "${PR_URL}"
