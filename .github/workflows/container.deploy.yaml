@@ -2,6 +2,8 @@ name: container deploy
 run-name: ${{ github.ref_name }} by @${{ github.actor }} ${{ github.workflow }}
 on:
   workflow_dispatch:
+  schedule:
+    - cron: '0 13 * * 6'
 jobs:
   check:
     runs-on: ubuntu-22.04
