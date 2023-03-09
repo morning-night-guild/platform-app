@@ -116,7 +116,13 @@ func (a *Article) List(
 		}
 	}
 
+	next := token.CreateNextToken(size).String()
+	if len(output.Articles) < size.Int() {
+		next = ""
+	}
+
 	return connect.NewResponse(&articlev1.ListResponse{
-		Articles: result,
+		Articles:      result,
+		NextPageToken: next,
 	}), nil
 }
