@@ -1,4 +1,4 @@
-package gateway
+package external
 
 import (
 	"context"
@@ -6,24 +6,25 @@ import (
 	"github.com/google/uuid"
 	"github.com/morning-night-guild/platform-app/internal/domain/model"
 	"github.com/morning-night-guild/platform-app/internal/domain/model/article"
-	"github.com/morning-night-guild/platform-app/internal/domain/repository"
+	"github.com/morning-night-guild/platform-app/internal/domain/rpc"
+	"github.com/morning-night-guild/platform-app/internal/domain/value"
 	articlev1 "github.com/morning-night-guild/platform-app/pkg/connect/article/v1"
 	"github.com/morning-night-guild/platform-app/pkg/log"
 )
 
-var _ repository.APIArticle = (*APIArticle)(nil)
+var _ rpc.Article = (*Article)(nil)
 
-type APIArticle struct {
+type Article struct {
 	connect *Connect
 }
 
-func NewAPIArticle(connect *Connect) *APIArticle {
-	return &APIArticle{
+func NewArticle(connect *Connect) *Article {
+	return &Article{
 		connect: connect,
 	}
 }
 
-func (aa *APIArticle) Save(
+func (aa *Article) Share(
 	ctx context.Context,
 	url article.URL,
 	title article.Title,
@@ -56,13 +57,13 @@ func (aa *APIArticle) Save(
 	return article, nil
 }
 
-func (aa *APIArticle) FindAll(
+func (aa *Article) List(
 	ctx context.Context,
-	index repository.Index,
-	size repository.Size,
+	index value.Index,
+	size value.Size,
 ) ([]model.Article, error) {
 	req := NewRequestWithTID(ctx, &articlev1.ListRequest{
-		PageToken:   string(repository.CreateNextTokenFromIndex(index)),
+		PageToken:   string(value.CreateNextTokenFromIndex(index)),
 		MaxPageSize: uint32(size),
 	})
 

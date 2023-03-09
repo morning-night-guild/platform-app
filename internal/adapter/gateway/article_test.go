@@ -11,7 +11,7 @@ import (
 	"github.com/morning-night-guild/platform-app/internal/adapter/gateway"
 	"github.com/morning-night-guild/platform-app/internal/domain/model"
 	"github.com/morning-night-guild/platform-app/internal/domain/model/article"
-	"github.com/morning-night-guild/platform-app/internal/domain/repository"
+	"github.com/morning-night-guild/platform-app/internal/domain/value"
 	"github.com/morning-night-guild/platform-app/pkg/ent"
 	"github.com/morning-night-guild/platform-app/pkg/ent/articletag"
 	"github.com/morning-night-guild/platform-app/pkg/ent/enttest"
@@ -58,7 +58,7 @@ func TestCoreArticleSave(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		ag := gateway.NewCoreArticle(rdb)
+		ag := gateway.NewArticle(rdb)
 
 		ctx := context.Background()
 
@@ -112,7 +112,7 @@ func TestCoreArticleSave(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		ag := gateway.NewCoreArticle(rdb)
+		ag := gateway.NewArticle(rdb)
 
 		ctx := context.Background()
 
@@ -141,7 +141,7 @@ func TestCoreArticleSave(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		ag := gateway.NewCoreArticle(rdb)
+		ag := gateway.NewArticle(rdb)
 
 		ctx := context.Background()
 
@@ -188,7 +188,7 @@ func TestCoreArticleSave(t *testing.T) {
 		}
 
 		if !reflect.DeepEqual(a1.TagList, got) {
-			t.Errorf("NewCoreArticle() = %v, want %v", got, a1.TagList)
+			t.Errorf("NewArticle() = %v, want %v", got, a1.TagList)
 		}
 	})
 }
@@ -204,7 +204,7 @@ func TestArticleList(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		ag := gateway.NewCoreArticle(rdb)
+		ag := gateway.NewArticle(rdb)
 
 		ctx := context.Background()
 
@@ -238,7 +238,7 @@ func TestArticleList(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		got, err := ag.FindAll(ctx, repository.Index(0), repository.Size(1))
+		got, err := ag.FindAll(ctx, value.Index(0), value.Size(1))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -258,7 +258,7 @@ func TestArticleList(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		ag := gateway.NewCoreArticle(rdb)
+		ag := gateway.NewArticle(rdb)
 
 		ctx := context.Background()
 
@@ -292,7 +292,7 @@ func TestArticleList(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		got, err := ag.FindAll(ctx, repository.Index(1), repository.Size(1))
+		got, err := ag.FindAll(ctx, value.Index(1), value.Size(1))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -312,7 +312,7 @@ func TestArticleList(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		ag := gateway.NewCoreArticle(rdb)
+		ag := gateway.NewArticle(rdb)
 
 		ctx := context.Background()
 
@@ -346,7 +346,7 @@ func TestArticleList(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		got, err := ag.FindAll(ctx, repository.Index(0), repository.Size(2))
+		got, err := ag.FindAll(ctx, value.Index(0), value.Size(2))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -366,7 +366,7 @@ func TestArticleList(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		ag := gateway.NewCoreArticle(rdb)
+		ag := gateway.NewArticle(rdb)
 
 		ctx := context.Background()
 
@@ -385,7 +385,7 @@ func TestArticleList(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		got, err := ag.FindAll(ctx, repository.Index(0), repository.Size(2))
+		got, err := ag.FindAll(ctx, value.Index(0), value.Size(2))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -405,7 +405,7 @@ func TestArticleList(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		ag := gateway.NewCoreArticle(rdb)
+		ag := gateway.NewArticle(rdb)
 
 		ctx := context.Background()
 
@@ -424,7 +424,7 @@ func TestArticleList(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		got, err := ag.FindAll(ctx, repository.Index(2), repository.Size(2))
+		got, err := ag.FindAll(ctx, value.Index(2), value.Size(2))
 		if err != nil {
 			t.Fatal(err)
 		}

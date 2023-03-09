@@ -6,45 +6,46 @@ import (
 
 	"github.com/morning-night-guild/platform-app/internal/domain/model"
 	"github.com/morning-night-guild/platform-app/internal/domain/model/article"
-	"github.com/morning-night-guild/platform-app/internal/domain/repository"
+	"github.com/morning-night-guild/platform-app/internal/domain/rpc"
+	"github.com/morning-night-guild/platform-app/internal/domain/value"
 )
 
-var _ repository.APIArticle = (*APIArticle)(nil)
+var _ rpc.Article = (*RPCArticle)(nil)
 
 // Article 記事リポジトリのモック.
-type APIArticle struct {
+type RPCArticle struct {
 	T        *testing.T
 	ID       article.ID
 	Articles []model.Article
 	Err      error
 }
 
-// Save 記事を保存するモックメソッド.
-func (ca *APIArticle) Save(
+// Share 記事を保存するモックメソッド.
+func (ra *RPCArticle) Share(
 	ctx context.Context,
 	url article.URL,
 	title article.Title,
 	description article.Description,
 	thumbnail article.Thumbnail,
 ) (model.Article, error) {
-	ca.T.Helper()
+	ra.T.Helper()
 
 	return model.Article{
-		ID:          ca.ID,
+		ID:          ra.ID,
 		URL:         url,
 		Title:       title,
 		Description: description,
 		Thumbnail:   thumbnail,
-	}, ca.Err
+	}, ra.Err
 }
 
-// FindAll 記事を一覧取得するモックメソッド.
-func (ca *APIArticle) FindAll(
+// List 記事を一覧取得するモックメソッド.
+func (ra *RPCArticle) List(
 	ctx context.Context,
-	index repository.Index,
-	size repository.Size,
+	index value.Index,
+	size value.Size,
 ) ([]model.Article, error) {
-	ca.T.Helper()
+	ra.T.Helper()
 
-	return ca.Articles, ca.Err
+	return ra.Articles, ra.Err
 }

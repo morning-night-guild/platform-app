@@ -3,7 +3,7 @@ package port
 import (
 	"github.com/morning-night-guild/platform-app/internal/domain/model"
 	"github.com/morning-night-guild/platform-app/internal/domain/model/article"
-	"github.com/morning-night-guild/platform-app/internal/domain/repository"
+	"github.com/morning-night-guild/platform-app/internal/domain/value"
 	"github.com/morning-night-guild/platform-app/internal/usecase"
 )
 
@@ -30,8 +30,8 @@ type CoreArticleShare interface {
 // CoreArticleListInput.
 type CoreArticleListInput struct {
 	usecase.Input
-	Index repository.Index
-	Size  repository.Size
+	Index value.Index
+	Size  value.Size
 }
 
 // CoreArticleListOutput.

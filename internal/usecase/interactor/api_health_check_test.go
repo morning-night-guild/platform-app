@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/morning-night-guild/platform-app/internal/domain/repository"
+	"github.com/morning-night-guild/platform-app/internal/domain/rpc"
 	"github.com/morning-night-guild/platform-app/internal/usecase/interactor"
 	"github.com/morning-night-guild/platform-app/internal/usecase/mock"
 	"github.com/morning-night-guild/platform-app/internal/usecase/port"
@@ -16,7 +16,7 @@ func TestAPIHealthCheckExecute(t *testing.T) {
 	t.Parallel()
 
 	type fields struct {
-		healthRepository repository.APIHealth
+		healthRPC rpc.Health
 	}
 
 	type args struct {
@@ -34,7 +34,7 @@ func TestAPIHealthCheckExecute(t *testing.T) {
 		{
 			name: "ヘルスチェックが成功する",
 			fields: fields{
-				healthRepository: &mock.APIHealth{
+				healthRPC: &mock.RPCHealth{
 					T:   t,
 					Err: nil,
 				},
@@ -49,7 +49,7 @@ func TestAPIHealthCheckExecute(t *testing.T) {
 		{
 			name: "ヘルスチェックが失敗する",
 			fields: fields{
-				healthRepository: &mock.APIHealth{
+				healthRPC: &mock.RPCHealth{
 					T:   t,
 					Err: errors.New("error"),
 				},
@@ -67,7 +67,7 @@ func TestAPIHealthCheckExecute(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			ahc := interactor.NewAPIHealthCheck(tt.fields.healthRepository)
+			ahc := interactor.NewAPIHealthCheck(tt.fields.healthRPC)
 			got, err := ahc.Execute(tt.args.ctx, tt.args.input)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("APIHealthCheck.Execute() error = %v, wantErr %v", err, tt.wantErr)

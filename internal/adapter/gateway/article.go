@@ -6,27 +6,28 @@ import (
 
 	"github.com/morning-night-guild/platform-app/internal/domain/model"
 	"github.com/morning-night-guild/platform-app/internal/domain/repository"
+	"github.com/morning-night-guild/platform-app/internal/domain/value"
 	"github.com/morning-night-guild/platform-app/pkg/ent"
 	"github.com/morning-night-guild/platform-app/pkg/ent/article"
 	"github.com/pkg/errors"
 )
 
-var _ repository.CoreArticle = (*CoreArticle)(nil)
+var _ repository.Article = (*Article)(nil)
 
-// CoreArticle.
-type CoreArticle struct {
+// Article.
+type Article struct {
 	rdb *RDB
 }
 
-// NewACoreArticle ACoreArticleGatewayを生成するファクトリー関数.
-func NewCoreArticle(rdb *RDB) *CoreArticle {
-	return &CoreArticle{
+// NewAArticle AArticleGatewayを生成するファクトリー関数.
+func NewArticle(rdb *RDB) *Article {
+	return &Article{
 		rdb: rdb,
 	}
 }
 
 // Save 記事を保存するメソッド.
-func (ca *CoreArticle) Save(ctx context.Context, item model.Article) error {
+func (ca *Article) Save(ctx context.Context, item model.Article) error {
 	id := item.ID.Value()
 
 	now := time.Now().UTC()
@@ -79,10 +80,10 @@ func (ca *CoreArticle) Save(ctx context.Context, item model.Article) error {
 }
 
 // FindAll 記事を取得するメソッド.
-func (ca *CoreArticle) FindAll(
+func (ca *Article) FindAll(
 	ctx context.Context,
-	index repository.Index,
-	size repository.Size,
+	index value.Index,
+	size value.Size,
 ) ([]model.Article, error) {
 	// ent articles
 	eas, err := ca.rdb.Article.Query().

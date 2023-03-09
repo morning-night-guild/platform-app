@@ -5,7 +5,7 @@ import (
 
 	"github.com/bufbuild/connect-go"
 	"github.com/morning-night-guild/platform-app/internal/domain/model/article"
-	"github.com/morning-night-guild/platform-app/internal/domain/repository"
+	"github.com/morning-night-guild/platform-app/internal/domain/value"
 	"github.com/morning-night-guild/platform-app/internal/usecase/port"
 	articlev1 "github.com/morning-night-guild/platform-app/pkg/connect/article/v1"
 )
@@ -84,11 +84,11 @@ func (a *Article) List(
 	ctx context.Context,
 	req *connect.Request[articlev1.ListRequest],
 ) (*connect.Response[articlev1.ListResponse], error) {
-	token := repository.NewNextToken(req.Msg.PageToken)
+	token := value.NewNextToken(req.Msg.PageToken)
 
 	index := token.ToIndex()
 
-	size, err := repository.NewSize(int(req.Msg.MaxPageSize))
+	size, err := value.NewSize(int(req.Msg.MaxPageSize))
 	if err != nil {
 		return nil, a.ctl.HandleConnectError(ctx, err)
 	}
@@ -116,13 +116,7 @@ func (a *Article) List(
 		}
 	}
 
-	next := token.CreateNextToken(size).String()
-	if len(output.Articles) < size.Int() {
-		next = ""
-	}
-
 	return connect.NewResponse(&articlev1.ListResponse{
-		Articles:      result,
-		NextPageToken: next,
+		Articles: result,
 	}), nil
 }

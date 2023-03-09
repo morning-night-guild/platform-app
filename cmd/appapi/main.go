@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/morning-night-guild/platform-app/internal/adapter/api"
-	"github.com/morning-night-guild/platform-app/internal/adapter/gateway"
+	"github.com/morning-night-guild/platform-app/internal/adapter/external"
 	"github.com/morning-night-guild/platform-app/internal/driver/config"
 	"github.com/morning-night-guild/platform-app/internal/driver/connect"
 	"github.com/morning-night-guild/platform-app/internal/driver/cors"
@@ -33,15 +33,15 @@ func main() {
 		panic(err)
 	}
 
-	articleRepo := gateway.NewAPIArticle(c)
+	articleRPC := external.NewArticle(c)
 
-	healthRepo := gateway.NewAPIHealth(c)
+	healthRPC := external.NewHealth(c)
 
-	articleList := interactor.NewAPIArticleList(articleRepo)
+	articleList := interactor.NewAPIArticleList(articleRPC)
 
-	articleShare := interactor.NewAPIArticleShare(articleRepo)
+	articleShare := interactor.NewAPIArticleShare(articleRPC)
 
-	healthUsecase := interactor.NewAPIHealthCheck(healthRepo)
+	healthUsecase := interactor.NewAPIHealthCheck(healthRPC)
 
 	article := api.NewArticle(articleList, articleShare)
 

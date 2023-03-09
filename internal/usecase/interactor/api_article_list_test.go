@@ -8,7 +8,8 @@ import (
 
 	"github.com/morning-night-guild/platform-app/internal/domain/model"
 	"github.com/morning-night-guild/platform-app/internal/domain/model/article"
-	"github.com/morning-night-guild/platform-app/internal/domain/repository"
+	"github.com/morning-night-guild/platform-app/internal/domain/rpc"
+	"github.com/morning-night-guild/platform-app/internal/domain/value"
 	"github.com/morning-night-guild/platform-app/internal/usecase/interactor"
 	"github.com/morning-night-guild/platform-app/internal/usecase/mock"
 	"github.com/morning-night-guild/platform-app/internal/usecase/port"
@@ -18,7 +19,7 @@ func TestAPIArticleListExecute(t *testing.T) {
 	t.Parallel()
 
 	type fields struct {
-		articleRepository repository.APIArticle
+		articleRPC rpc.Article
 	}
 
 	type args struct {
@@ -53,7 +54,7 @@ func TestAPIArticleListExecute(t *testing.T) {
 		{
 			name: "記事リストが取得できる",
 			fields: fields{
-				articleRepository: &mock.APIArticle{
+				articleRPC: &mock.RPCArticle{
 					T:        t,
 					Articles: articles,
 					Err:      nil,
@@ -62,8 +63,8 @@ func TestAPIArticleListExecute(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				input: port.APIArticleListInput{
-					Index: repository.Index(0),
-					Size:  repository.Size(2),
+					Index: value.Index(0),
+					Size:  value.Size(2),
 				},
 			},
 			want: port.APIArticleListOutput{
@@ -74,7 +75,7 @@ func TestAPIArticleListExecute(t *testing.T) {
 		{
 			name: "repositoryでerrorが発生して記事リストが取得できない",
 			fields: fields{
-				articleRepository: &mock.APIArticle{
+				articleRPC: &mock.RPCArticle{
 					T:        t,
 					Articles: nil,
 					Err:      errors.New("error"),
@@ -83,8 +84,8 @@ func TestAPIArticleListExecute(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				input: port.APIArticleListInput{
-					Index: repository.Index(0),
-					Size:  repository.Size(2),
+					Index: value.Index(0),
+					Size:  value.Size(2),
 				},
 			},
 			want: port.APIArticleListOutput{
@@ -98,7 +99,7 @@ func TestAPIArticleListExecute(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			aal := interactor.NewAPIArticleList(tt.fields.articleRepository)
+			aal := interactor.NewAPIArticleList(tt.fields.articleRPC)
 			got, err := aal.Execute(tt.args.ctx, tt.args.input)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("APIArticleList.Execute() error = %v, wantErr %v", err, tt.wantErr)

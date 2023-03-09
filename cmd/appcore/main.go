@@ -25,7 +25,7 @@ func main() {
 		panic(err)
 	}
 
-	articleRepo := gateway.NewCoreArticle(rdb)
+	articleRepo := gateway.NewArticle(rdb)
 
 	articleShare := interactor.NewCoreArticleShare(articleRepo)
 

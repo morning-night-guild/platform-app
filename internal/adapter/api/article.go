@@ -7,7 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/morning-night-guild/platform-app/internal/domain/model/article"
-	"github.com/morning-night-guild/platform-app/internal/domain/repository"
+	"github.com/morning-night-guild/platform-app/internal/domain/value"
 	"github.com/morning-night-guild/platform-app/internal/usecase/port"
 	"github.com/morning-night-guild/platform-app/pkg/log"
 	"github.com/morning-night-guild/platform-app/pkg/openapi"
@@ -21,9 +21,9 @@ func (api *API) V1ListArticles(w http.ResponseWriter, r *http.Request, params op
 		pageToken = *params.PageToken
 	}
 
-	token := repository.NewNextToken(pageToken)
+	token := value.NewNextToken(pageToken)
 
-	size, err := repository.NewSize(params.MaxPageSize)
+	size, err := value.NewSize(params.MaxPageSize)
 	if err != nil {
 		log.GetLogCtx(ctx).Warn("failed to list articles", log.ErrorField(err))
 

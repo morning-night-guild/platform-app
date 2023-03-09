@@ -19,7 +19,7 @@ func TestCoreArticleShareExecute(t *testing.T) {
 	t.Parallel()
 
 	type fields struct {
-		articleRepository repository.CoreArticle
+		articleRepository repository.Article
 	}
 
 	type args struct {
@@ -37,7 +37,7 @@ func TestCoreArticleShareExecute(t *testing.T) {
 		{
 			name: "記事を共有できる",
 			fields: fields{
-				articleRepository: &mock.CoreArticle{
+				articleRepository: &mock.RepositoryArticle{
 					T:   t,
 					Err: nil,
 				},
@@ -65,7 +65,7 @@ func TestCoreArticleShareExecute(t *testing.T) {
 		{
 			name: "記事Repositoryのerrorを握りつぶさない",
 			fields: fields{
-				articleRepository: &mock.CoreArticle{
+				articleRepository: &mock.RepositoryArticle{
 					T:   t,
 					Err: errors.New("article repository error"),
 				},
