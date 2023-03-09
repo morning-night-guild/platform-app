@@ -22,7 +22,7 @@ func NewCore() CoreConfig {
 		port = "8080"
 	}
 
-	c := CoreConfig{
+	conf := CoreConfig{
 		Port:            port,
 		DSN:             os.Getenv("DATABASE_URL"),
 		APIKey:          os.Getenv("API_KEY"),
@@ -30,7 +30,7 @@ func NewCore() CoreConfig {
 		NewRelicLicense: os.Getenv("NEWRELIC_LICENSE"),
 	}
 
-	log.Log().Sugar().Infof("config: %+v", c)
+	log.Log().Sugar().Infof("config: %+v", conf)
 
-	return c
+	return conf
 }

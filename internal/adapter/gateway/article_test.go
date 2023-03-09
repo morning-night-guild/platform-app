@@ -62,7 +62,7 @@ func TestCoreArticleSave(t *testing.T) {
 
 		ctx := context.Background()
 
-		a := model.CreateArticle(
+		ca := model.CreateArticle(
 			article.URL("https://example.com"),
 			article.Title("title"),
 			article.Description("description"),
@@ -70,11 +70,11 @@ func TestCoreArticleSave(t *testing.T) {
 			article.TagList{},
 		)
 
-		if err := ag.Save(ctx, a); err != nil {
+		if err := ag.Save(ctx, ca); err != nil {
 			t.Error(err)
 		}
 
-		found, err := rdb.Article.Get(ctx, a.ID.Value())
+		found, err := rdb.Article.Get(ctx, ca.ID.Value())
 		if err != nil {
 			t.Error(err)
 		}
@@ -88,8 +88,8 @@ func TestCoreArticleSave(t *testing.T) {
 			article.TagList{},
 		)
 
-		if !reflect.DeepEqual(got, a) {
-			t.Errorf("NewArticle() = %v, want %v", got, a)
+		if !reflect.DeepEqual(got, ca) {
+			t.Errorf("NewArticle() = %v, want %v", got, ca)
 		}
 
 		// 同じURLを保存してもerrorにならないことを確認

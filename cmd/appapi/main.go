@@ -18,7 +18,7 @@ func main() {
 
 	cfg := config.NewAPI()
 
-	c, err := connect.New().Of(cfg.AppCoreURL)
+	con, err := connect.New().Of(cfg.AppCoreURL)
 	if err != nil {
 		panic(err)
 	}
@@ -33,9 +33,9 @@ func main() {
 		panic(err)
 	}
 
-	articleRPC := external.NewArticle(c)
+	articleRPC := external.NewArticle(con)
 
-	healthRPC := external.NewHealth(c)
+	healthRPC := external.NewHealth(con)
 
 	articleList := interactor.NewAPIArticleList(articleRPC)
 

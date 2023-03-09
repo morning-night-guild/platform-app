@@ -29,14 +29,14 @@ func NewServer(
 	port string,
 	handler http.Handler,
 ) *Server {
-	s := &http.Server{
+	server := &http.Server{
 		Addr:              fmt.Sprintf(":%s", port),
 		Handler:           handler,
 		ReadHeaderTimeout: readHeaderTimeout,
 	}
 
 	return &Server{
-		Server: s,
+		Server: server,
 	}
 }
 
