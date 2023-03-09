@@ -12,7 +12,6 @@ import (
 
 var _ rpc.Article = (*RPCArticle)(nil)
 
-// Article 記事リポジトリのモック.
 type RPCArticle struct {
 	T        *testing.T
 	ID       article.ID
@@ -20,7 +19,6 @@ type RPCArticle struct {
 	Err      error
 }
 
-// Share 記事を保存するモックメソッド.
 func (ra *RPCArticle) Share(
 	ctx context.Context,
 	url article.URL,
@@ -39,7 +37,6 @@ func (ra *RPCArticle) Share(
 	}, ra.Err
 }
 
-// List 記事を一覧取得するモックメソッド.
 func (ra *RPCArticle) List(
 	ctx context.Context,
 	index value.Index,

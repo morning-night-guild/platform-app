@@ -65,7 +65,7 @@ func TestAPIArticleShareExecute(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "repositoryでerrorが発生して記事の共有が共有できない",
+			name: "rpcでerrorが発生して記事の共有が共有できない",
 			fields: fields{
 				articleRPC: &mock.RPCArticle{
 					T:   t,

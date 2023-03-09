@@ -73,7 +73,7 @@ func TestAPIArticleListExecute(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "repositoryでerrorが発生して記事リストが取得できない",
+			name: "rpcでerrorが発生して記事リストが取得できない",
 			fields: fields{
 				articleRPC: &mock.RPCArticle{
 					T:        t,
