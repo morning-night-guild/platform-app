@@ -8,6 +8,41 @@
 - [database](https://github.com/morning-night-guild/platform-app/tree/gh-pages/database)
 - [proto](https://github.com/morning-night-guild/platform-app/tree/gh-pages/proto)
 
+## directory structure
+
+four layered architecture
+
+```shell
+.
+├── domain
+│   ├── model           // domain model include id
+│   ├── value           // value object
+│   ├── repository      // interface domain model persistence
+│   └── rpc             // interface domain model remote procedure call
+├── usecase
+│   ├── interactor      // implements port
+│   ├── port            // usecase interface
+│   └── mock            // for test
+├── adapter
+│   ├── controller      // core adapter
+│   ├── gateway         // core adapter (implements repository)
+│   ├── handler         // api adapter
+│   ├── external        // api adapter (implements rpc)
+│   └── mock            // for test
+└── driver
+    ├── config
+    ├── connect
+    ├── cors
+    ├── database
+    ├── env
+    ├── http
+    ├── interceptor
+    ├── middleware
+    ├── newrelic
+    ├── router
+    └── server
+```
+
 ## commit message prefix
 
 Create an issue and include the number in the PREFIX when implementing.
