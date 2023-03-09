@@ -1,4 +1,4 @@
-package api_test
+package handler_test
 
 import (
 	"context"
@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/bufbuild/connect-go"
-	"github.com/morning-night-guild/platform-app/internal/adapter/api"
+	"github.com/morning-night-guild/platform-app/internal/adapter/handler"
 )
 
 func TestAPIHandleConnectError(t *testing.T) {
@@ -44,8 +44,8 @@ func TestAPIHandleConnectError(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			api := api.New("", nil, nil)
-			if got := api.HandleConnectError(tt.args.ctx, tt.args.err); got != tt.want {
+			rest := handler.New("", nil, nil)
+			if got := rest.HandleConnectError(tt.args.ctx, tt.args.err); got != tt.want {
 				t.Errorf("API.HandleConnectError() = %v, want %v", got, tt.want)
 			}
 		})
@@ -86,8 +86,8 @@ func TestAPIPointerToString(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			api := api.New("", nil, nil)
-			if got := api.PointerToString(tt.args.s); got != tt.want {
+			rest := handler.New("", nil, nil)
+			if got := rest.PointerToString(tt.args.s); got != tt.want {
 				t.Errorf("API.PointerToString() = %v, want %v", got, tt.want)
 			}
 		})

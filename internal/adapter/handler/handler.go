@@ -1,4 +1,4 @@
-package api
+package handler
 
 import (
 	"context"
@@ -12,9 +12,9 @@ import (
 	"github.com/morning-night-guild/platform-app/pkg/trace"
 )
 
-var _ openapi.ServerInterface = (*API)(nil)
+var _ openapi.ServerInterface = (*Handler)(nil)
 
-type API struct {
+type Handler struct {
 	key     string
 	article *Article
 	health  *Health
@@ -51,15 +51,15 @@ func New(
 	key string,
 	article *Article,
 	health *Health,
-) *API {
-	return &API{
+) *Handler {
+	return &Handler{
 		key:     key,
 		article: article,
 		health:  health,
 	}
 }
 
-func (api *API) HandleConnectError(ctx context.Context, err error) int {
+func (hand *Handler) HandleConnectError(ctx context.Context, err error) int {
 	if connectErr := new(connect.Error); errors.As(err, &connectErr) {
 		code := connect.CodeOf(connectErr)
 		if code == connect.CodeInvalidArgument {
@@ -74,7 +74,7 @@ func (api *API) HandleConnectError(ctx context.Context, err error) int {
 	return http.StatusInternalServerError
 }
 
-func (api *API) PointerToString(s *string) string {
+func (hand *Handler) PointerToString(s *string) string {
 	if s == nil {
 		return ""
 	}
@@ -82,7 +82,7 @@ func (api *API) PointerToString(s *string) string {
 	return *s
 }
 
-func (api *API) StringToPointer(s string) *string {
+func (hand *Handler) StringToPointer(s string) *string {
 	return &s
 }
 

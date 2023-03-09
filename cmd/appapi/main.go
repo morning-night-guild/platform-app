@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/morning-night-guild/platform-app/internal/adapter/api"
 	"github.com/morning-night-guild/platform-app/internal/adapter/external"
+	"github.com/morning-night-guild/platform-app/internal/adapter/handler"
 	"github.com/morning-night-guild/platform-app/internal/driver/config"
 	"github.com/morning-night-guild/platform-app/internal/driver/connect"
 	"github.com/morning-night-guild/platform-app/internal/driver/cors"
@@ -43,12 +43,12 @@ func main() {
 
 	healthUsecase := interactor.NewAPIHealthCheck(healthRPC)
 
-	article := api.NewArticle(articleList, articleShare)
+	article := handler.NewArticle(articleList, articleShare)
 
-	health := api.NewHealth(healthUsecase)
+	health := handler.NewHealth(healthUsecase)
 
 	hd := http.NewOpenAPI(
-		api.New(cfg.APIKey, article, health),
+		handler.New(cfg.APIKey, article, health),
 		cs,
 		middleware.New(),
 	)
