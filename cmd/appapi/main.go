@@ -7,7 +7,7 @@ import (
 	"github.com/morning-night-guild/platform-app/internal/driver/connect"
 	"github.com/morning-night-guild/platform-app/internal/driver/cors"
 	"github.com/morning-night-guild/platform-app/internal/driver/env"
-	"github.com/morning-night-guild/platform-app/internal/driver/handler"
+	"github.com/morning-night-guild/platform-app/internal/driver/http"
 	"github.com/morning-night-guild/platform-app/internal/driver/middleware"
 	"github.com/morning-night-guild/platform-app/internal/driver/server"
 	"github.com/morning-night-guild/platform-app/internal/usecase/interactor"
@@ -47,7 +47,7 @@ func main() {
 
 	health := api.NewHealth(healthUsecase)
 
-	hd := handler.NewOpenAPIHandler(
+	hd := http.NewOpenAPI(
 		api.New(cfg.APIKey, article, health),
 		cs,
 		middleware.New(),

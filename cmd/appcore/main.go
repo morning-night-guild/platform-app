@@ -6,7 +6,7 @@ import (
 	"github.com/morning-night-guild/platform-app/internal/driver/config"
 	"github.com/morning-night-guild/platform-app/internal/driver/database"
 	"github.com/morning-night-guild/platform-app/internal/driver/env"
-	"github.com/morning-night-guild/platform-app/internal/driver/handler"
+	"github.com/morning-night-guild/platform-app/internal/driver/http"
 	"github.com/morning-night-guild/platform-app/internal/driver/interceptor"
 	"github.com/morning-night-guild/platform-app/internal/driver/newrelic"
 	"github.com/morning-night-guild/platform-app/internal/driver/server"
@@ -48,7 +48,7 @@ func main() {
 
 	ic := interceptor.New()
 
-	h := handler.NewConnectHandler(ic, nr, articleCtr, healthCtr)
+	h := http.NewConnect(ic, nr, articleCtr, healthCtr)
 
 	srv := server.NewServer(cfg.Port, h)
 
