@@ -4,11 +4,11 @@ import (
 	"github.com/morning-night-guild/platform-app/internal/adapter/controller"
 	"github.com/morning-night-guild/platform-app/internal/adapter/gateway"
 	"github.com/morning-night-guild/platform-app/internal/driver/config"
-	"github.com/morning-night-guild/platform-app/internal/driver/database"
 	"github.com/morning-night-guild/platform-app/internal/driver/env"
 	"github.com/morning-night-guild/platform-app/internal/driver/http"
 	"github.com/morning-night-guild/platform-app/internal/driver/interceptor"
 	"github.com/morning-night-guild/platform-app/internal/driver/newrelic"
+	"github.com/morning-night-guild/platform-app/internal/driver/postgres"
 	"github.com/morning-night-guild/platform-app/internal/driver/server"
 	"github.com/morning-night-guild/platform-app/internal/usecase/interactor"
 )
@@ -18,9 +18,7 @@ func main() {
 
 	cfg := config.NewCore()
 
-	db := database.NewClient()
-
-	rdb, err := db.Of(cfg.DSN)
+	rdb, err := postgres.New().Of(cfg.DSN)
 	if err != nil {
 		panic(err)
 	}
