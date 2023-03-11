@@ -11,12 +11,12 @@ var _ port.CoreArticleList = (*CoreArticleList)(nil)
 
 // CoreArticleList 記事一覧のインタラクター.
 type CoreArticleList struct {
-	articleRepository repository.CoreArticle // 記事のリポジトリ
+	articleRepository repository.Article // 記事のリポジトリ
 }
 
 // NewCoreArticleList 記事一覧のインタラクターのファクトリ関数.
 func NewCoreArticleList(
-	articleRepository repository.CoreArticle,
+	articleRepository repository.Article,
 ) *CoreArticleList {
 	return &CoreArticleList{
 		articleRepository: articleRepository,

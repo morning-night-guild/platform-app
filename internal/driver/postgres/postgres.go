@@ -1,4 +1,4 @@
-package database
+package postgres
 
 import (
 	// postgres driver.
@@ -7,15 +7,15 @@ import (
 	"github.com/morning-night-guild/platform-app/pkg/ent"
 )
 
-var _ gateway.RDBFactory = (*Client)(nil)
+var _ gateway.RDBFactory = (*Postgres)(nil)
 
-type Client struct{}
+type Postgres struct{}
 
-func NewClient() *Client {
-	return &Client{}
+func New() *Postgres {
+	return &Postgres{}
 }
 
-func (c Client) Of(dsn string) (*gateway.RDB, error) {
+func (c Postgres) Of(dsn string) (*gateway.RDB, error) {
 	client, err := ent.Open("postgres", dsn)
 	if err != nil {
 		return &gateway.RDB{}, err

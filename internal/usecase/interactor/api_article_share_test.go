@@ -8,7 +8,7 @@ import (
 
 	"github.com/morning-night-guild/platform-app/internal/domain/model"
 	"github.com/morning-night-guild/platform-app/internal/domain/model/article"
-	"github.com/morning-night-guild/platform-app/internal/domain/repository"
+	"github.com/morning-night-guild/platform-app/internal/domain/rpc"
 	"github.com/morning-night-guild/platform-app/internal/usecase/interactor"
 	"github.com/morning-night-guild/platform-app/internal/usecase/mock"
 	"github.com/morning-night-guild/platform-app/internal/usecase/port"
@@ -18,7 +18,7 @@ func TestAPIArticleShareExecute(t *testing.T) {
 	t.Parallel()
 
 	type fields struct {
-		articleRepository repository.APIArticle
+		articleRPC rpc.Article
 	}
 
 	type args struct {
@@ -38,7 +38,7 @@ func TestAPIArticleShareExecute(t *testing.T) {
 		{
 			name: "記事が共有できる",
 			fields: fields{
-				articleRepository: &mock.APIArticle{
+				articleRPC: &mock.RPCArticle{
 					T:   t,
 					ID:  id,
 					Err: nil,
@@ -65,9 +65,9 @@ func TestAPIArticleShareExecute(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "repositoryでerrorが発生して記事の共有が共有できない",
+			name: "rpcでerrorが発生して記事の共有が共有できない",
 			fields: fields{
-				articleRepository: &mock.APIArticle{
+				articleRPC: &mock.RPCArticle{
 					T:   t,
 					ID:  id,
 					Err: errors.New("error"),
@@ -93,7 +93,7 @@ func TestAPIArticleShareExecute(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			aas := interactor.NewAPIArticleShare(tt.fields.articleRepository)
+			aas := interactor.NewAPIArticleShare(tt.fields.articleRPC)
 			got, err := aas.Execute(tt.args.ctx, tt.args.input)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("APIArticleShare.Execute() error = %v, wantErr %v", err, tt.wantErr)

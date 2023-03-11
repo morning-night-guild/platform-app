@@ -3,12 +3,12 @@ package connect
 import (
 	"net/http"
 
-	"github.com/morning-night-guild/platform-app/internal/adapter/gateway"
+	"github.com/morning-night-guild/platform-app/internal/adapter/external"
 	"github.com/morning-night-guild/platform-app/pkg/connect/article/v1/articlev1connect"
 	"github.com/morning-night-guild/platform-app/pkg/connect/health/v1/healthv1connect"
 )
 
-var _ gateway.ConnectFactory = (*Client)(nil)
+var _ external.ConnectFactory = (*Client)(nil)
 
 type Client struct{}
 
@@ -16,7 +16,7 @@ func New() *Client {
 	return &Client{}
 }
 
-func (c *Client) Of(url string) (*gateway.Connect, error) {
+func (cl *Client) Of(url string) (*external.Connect, error) {
 	client := http.DefaultClient
 
 	ac := articlev1connect.NewArticleServiceClient(
@@ -29,7 +29,7 @@ func (c *Client) Of(url string) (*gateway.Connect, error) {
 		url,
 	)
 
-	return &gateway.Connect{
+	return &external.Connect{
 		Article: ac,
 		Health:  hc,
 	}, nil

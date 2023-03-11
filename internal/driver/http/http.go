@@ -1,4 +1,4 @@
-package handler
+package http
 
 import (
 	"net/http"
@@ -16,7 +16,7 @@ import (
 	"golang.org/x/net/http2/h2c"
 )
 
-func NewConnectHandler(
+func NewConnect(
 	interceptor connect.UnaryInterceptorFunc,
 	nr *newrelic.NewRelic,
 	article *controller.Article,
@@ -44,7 +44,7 @@ const (
 	baseURL = "/api"
 )
 
-func NewOpenAPIHandler(
+func NewOpenAPI(
 	si openapi.ServerInterface,
 	cors openapi.MiddlewareFunc,
 	middleware *middleware.Middleware,

@@ -1,7 +1,7 @@
-package repository
+package rpc
 
 import "context"
 
-type APIHealth interface {
+type Health interface {
 	Check(context.Context) error
 }

@@ -1,4 +1,4 @@
-package api_test
+package handler_test
 
 import (
 	"errors"
@@ -6,7 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/morning-night-guild/platform-app/internal/adapter/api"
+	"github.com/morning-night-guild/platform-app/internal/adapter/handler"
 	"github.com/morning-night-guild/platform-app/internal/adapter/mock"
 	"github.com/morning-night-guild/platform-app/internal/domain/model"
 )
@@ -16,8 +16,8 @@ func TestAPIV1HealthAPI(t *testing.T) {
 
 	type fields struct {
 		key     string
-		article *api.Article
-		health  *api.Health
+		article *handler.Article
+		health  *handler.Health
 	}
 
 	type args struct {
@@ -34,13 +34,13 @@ func TestAPIV1HealthAPI(t *testing.T) {
 			name: "ヘルスチェックが成功する",
 			fields: fields{
 				key: "key",
-				article: api.NewArticle(mock.APIArticleList{
+				article: handler.NewArticle(mock.APIArticleList{
 					T:        t,
 					Articles: []model.Article{},
 				}, mock.APIArticleShare{
 					T: t,
 				}),
-				health: api.NewHealth(&mock.APIHealthCheck{
+				health: handler.NewHealth(&mock.APIHealthCheck{
 					T: t,
 				}),
 			},
@@ -57,7 +57,7 @@ func TestAPIV1HealthAPI(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			rest := api.New(tt.fields.key, tt.fields.article, tt.fields.health)
+			rest := handler.New(tt.fields.key, tt.fields.article, tt.fields.health)
 			got := httptest.NewRecorder()
 			rest.V1HealthAPI(got, tt.args.r)
 			if got.Code != tt.status {
@@ -72,8 +72,8 @@ func TestAPIV1HealthCore(t *testing.T) {
 
 	type fields struct {
 		key     string
-		article *api.Article
-		health  *api.Health
+		article *handler.Article
+		health  *handler.Health
 	}
 
 	type args struct {
@@ -90,13 +90,13 @@ func TestAPIV1HealthCore(t *testing.T) {
 			name: "ヘルスチェックが成功する",
 			fields: fields{
 				key: "key",
-				article: api.NewArticle(mock.APIArticleList{
+				article: handler.NewArticle(mock.APIArticleList{
 					T:        t,
 					Articles: []model.Article{},
 				}, mock.APIArticleShare{
 					T: t,
 				}),
-				health: api.NewHealth(&mock.APIHealthCheck{
+				health: handler.NewHealth(&mock.APIHealthCheck{
 					T: t,
 				}),
 			},
@@ -111,13 +111,13 @@ func TestAPIV1HealthCore(t *testing.T) {
 			name: "Coreでエラーが発生してヘルスチェックが失敗する",
 			fields: fields{
 				key: "key",
-				article: api.NewArticle(mock.APIArticleList{
+				article: handler.NewArticle(mock.APIArticleList{
 					T:        t,
 					Articles: []model.Article{},
 				}, mock.APIArticleShare{
 					T: t,
 				}),
-				health: api.NewHealth(&mock.APIHealthCheck{
+				health: handler.NewHealth(&mock.APIHealthCheck{
 					T:   t,
 					Err: errors.New("error"),
 				}),
@@ -135,7 +135,7 @@ func TestAPIV1HealthCore(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			rest := api.New(tt.fields.key, tt.fields.article, tt.fields.health)
+			rest := handler.New(tt.fields.key, tt.fields.article, tt.fields.health)
 			got := httptest.NewRecorder()
 			rest.V1HealthCore(got, tt.args.r)
 			if got.Code != tt.status {

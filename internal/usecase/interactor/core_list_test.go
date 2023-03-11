@@ -9,6 +9,7 @@ import (
 	"github.com/morning-night-guild/platform-app/internal/domain/model"
 	"github.com/morning-night-guild/platform-app/internal/domain/model/article"
 	"github.com/morning-night-guild/platform-app/internal/domain/repository"
+	"github.com/morning-night-guild/platform-app/internal/domain/value"
 	"github.com/morning-night-guild/platform-app/internal/usecase/interactor"
 	"github.com/morning-night-guild/platform-app/internal/usecase/mock"
 	"github.com/morning-night-guild/platform-app/internal/usecase/port"
@@ -18,7 +19,7 @@ func TestCoreArticleListExecute(t *testing.T) {
 	t.Parallel()
 
 	type fields struct {
-		articleRepository repository.CoreArticle
+		articleRepository repository.Article
 	}
 
 	type args struct {
@@ -38,7 +39,7 @@ func TestCoreArticleListExecute(t *testing.T) {
 		{
 			name: "記事一覧を取得できる",
 			fields: fields{
-				articleRepository: &mock.CoreArticle{
+				articleRepository: &mock.RepositoryArticle{
 					T: t,
 					Articles: []model.Article{
 						{
@@ -56,8 +57,8 @@ func TestCoreArticleListExecute(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				input: port.CoreArticleListInput{
-					Index: repository.Index(0),
-					Size:  repository.Size(1),
+					Index: value.Index(0),
+					Size:  value.Size(1),
 				},
 			},
 			want: port.CoreArticleListOutput{

@@ -24,7 +24,7 @@ func NewAPI() APIConfig {
 		port = "8080"
 	}
 
-	c := APIConfig{
+	conf := APIConfig{
 		Port:             port,
 		APIKey:           os.Getenv("API_KEY"),
 		AppCoreURL:       os.Getenv("APP_CORE_URL"),
@@ -34,7 +34,7 @@ func NewAPI() APIConfig {
 		CORSDebugEnable:  os.Getenv("CORS_DEBUG_ENABLE"),
 	}
 
-	log.Log().Sugar().Infof("config: %+v", c)
+	log.Log().Sugar().Infof("config: %+v", conf)
 
-	return c
+	return conf
 }

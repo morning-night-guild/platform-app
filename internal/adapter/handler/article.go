@@ -1,4 +1,4 @@
-package api
+package handler
 
 import (
 	"encoding/json"
@@ -7,13 +7,13 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/morning-night-guild/platform-app/internal/domain/model/article"
-	"github.com/morning-night-guild/platform-app/internal/domain/repository"
+	"github.com/morning-night-guild/platform-app/internal/domain/value"
 	"github.com/morning-night-guild/platform-app/internal/usecase/port"
 	"github.com/morning-night-guild/platform-app/pkg/log"
 	"github.com/morning-night-guild/platform-app/pkg/openapi"
 )
 
-func (api *API) V1ListArticles(w http.ResponseWriter, r *http.Request, params openapi.V1ListArticlesParams) {
+func (hand *Handler) V1ListArticles(w http.ResponseWriter, r *http.Request, params openapi.V1ListArticlesParams) {
 	ctx := r.Context()
 
 	pageToken := ""
@@ -21,9 +21,9 @@ func (api *API) V1ListArticles(w http.ResponseWriter, r *http.Request, params op
 		pageToken = *params.PageToken
 	}
 
-	token := repository.NewNextToken(pageToken)
+	token := value.NewNextToken(pageToken)
 
-	size, err := repository.NewSize(params.MaxPageSize)
+	size, err := value.NewSize(params.MaxPageSize)
 	if err != nil {
 		log.GetLogCtx(ctx).Warn("failed to list articles", log.ErrorField(err))
 
@@ -37,7 +37,7 @@ func (api *API) V1ListArticles(w http.ResponseWriter, r *http.Request, params op
 		Size:  size,
 	}
 
-	res, err := api.article.list.Execute(ctx, input)
+	res, err := hand.article.list.Execute(ctx, input)
 	if err != nil {
 		log.GetLogCtx(ctx).Warn("failed to list articles", log.ErrorField(err))
 
@@ -53,10 +53,10 @@ func (api *API) V1ListArticles(w http.ResponseWriter, r *http.Request, params op
 		tags := article.TagList.StringSlice()
 		articles[i] = openapi.Article{
 			Id:          &id,
-			Title:       api.StringToPointer(article.Title.String()),
-			Url:         api.StringToPointer(article.URL.String()),
-			Description: api.StringToPointer(article.Description.String()),
-			Thumbnail:   api.StringToPointer(article.Thumbnail.String()),
+			Title:       hand.StringToPointer(article.Title.String()),
+			Url:         hand.StringToPointer(article.URL.String()),
+			Description: hand.StringToPointer(article.Description.String()),
+			Thumbnail:   hand.StringToPointer(article.Thumbnail.String()),
 			Tags:        &tags,
 		}
 	}
@@ -75,11 +75,11 @@ func (api *API) V1ListArticles(w http.ResponseWriter, r *http.Request, params op
 	}
 }
 
-func (api *API) V1ShareArticle(w http.ResponseWriter, r *http.Request) {
+func (hand *Handler) V1ShareArticle(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	key := r.Header.Get("Api-Key")
-	if key != api.key {
+	if key != hand.key {
 		log.GetLogCtx(ctx).Warn(fmt.Sprintf("invalid api key. api key = %s", key))
 
 		w.WriteHeader(http.StatusUnauthorized)
@@ -99,13 +99,13 @@ func (api *API) V1ShareArticle(w http.ResponseWriter, r *http.Request) {
 
 	input := port.APIArticleShareInput{
 		URL:         article.URL(body.Url),
-		Title:       article.Title(api.PointerToString(body.Title)),
-		Description: article.Description(api.PointerToString(body.Description)),
-		Thumbnail:   article.Thumbnail(api.PointerToString(body.Thumbnail)),
+		Title:       article.Title(hand.PointerToString(body.Title)),
+		Description: article.Description(hand.PointerToString(body.Description)),
+		Thumbnail:   article.Thumbnail(hand.PointerToString(body.Thumbnail)),
 	}
 
-	if _, err := api.article.share.Execute(ctx, input); err != nil {
-		w.WriteHeader(api.HandleConnectError(ctx, err))
+	if _, err := hand.article.share.Execute(ctx, input); err != nil {
+		w.WriteHeader(hand.HandleConnectError(ctx, err))
 
 		return
 	}
