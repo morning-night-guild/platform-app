@@ -1,0 +1,73 @@
+name: auto go mod
+run-name: ${{ github.ref_name }} by @${{ github.actor }} ${{ github.workflow }}
+on:
+  pull_request:
+    types:
+      - opened
+jobs:
+  mod:
+    runs-on: ubuntu-latest
+    if: "startsWith( github.head_ref , 'renovate')"
+    steps:
+      - name: Generate token
+        id: generate-token
+        uses: tibdex/github-app-token@v1
+        with:
+          app_id: ${{ secrets.BOT_GITHUB_APP_ID }}
+          private_key: ${{ secrets.BOT_GITHUB_APP_PRIVATE_KEY }}
+      - name: Add PR label
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GITHUB_TOKEN: ${{ steps.generate-token.outputs.token }}
+        run: gh pr edit "${PR_URL}" --add-label "renovate"
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.head_ref }}
+          token: ${{ steps.generate-token.outputs.token }}
+      - name: Setup go
+        uses: actions/setup-go@v3
+        with:
+          go-version-file: go.mod
+      - name: Setup aqua
+        uses: aquaproj/aqua-installer@v2.0.2
+        with:
+          aqua_version: v1.36.0
+      - name: Install buf
+        run: ${AQUA_ROOT_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/aquaproj-aqua}/bin/aqua install -t buf
+      - name: Install protoc-gen-go
+        run: ${AQUA_ROOT_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/aquaproj-aqua}/bin/aqua install -t protoc-gen-go
+      - name: Install protoc-gen-connect-go
+        run: ${AQUA_ROOT_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/aquaproj-aqua}/bin/aqua install -t protoc-gen-connect-go
+      - name: Generate connect code
+        working-directory: ./proto
+        run: buf generate --template buf.gen.yaml
+      - name: Install oapi-codegen
+        run: ${AQUA_ROOT_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/aquaproj-aqua}/bin/aqua install -t oapi-codegen
+      - name: Generate openapi code
+        run: |
+          oapi-codegen -generate types -package openapi ./api/openapi.yaml > ./pkg/openapi/types.gen.go
+          oapi-codegen -generate chi-server -package openapi ./api/openapi.yaml > ./pkg/openapi/server.gen.go
+          oapi-codegen -generate client -package openapi ./api/openapi.yaml > ./pkg/openapi/client.gen.go
+      - name: Generate go code
+        run: go generate ./...
+      - name:  Go mod tidy
+        run: go mod tidy
+      - name: Go mod vendor
+        run: go mod vendor
+      - name: Git commit and push
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            git status --porcelain
+            msg=$(git log -1 --pretty=format:"%s")
+            name=$(git log -1 --pretty=format:"%an")
+            email=$(git log -1 --pretty=format:"%ae")
+            git config --global credential.helper 'github-apps -privatekey ${{ secrets.BOT_GITHUB_APP_PRIVATE_KEY }} -appid ${{ secrets.BOT_GITHUB_APP_ID }} -login ${{ github.repository_owner }}'
+            git config user.name ${name}
+            git config user.email ${email}
+            git add .
+            git commit -m "${msg}"
+            git push
+          else
+            echo "no changes";
+          fi
