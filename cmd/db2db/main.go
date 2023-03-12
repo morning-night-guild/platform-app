@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"log"
 
 	_ "github.com/lib/pq"
 	"github.com/morning-night-guild/platform-app/pkg/ent"
@@ -15,7 +16,6 @@ type Mode string
 
 func main() {
 	flag.Parse()
-	fmt.Println(flag.Args())
 
 	mode := flag.Arg(0)
 
@@ -23,6 +23,8 @@ func main() {
 	if dsn == "" {
 		panic("dsn must be set")
 	}
+
+	log.Printf("mode: %s, dsn: %s\n", mode, dsn)
 
 	switch mode {
 	case "export":
@@ -46,17 +48,19 @@ func Execute(ctx context.Context, src string, dst string) error {
 
 	defer srcCli.Close()
 
-	articles, err := srcCli.Article.Query().All(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to query articles: %w", err)
-	}
-
 	dstCli, err := ent.Open("postgres", dst)
 	if err != nil {
 		return fmt.Errorf("failed to open dst client: %w", err)
 	}
 
 	defer dstCli.Close()
+
+	articles, err := srcCli.Debug().Article.Query().All(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to query articles: %w", err)
+	}
+
+	log.Printf("completed select %d articles from %s\n", len(articles), src)
 
 	bulk := make([]*ent.ArticleCreate, len(articles))
 	for i, article := range articles {
@@ -70,9 +74,11 @@ func Execute(ctx context.Context, src string, dst string) error {
 			SetUpdatedAt(article.UpdatedAt)
 	}
 
-	if _, err := dstCli.Article.CreateBulk(bulk...).Save(ctx); err != nil {
+	if _, err := dstCli.Debug().Article.CreateBulk(bulk...).Save(ctx); err != nil {
 		return fmt.Errorf("failed to bulk create articles: %w", err)
 	}
+
+	log.Printf("completed insert %d articles to %s\n", len(articles), dst)
 
 	return nil
 }
