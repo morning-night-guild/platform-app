@@ -1,7 +1,7 @@
 services:
   postgres:
     container_name: ${APP_NAME}-postgres
-    image: postgres:14.7-alpine
+    image: postgres:15.2-alpine
     ports:
       - ${DB_PORT}:5432
     environment:
