@@ -4,23 +4,21 @@ import (
 	"context"
 	"os"
 
-	_ "github.com/lib/pq"
-	"github.com/morning-night-guild/platform-app/pkg/ent"
+	"github.com/morning-night-guild/platform-app/internal/driver/postgres"
 )
 
 func main() {
 	dsn := os.Getenv("DATABASE_URL")
 
-	client, err := ent.Open("postgres", dsn)
+	rdb, err := postgres.New().Of(dsn)
 	if err != nil {
 		panic(err)
 	}
-
-	defer client.Close()
+	defer rdb.Close()
 
 	ctx := context.Background()
 
-	if err := client.Debug().Schema.Create(ctx); err != nil {
+	if err := rdb.Debug().Schema.Create(ctx); err != nil {
 		panic(err)
 	}
 }

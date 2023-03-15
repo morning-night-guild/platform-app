@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"log"
 
-	_ "github.com/lib/pq"
+	"github.com/morning-night-guild/platform-app/internal/driver/postgres"
 	"github.com/morning-night-guild/platform-app/pkg/ent"
 )
 
@@ -41,14 +41,14 @@ func main() {
 }
 
 func Execute(ctx context.Context, src string, dst string) error {
-	srcCli, err := ent.Open("postgres", src)
+	srcCli, err := postgres.New().Of(src)
 	if err != nil {
 		return fmt.Errorf("failed to open src client: %w", err)
 	}
 
 	defer srcCli.Close()
 
-	dstCli, err := ent.Open("postgres", dst)
+	dstCli, err := postgres.New().Of(dst)
 	if err != nil {
 		return fmt.Errorf("failed to open dst client: %w", err)
 	}
