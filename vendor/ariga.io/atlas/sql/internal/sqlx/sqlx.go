@@ -216,6 +216,8 @@ type Builder struct {
 	bytes.Buffer
 	QuoteChar byte    // quoting identifiers
 	Schema    *string // schema qualifier
+	Indent    string  // indentation string
+	level     int     // current indentation level
 }
 
 // P writes a list of phrases to the builder separated and
@@ -267,6 +269,32 @@ func (b *Builder) Table(t *schema.Table) *Builder {
 	return b
 }
 
+// IndentIn adds one indentation in.
+func (b *Builder) IndentIn() *Builder {
+	b.level++
+	return b
+}
+
+// IndentOut removed one indentation level.
+func (b *Builder) IndentOut() *Builder {
+	b.level--
+	return b
+}
+
+// NL adds line break and prefix the new line with
+// indentation in case indentation is enabled.
+func (b *Builder) NL() *Builder {
+	if b.Indent != "" {
+		if b.lastByte() == ' ' {
+			b.rewriteLastByte('\n')
+		} else {
+			b.WriteByte('\n')
+		}
+		b.WriteString(strings.Repeat(b.Indent, b.level))
+	}
+	return b
+}
+
 // Comma writes a comma in case the buffer is not empty, or
 // replaces the last char if it is a whitespace.
 func (b *Builder) Comma() *Builder {
@@ -294,6 +322,13 @@ func (b *Builder) MapComma(x any, f func(i int, b *Builder)) *Builder {
 	return b
 }
 
+// MapIndent is like MapComma, but writes a new line before each element.
+func (b *Builder) MapIndent(x any, f func(i int, b *Builder)) *Builder {
+	return b.MapComma(x, func(i int, b *Builder) {
+		f(i, b.NL())
+	})
+}
+
 // MapCommaErr is like MapComma, but returns an error if f returns an error.
 func (b *Builder) MapCommaErr(x any, f func(i int, b *Builder) error) error {
 	s := reflect.ValueOf(x)
@@ -308,6 +343,13 @@ func (b *Builder) MapCommaErr(x any, f func(i int, b *Builder) error) error {
 	return nil
 }
 
+// MapIndentErr is like MapCommaErr, but writes a new line before each element.
+func (b *Builder) MapIndentErr(x any, f func(i int, b *Builder) error) error {
+	return b.MapCommaErr(x, func(i int, b *Builder) error {
+		return f(i, b.NL())
+	})
+}
+
 // Wrap wraps the written string with parentheses.
 func (b *Builder) Wrap(f func(b *Builder)) *Builder {
 	b.WriteByte('(')
@@ -318,6 +360,16 @@ func (b *Builder) Wrap(f func(b *Builder)) *Builder {
 		b.rewriteLastByte(')')
 	}
 	return b
+}
+
+// WrapIndent is like Wrap but with extra level of indentation.
+func (b *Builder) WrapIndent(f func(b *Builder)) *Builder {
+	return b.Wrap(func(b *Builder) {
+		b.IndentIn()
+		f(b)
+		b.IndentOut()
+		b.NL()
+	})
 }
 
 // Clone returns a duplicate of the builder.

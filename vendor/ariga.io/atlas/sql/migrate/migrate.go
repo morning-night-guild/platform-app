@@ -99,6 +99,9 @@ type (
 		// PlanWithSchemaQualifier allows setting a custom schema to prefix
 		// tables and other resources. An empty string indicates no qualifier.
 		SchemaQualifier *string
+		// Indent is the string to use for indentation.
+		// If empty, no indentation is used.
+		Indent string
 	}
 
 	// PlanOption allows configuring a drivers' plan using functional arguments.
@@ -296,6 +299,16 @@ func PlanWithSchemaQualifier(q string) PlannerOption {
 	return func(p *Planner) {
 		p.opts = append(p.opts, func(o *PlanOptions) {
 			o.SchemaQualifier = &q
+		})
+	}
+}
+
+// PlanWithIndent allows generating SQL statements with indentation.
+// An empty string indicates no indentation.
+func PlanWithIndent(indent string) PlannerOption {
+	return func(p *Planner) {
+		p.opts = append(p.opts, func(o *PlanOptions) {
+			o.Indent = indent
 		})
 	}
 }
