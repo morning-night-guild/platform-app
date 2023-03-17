@@ -17,11 +17,21 @@ jobs:
         uses: actions/setup-go@v4
         with:
           go-version-file: go.mod
+      - name: Setup aqua
+        uses: aquaproj/aqua-installer@v2.0.2
+        with:
+          aqua_version: v1.36.1
       - name: Install ko
-        run: go install github.com/google/ko@latest
+        run: ${AQUA_ROOT_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/aquaproj-aqua}/bin/aqua install -t ko
       - name: Build app api
-        working-directory: ./cmd/appapi
+        working-directory: ./cmd/app/api
         run: ko publish --local .
       - name: Build app core
-        working-directory: ./cmd/appcore
+        working-directory: ./cmd/app/core
+        run: ko publish --local .
+      - name: Build db migrate
+        working-directory: ./cmd/db/migrate
+        run: ko publish --local .
+      - name: Build db backup
+        working-directory: ./cmd/db/backup
         run: ko publish --local .

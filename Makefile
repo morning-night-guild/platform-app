@@ -41,6 +41,14 @@ balus: ## Destroy everything about docker. (containers, images, volumes, network
 psql: ## Connect to postgres.
 	@docker exec -it ${APP_NAME}-postgres psql -U postgres
 
+.PHONY: migrate
+migrate: ## Migrate database.
+	@touch cmd/db/migrate/main.go
+
+.PHONY: backup
+backup: ## Backup database.
+	@touch cmd/db/backup/main.go
+
 # go
 
 .PHONY: fmt
