@@ -26,8 +26,8 @@ dev: ## Make development.
 
 .PHONY: redev
 redev: ## restart dev container
-	@touch cmd/appcore/main.go
-	@touch cmd/appapi/main.go
+	@touch cmd/app/core/main.go
+	@touch cmd/app/api/main.go
 
 .PHONY: down
 down: ## Down development. (retain containers and delete volumes.)
