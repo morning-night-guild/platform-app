@@ -33,13 +33,13 @@ jobs:
       - name: Migrate postgresql
         env:
           DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable
-        run: go run cmd/migrate/main.go
+        run: go run cmd/db/migrate/main.go
       - name: Run app core
         env:
           PORT: "8888"
           DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable
         run: | # サーバー起動待機のためにsleepを導入 TODO health check 待機でも良いかも
-          go run cmd/appcore/main.go &
+          go run cmd/app/core/main.go &
           echo APP_CORE_PID=$! >> $GITHUB_ENV
           sleep 20
       - name: Run app api
@@ -50,7 +50,7 @@ jobs:
           DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable
           CORS_ALLOW_ORIGINS: http://localhost:5173
         run: | # サーバー起動待機のためにsleepを導入 TODO health check 待機でも良いかも
-          go run cmd/appapi/main.go &
+          go run cmd/app/api/main.go &
           echo APP_API_PID=$! >> $GITHUB_ENV
           sleep 20
       - name: Test e2e

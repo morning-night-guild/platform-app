@@ -78,7 +78,7 @@ jobs:
       - name: Migrate
         env:
           DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable
-        run: go run cmd/migrate/main.go
+        run: go run cmd/db/migrate/main.go
       - name: Generate database document
         run: tbls doc "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable" public/database
       - name: Upload
