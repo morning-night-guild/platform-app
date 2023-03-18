@@ -37,9 +37,13 @@ down: ## Down development. (retain containers and delete volumes.)
 balus: ## Destroy everything about docker. (containers, images, volumes, networks.)
 	@docker compose --project-name ${APP_NAME} down --rmi all --volumes
 
-.PHONY: psql
-psql: ## Connect to postgres.
-	@docker exec -it ${APP_NAME}-postgres psql -U postgres
+.PHONY: primary
+primary: ## Connect to postgres primary.
+	@docker exec -it ${APP_NAME}-postgres-primary psql -U postgres
+
+.PHONY: secondary
+secondary: ## Connect to postgres secondary.
+	@docker exec -it ${APP_NAME}-postgres-secondary psql -U postgres
 
 .PHONY: migrate
 migrate: ## Migrate database.
