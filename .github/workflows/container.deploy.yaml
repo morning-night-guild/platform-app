@@ -112,4 +112,4 @@ jobs:
             -H "Accespt: application/vnd.github.v3+json" \
             -H "Authorization: token ${{ steps.generate-token.outputs.token }}" \
             https://api.github.com/repos/morning-night-guild/platform-infra/dispatches \
-            -d '{"event_type": "manifest-update-prod", "client_payload": {"tag": "${{ needs.container-push.outputs.tag }}"}}'
+            -d '{"event_type": "manifest-update", "client_payload": {"tag": "${{ needs.container-push.outputs.tag }}"}}'
