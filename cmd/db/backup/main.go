@@ -97,7 +97,7 @@ func Import(ctx context.Context, client *gateway.RDB, entity Entity) error { //n
 		return fmt.Errorf("failed to delete articles: %w", err)
 	}
 
-	articleBulk := make([]*ent.ArticleCreate, 0, len(entity.Articles))
+	articleBulk := make([]*ent.ArticleCreate, len(entity.Articles))
 	for i, article := range entity.Articles {
 		articleBulk[i] = tx.Article.Create().
 			SetID(article.ID).
@@ -117,7 +117,7 @@ func Import(ctx context.Context, client *gateway.RDB, entity Entity) error { //n
 		return fmt.Errorf("failed to bulk create articles: %w", err)
 	}
 
-	articleTagBulk := make([]*ent.ArticleTagCreate, 0, len(entity.ArticleTags))
+	articleTagBulk := make([]*ent.ArticleTagCreate, len(entity.ArticleTags))
 	for i, articleTag := range entity.ArticleTags {
 		articleTagBulk[i] = tx.ArticleTag.Create().
 			SetID(articleTag.ID).
