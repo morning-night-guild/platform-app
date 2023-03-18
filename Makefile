@@ -26,8 +26,8 @@ dev: ## Make development.
 
 .PHONY: redev
 redev: ## restart dev container
-	@touch cmd/appcore/main.go
-	@touch cmd/appapi/main.go
+	@touch cmd/app/core/main.go
+	@touch cmd/app/api/main.go
 
 .PHONY: down
 down: ## Down development. (retain containers and delete volumes.)
@@ -40,6 +40,14 @@ balus: ## Destroy everything about docker. (containers, images, volumes, network
 .PHONY: psql
 psql: ## Connect to postgres.
 	@docker exec -it ${APP_NAME}-postgres psql -U postgres
+
+.PHONY: migrate
+migrate: ## Migrate database.
+	@touch cmd/db/migrate/main.go
+
+.PHONY: backup
+backup: ## Backup database.
+	@touch cmd/db/backup/main.go
 
 # go
 

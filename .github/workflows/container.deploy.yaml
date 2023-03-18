@@ -46,20 +46,36 @@ jobs:
         uses: actions/setup-go@v4
         with:
           go-version-file: go.mod
+      - name: Setup aqua
+        uses: aquaproj/aqua-installer@v2.0.2
+        with:
+          aqua_version: v1.36.1
       - name: Install ko
-        run: go install github.com/google/ko@latest
+        run: ${AQUA_ROOT_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/aquaproj-aqua}/bin/aqua install -t ko
       - name: Docker login
         run: ko login -u ${{ secrets.DOCKERHUB_USERNAME }} -p ${{ secrets.DOCKERHUB_PASSWORD }} index.docker.io
       - name: Build and push app api container
-        working-directory: ./cmd/appapi
+        working-directory: ./cmd/app/api
         run: |
           KO_DOCKER_REPO=${{ secrets.DOCKERHUB_USERNAME }}/platform-app-api \
           SOURCE_DATE_EPOCH=$(date +%s) \
           ko build --sbom=none --bare --tags=${{ env.TAG }},latest ./ --platform=linux/amd64
       - name: Build and push app core container
-        working-directory: ./cmd/appcore
+        working-directory: ./cmd/app/core
         run: |
           KO_DOCKER_REPO=${{ secrets.DOCKERHUB_USERNAME }}/platform-app-core \
+          SOURCE_DATE_EPOCH=$(date +%s) \
+          ko build --sbom=none --bare --tags=${{ env.TAG }},latest ./ --platform=linux/amd64
+      - name: Build and push db migrate container
+        working-directory: ./cmd/db/migrate
+        run: |
+          KO_DOCKER_REPO=${{ secrets.DOCKERHUB_USERNAME }}/platform-db-migrate \
+          SOURCE_DATE_EPOCH=$(date +%s) \
+          ko build --sbom=none --bare --tags=${{ env.TAG }},latest ./ --platform=linux/amd64
+      - name: Build and push db backup container
+        working-directory: ./cmd/db/backup
+        run: |
+          KO_DOCKER_REPO=${{ secrets.DOCKERHUB_USERNAME }}/platform-db-backup \
           SOURCE_DATE_EPOCH=$(date +%s) \
           ko build --sbom=none --bare --tags=${{ env.TAG }},latest ./ --platform=linux/amd64
   create-tag:
