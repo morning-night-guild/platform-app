@@ -9,16 +9,23 @@ import (
 	"github.com/morning-night-guild/platform-app/internal/domain/rpc"
 	"github.com/morning-night-guild/platform-app/internal/domain/value"
 	articlev1 "github.com/morning-night-guild/platform-app/pkg/connect/article/v1"
+	"github.com/morning-night-guild/platform-app/pkg/connect/article/v1/articlev1connect"
 	"github.com/morning-night-guild/platform-app/pkg/log"
 )
+
+type ArticleFactory interface {
+	Article(string) (*Article, error)
+}
 
 var _ rpc.Article = (*Article)(nil)
 
 type Article struct {
-	connect *Connect
+	connect articlev1connect.ArticleServiceClient
 }
 
-func NewArticle(connect *Connect) *Article {
+func NewArticle(
+	connect articlev1connect.ArticleServiceClient,
+) *Article {
 	return &Article{
 		connect: connect,
 	}
@@ -38,7 +45,7 @@ func (aa *Article) Share(
 		Thumbnail:   thumbnail.String(),
 	})
 
-	res, err := aa.connect.Article.Share(ctx, req)
+	res, err := aa.connect.Share(ctx, req)
 	if err != nil {
 		log.GetLogCtx(ctx).Warn("failed to share article", log.ErrorField(err))
 
@@ -67,7 +74,7 @@ func (aa *Article) List(
 		MaxPageSize: uint32(size),
 	})
 
-	res, err := aa.connect.Article.List(ctx, req)
+	res, err := aa.connect.List(ctx, req)
 	if err != nil {
 		log.GetLogCtx(ctx).Warn("failed to list articles", log.ErrorField(err))
 

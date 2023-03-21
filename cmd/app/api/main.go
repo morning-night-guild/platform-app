@@ -1,7 +1,6 @@
 package main
 
 import (
-	"github.com/morning-night-guild/platform-app/internal/adapter/external"
 	"github.com/morning-night-guild/platform-app/internal/adapter/handler"
 	"github.com/morning-night-guild/platform-app/internal/driver/config"
 	"github.com/morning-night-guild/platform-app/internal/driver/connect"
@@ -18,10 +17,7 @@ func main() {
 
 	cfg := config.NewAPI()
 
-	con, err := connect.New().Of(cfg.AppCoreURL)
-	if err != nil {
-		panic(err)
-	}
+	con := connect.New()
 
 	origins, err := cors.ConvertAllowOrigins(cfg.CORSAllowOrigins)
 	if err != nil {
@@ -33,9 +29,15 @@ func main() {
 		panic(err)
 	}
 
-	articleRPC := external.NewArticle(con)
+	articleRPC, err := con.Article(cfg.AppCoreURL)
+	if err != nil {
+		panic(err)
+	}
 
-	healthRPC := external.NewHealth(con)
+	healthRPC, err := con.Health(cfg.AppCoreURL)
+	if err != nil {
+		panic(err)
+	}
 
 	articleList := interactor.NewAPIArticleList(articleRPC)
 
