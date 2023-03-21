@@ -13,7 +13,7 @@ env: ## Create .env file.
 
 .PHONY: aqua
 aqua: ## Put the path in your environment variables. ex) export PATH="${AQUA_ROOT_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/aquaproj-aqua}/bin:$PATH"
-	@go run github.com/aquaproj/aqua-installer@latest --aqua-version v1.33.0
+	@go run github.com/aquaproj/aqua-installer@latest --aqua-version v2.0.0
 
 .PHONY: tool
 tool: ## Install tool.
