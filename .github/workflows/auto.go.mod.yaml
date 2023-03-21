@@ -6,7 +6,7 @@ on:
       - opened
 jobs:
   mod:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     if: "startsWith( github.head_ref , 'renovate')"
     steps:
       - name: Generate token
