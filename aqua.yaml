@@ -10,6 +10,6 @@ packages:
   - name: golangci/golangci-lint@v1.50.1
   - name: bufbuild/buf@v1.15.1
   - name: deepmap/oapi-codegen@v1.12.4
-  - name: protocolbuffers/protobuf-go/protoc-gen-go@v1.28.1
+  - name: protocolbuffers/protobuf-go/protoc-gen-go@v1.30.0
   - name: bufbuild/connect-go/protoc-gen-connect-go@v1.5.2
   - name: k1LoW/tbls@v1.63.0
