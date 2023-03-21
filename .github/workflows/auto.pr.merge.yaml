@@ -7,7 +7,7 @@ on:
 jobs:
   aqua:
     runs-on: ubuntu-22.04
-    if: "startsWith( github.head_ref , 'renovate/aquaproj-aqua-registry')"
+    if: "startsWith( github.head_ref , 'renovate/aquaproj')"
     steps:
       - name: Check branch
         run: echo "${{ github.head_ref }}"
