@@ -70,7 +70,7 @@ mod: ## Go mod
 
 .PHONY: modules
 modules: ## List modules with dependencies.
-	@go list -u -m all
+	@go list -u -deps ./...
 
 .PHONY: renovate
 renovate: ## Update modules with dependencies.
