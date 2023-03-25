@@ -30,7 +30,7 @@ func TestAppAPIE2EArticleShare(t *testing.T) {
 
 		client := helper.NewOpenAPIClientWithAPIKey(t, url, helper.GetAPIKey(t))
 
-		res, err := client.Client.V1ShareArticle(context.Background(), openapi.V1ShareArticleRequest{
+		res, err := client.Client.V1ArticleShare(context.Background(), openapi.V1ArticleShareRequestSchema{
 			Url:         fmt.Sprintf("https://example.com/%s", title),
 			Title:       helper.ToStringPointer(title),
 			Description: helper.ToStringPointer("description"),
@@ -60,7 +60,7 @@ func TestAppAPIE2EArticleShare(t *testing.T) {
 
 		client := helper.NewOpenAPIClientWithAPIKey(t, url, helper.GetAPIKey(t))
 
-		res, err := client.Client.V1ShareArticle(context.Background(), openapi.V1ShareArticleRequest{
+		res, err := client.Client.V1ArticleShare(context.Background(), openapi.V1ArticleShareRequestSchema{
 			Url:         fmt.Sprintf("https://example.com/%s", title),
 			Title:       nil,
 			Description: helper.ToStringPointer("description"),
@@ -90,7 +90,7 @@ func TestAppAPIE2EArticleShare(t *testing.T) {
 
 		client := helper.NewOpenAPIClientWithAPIKey(t, url, helper.GetAPIKey(t))
 
-		res, err := client.Client.V1ShareArticle(context.Background(), openapi.V1ShareArticleRequest{
+		res, err := client.Client.V1ArticleShare(context.Background(), openapi.V1ArticleShareRequestSchema{
 			Url:         fmt.Sprintf("https://example.com/%s", title),
 			Title:       helper.ToStringPointer(title),
 			Description: nil,
@@ -120,7 +120,7 @@ func TestAppAPIE2EArticleShare(t *testing.T) {
 
 		client := helper.NewOpenAPIClientWithAPIKey(t, url, helper.GetAPIKey(t))
 
-		res, err := client.Client.V1ShareArticle(context.Background(), openapi.V1ShareArticleRequest{
+		res, err := client.Client.V1ArticleShare(context.Background(), openapi.V1ArticleShareRequestSchema{
 			Url:         fmt.Sprintf("https://example.com/%s", title),
 			Title:       helper.ToStringPointer(title),
 			Description: helper.ToStringPointer("description"),
@@ -142,7 +142,7 @@ func TestAppAPIE2EArticleShare(t *testing.T) {
 
 		client := helper.NewOpenAPIClientWithAPIKey(t, url, helper.GetAPIKey(t))
 
-		res, err := client.Client.V1ShareArticle(context.Background(), openapi.V1ShareArticleRequest{
+		res, err := client.Client.V1ArticleShare(context.Background(), openapi.V1ArticleShareRequestSchema{
 			Url:         "",
 			Title:       helper.ToStringPointer("title"),
 			Description: helper.ToStringPointer("description"),
@@ -166,7 +166,7 @@ func TestAppAPIE2EArticleShare(t *testing.T) {
 
 		client := helper.NewOpenAPIClient(t, url)
 
-		res, err := client.Client.V1ShareArticle(context.Background(), openapi.V1ShareArticleRequest{
+		res, err := client.Client.V1ArticleShare(context.Background(), openapi.V1ArticleShareRequestSchema{
 			Url:         fmt.Sprintf("https://example.com/%s", title),
 			Title:       helper.ToStringPointer("title"),
 			Description: helper.ToStringPointer("description"),

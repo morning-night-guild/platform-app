@@ -16,10 +16,10 @@ import (
 type ServerInterface interface {
 	// 記事一覧
 	// (GET /v1/articles)
-	V1ListArticles(w http.ResponseWriter, r *http.Request, params V1ListArticlesParams)
+	V1ArticleList(w http.ResponseWriter, r *http.Request, params V1ArticleListParams)
 	// 記事共有
 	// (POST /v1/articles)
-	V1ShareArticle(w http.ResponseWriter, r *http.Request)
+	V1ArticleShare(w http.ResponseWriter, r *http.Request)
 	// apiヘルスチェック
 	// (GET /v1/health/api)
 	V1HealthAPI(w http.ResponseWriter, r *http.Request)
@@ -37,14 +37,14 @@ type ServerInterfaceWrapper struct {
 
 type MiddlewareFunc func(http.Handler) http.Handler
 
-// V1ListArticles operation middleware
-func (siw *ServerInterfaceWrapper) V1ListArticles(w http.ResponseWriter, r *http.Request) {
+// V1ArticleList operation middleware
+func (siw *ServerInterfaceWrapper) V1ArticleList(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	var err error
 
 	// Parameter object where we will unmarshal all parameters from the context
-	var params V1ListArticlesParams
+	var params V1ArticleListParams
 
 	// ------------- Optional query parameter "pageToken" -------------
 
@@ -70,7 +70,7 @@ func (siw *ServerInterfaceWrapper) V1ListArticles(w http.ResponseWriter, r *http
 	}
 
 	var handler http.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.V1ListArticles(w, r, params)
+		siw.Handler.V1ArticleList(w, r, params)
 	})
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -80,14 +80,14 @@ func (siw *ServerInterfaceWrapper) V1ListArticles(w http.ResponseWriter, r *http
 	handler.ServeHTTP(w, r.WithContext(ctx))
 }
 
-// V1ShareArticle operation middleware
-func (siw *ServerInterfaceWrapper) V1ShareArticle(w http.ResponseWriter, r *http.Request) {
+// V1ArticleShare operation middleware
+func (siw *ServerInterfaceWrapper) V1ArticleShare(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	ctx = context.WithValue(ctx, ApiKeyScopes, []string{""})
 
 	var handler http.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.V1ShareArticle(w, r)
+		siw.Handler.V1ArticleShare(w, r)
 	})
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -241,10 +241,10 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	}
 
 	r.Group(func(r chi.Router) {
-		r.Get(options.BaseURL+"/v1/articles", wrapper.V1ListArticles)
+		r.Get(options.BaseURL+"/v1/articles", wrapper.V1ArticleList)
 	})
 	r.Group(func(r chi.Router) {
-		r.Post(options.BaseURL+"/v1/articles", wrapper.V1ShareArticle)
+		r.Post(options.BaseURL+"/v1/articles", wrapper.V1ArticleShare)
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/v1/health/api", wrapper.V1HealthAPI)

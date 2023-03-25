@@ -26,7 +26,7 @@ paths:
         - article
       summary: 記事一覧
       description: 記事一覧を取得する
-      operationId: v1ListArticles
+      operationId: v1ArticleList
       parameters:
         - name: pageToken
           in: query
@@ -50,7 +50,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ListArticleResponse'
+                $ref: '#/components/schemas/V1ArticleListResponseSchema'
         '500':
           description: Internal Server Error
     post:
@@ -58,7 +58,7 @@ paths:
         - article
       summary: 記事共有
       description: 記事を共有する
-      operationId: v1ShareArticle
+      operationId: v1ArticleShare
       security:
         - apiKey: []
       requestBody:
@@ -67,7 +67,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/V1ShareArticleRequest'
+              $ref: '#/components/schemas/V1ArticleShareRequestSchema'
       responses:
         '200':
           description: 成功
@@ -103,7 +103,7 @@ paths:
           description: Internal Server Error
 components:
   schemas:
-    Article:
+    ArticleSchema:
       type: object
       properties:
         id:
@@ -134,17 +134,17 @@ components:
           items:
             type: string
             example: tag
-    ListArticleResponse:
+    V1ArticleListResponseSchema:
       type: object
       properties:
         articles:
           type: array
           items:
-            $ref: '#/components/schemas/Article'
+            $ref: '#/components/schemas/ArticleSchema'
         nextPageToken:
           type: string
           description: 次回リクエスト時に指定するページトークン
-    V1ShareArticleRequest:
+    V1ArticleShareRequestSchema:
       type: object
       properties:
         url:

@@ -33,7 +33,7 @@ func TestAppAPIE2EArticleList(t *testing.T) {
 
 		client := helper.NewOpenAPIClient(t, url)
 
-		res, err := client.Client.V1ListArticles(context.Background(), &openapi.V1ListArticlesParams{
+		res, err := client.Client.V1ArticleList(context.Background(), &openapi.V1ArticleListParams{
 			PageToken:   nil,
 			MaxPageSize: int(size),
 		})
@@ -45,7 +45,7 @@ func TestAppAPIE2EArticleList(t *testing.T) {
 
 		body, _ := io.ReadAll(res.Body)
 
-		var article openapi.ListArticleResponse
+		var article openapi.V1ArticleListResponseSchema
 		if err := json.Unmarshal(body, &article); err != nil {
 			t.Fatalf("failed marshal response: %s caused by %s", body, err)
 

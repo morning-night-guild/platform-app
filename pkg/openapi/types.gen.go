@@ -11,8 +11,8 @@ const (
 	ApiKeyScopes = "apiKey.Scopes"
 )
 
-// Article defines model for Article.
-type Article struct {
+// ArticleSchema defines model for ArticleSchema.
+type ArticleSchema struct {
 	// Description description
 	Description *string `json:"description,omitempty"`
 
@@ -32,16 +32,16 @@ type Article struct {
 	Url *string `json:"url,omitempty"`
 }
 
-// ListArticleResponse defines model for ListArticleResponse.
-type ListArticleResponse struct {
-	Articles *[]Article `json:"articles,omitempty"`
+// V1ArticleListResponseSchema defines model for V1ArticleListResponseSchema.
+type V1ArticleListResponseSchema struct {
+	Articles *[]ArticleSchema `json:"articles,omitempty"`
 
 	// NextPageToken 次回リクエスト時に指定するページトークン
 	NextPageToken *string `json:"nextPageToken,omitempty"`
 }
 
-// V1ShareArticleRequest defines model for V1ShareArticleRequest.
-type V1ShareArticleRequest struct {
+// V1ArticleShareRequestSchema defines model for V1ArticleShareRequestSchema.
+type V1ArticleShareRequestSchema struct {
 	// Description description
 	Description *string `json:"description,omitempty"`
 
@@ -55,8 +55,8 @@ type V1ShareArticleRequest struct {
 	Url string `json:"url"`
 }
 
-// V1ListArticlesParams defines parameters for V1ListArticles.
-type V1ListArticlesParams struct {
+// V1ArticleListParams defines parameters for V1ArticleList.
+type V1ArticleListParams struct {
 	// PageToken トークン
 	PageToken *string `form:"pageToken,omitempty" json:"pageToken,omitempty"`
 
@@ -64,5 +64,5 @@ type V1ListArticlesParams struct {
 	MaxPageSize int `form:"maxPageSize" json:"maxPageSize"`
 }
 
-// V1ShareArticleJSONRequestBody defines body for V1ShareArticle for application/json ContentType.
-type V1ShareArticleJSONRequestBody = V1ShareArticleRequest
+// V1ArticleShareJSONRequestBody defines body for V1ArticleShare for application/json ContentType.
+type V1ArticleShareJSONRequestBody = V1ArticleShareRequestSchema
