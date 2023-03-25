@@ -76,7 +76,7 @@ paths:
       description: 検証を行う
       operationId: v1AuthVerify
       security:
-        - idTokenCookie: []
+        - authTokenCookie: []
         - sessionTokenCookie: []      
       responses:
         '200':
@@ -138,7 +138,7 @@ paths:
       description: サインアウトする
       operationId: v1AuthSignOut
       security:
-        - idTokenCookie: []
+        - authTokenCookie: []
         - sessionTokenCookie: []      
       responses:
         '200':
@@ -234,9 +234,9 @@ components:
       type: apiKey
       name: api-key
       in: header
-    idTokenCookie:
+    authTokenCookie:
       type: apiKey
-      name: id-token
+      name: auth-token
       in: cookie
     sessionTokenCookie:
       type: apiKey
