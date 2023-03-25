@@ -9,7 +9,7 @@ import (
 
 const (
 	ApiKeyScopes             = "apiKey.Scopes"
-	IdTokenCookieScopes      = "idTokenCookie.Scopes"
+	AuthTokenCookieScopes    = "authTokenCookie.Scopes"
 	SessionTokenCookieScopes = "sessionTokenCookie.Scopes"
 )
 

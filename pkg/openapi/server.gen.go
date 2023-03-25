@@ -191,7 +191,7 @@ func (siw *ServerInterfaceWrapper) V1AuthSignIn(w http.ResponseWriter, r *http.R
 func (siw *ServerInterfaceWrapper) V1AuthSignOut(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	ctx = context.WithValue(ctx, IdTokenCookieScopes, []string{""})
+	ctx = context.WithValue(ctx, AuthTokenCookieScopes, []string{""})
 
 	ctx = context.WithValue(ctx, SessionTokenCookieScopes, []string{""})
 
@@ -227,7 +227,7 @@ func (siw *ServerInterfaceWrapper) V1AuthSignUp(w http.ResponseWriter, r *http.R
 func (siw *ServerInterfaceWrapper) V1AuthVerify(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	ctx = context.WithValue(ctx, IdTokenCookieScopes, []string{""})
+	ctx = context.WithValue(ctx, AuthTokenCookieScopes, []string{""})
 
 	ctx = context.WithValue(ctx, SessionTokenCookieScopes, []string{""})
 
