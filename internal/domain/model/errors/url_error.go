@@ -1,5 +1,7 @@
 package errors
 
+import "errors"
+
 // URLError URLに関するエラー.
 type URLError struct {
 	msg string
@@ -13,6 +15,13 @@ func NewURLError(msg string) URLError {
 }
 
 // Error エラーメソッド.
-func (e URLError) Error() string {
-	return e.msg
+func (ue URLError) Error() string {
+	return ue.msg
+}
+
+// AsURLError URLError型に変換できるかどうかを判定する.
+func AsURLError(err error) bool {
+	var target URLError
+
+	return errors.As(err, &target)
 }

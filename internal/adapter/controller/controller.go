@@ -2,31 +2,34 @@ package controller
 
 import (
 	"context"
-	"errors"
+	"fmt"
 
 	"github.com/bufbuild/connect-go"
-	me "github.com/morning-night-guild/platform-app/internal/domain/model/errors"
+	"github.com/morning-night-guild/platform-app/internal/domain/model/errors"
 	"github.com/morning-night-guild/platform-app/pkg/log"
 )
 
-var errInternal = errors.New("internal server")
-
-var ErrInternal = connect.NewError(
-	connect.CodeInternal,
-	errInternal,
-)
-
-var errInvalidArgument = errors.New("bad request")
-
-var ErrInvalidArgument = connect.NewError(
-	connect.CodeInvalidArgument,
-	errInvalidArgument,
-)
-var errUnauthorized = errors.New("unauthorized")
-
-var ErrUnauthorized = connect.NewError(
-	connect.CodeUnauthenticated,
-	errUnauthorized,
+var (
+	errInternal = fmt.Errorf("internal server")
+	ErrInternal = connect.NewError(
+		connect.CodeInternal,
+		errInternal,
+	)
+	errInvalidArgument = fmt.Errorf("bad request")
+	ErrInvalidArgument = connect.NewError(
+		connect.CodeInvalidArgument,
+		errInvalidArgument,
+	)
+	errUnauthorized = fmt.Errorf("unauthorized")
+	ErrUnauthorized = connect.NewError(
+		connect.CodeUnauthenticated,
+		errUnauthorized,
+	)
+	errNotFound = fmt.Errorf("not found")
+	ErrNotFound = connect.NewError(
+		connect.CodeNotFound,
+		errNotFound,
+	)
 )
 
 type Controller struct{}
@@ -41,26 +44,18 @@ func (ctl *Controller) HandleConnectError(ctx context.Context, err error) error 
 
 	switch {
 	case
-		ctl.asValidationError(err),
-		ctl.asURLError(err):
+		errors.AsValidationError(err),
+		errors.AsURLError(err):
 		logger.Warn(err.Error())
 
 		return ErrInvalidArgument
+	case errors.AsNotFoundError(err):
+		logger.Warn(err.Error())
+
+		return ErrNotFound
 	default:
 		logger.Error(err.Error())
 
 		return ErrInternal
 	}
-}
-
-func (ctl *Controller) asValidationError(err error) bool {
-	var target me.ValidationError
-
-	return errors.As(err, &target)
-}
-
-func (ctl *Controller) asURLError(err error) bool {
-	var target me.URLError
-
-	return errors.As(err, &target)
 }

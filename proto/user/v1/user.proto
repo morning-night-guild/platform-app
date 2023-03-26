@@ -1,0 +1,34 @@
+syntax = "proto3";
+
+package user.v1;
+
+option go_package = "github.com/morning-night-guild/platform-app/pkg/connect/user/v1;userv1";
+
+// ユーザーサービス
+service UserService {
+  // 作成
+  rpc Create(CreateRequest) returns (CreateResponse) {}
+  // 更新
+  rpc Update(UpdateRequest) returns (UpdateResponse) {}
+}
+
+// ユーザーモデル
+message User {
+  string user_id = 1;
+}
+
+// 作成リクエスト
+message CreateRequest {}
+
+// 作成レスポンス
+message CreateResponse {
+  User user = 1;
+}
+
+// 更新リクエスト
+message UpdateRequest {
+  string user_id = 1;
+}
+
+// 更新レスポンス
+message UpdateResponse {}
