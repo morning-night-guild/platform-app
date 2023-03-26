@@ -80,7 +80,7 @@ func TestCodeIDVerify(t *testing.T) {
 			name: "署名が検証できる",
 			cd:   auth.CodeID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
 			args: args{
-				signature:  auth.Signature(sign(t, key, "01234567-0123-0123-0123-0123456789ab")),
+				signature:  sign(t, key, "01234567-0123-0123-0123-0123456789ab"),
 				privateKey: key,
 			},
 			wantErr: false,
@@ -97,7 +97,9 @@ func TestCodeIDVerify(t *testing.T) {
 	}
 
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			if err := tt.cd.Verify(tt.args.signature, &tt.args.privateKey.PublicKey); (err != nil) != tt.wantErr {
 				t.Errorf("CodeID.Verify() error = %v, wantErr %v", err, tt.wantErr)
 			}

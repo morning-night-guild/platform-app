@@ -80,6 +80,7 @@ func TestAPIAuthGenerateCodeExecute(t *testing.T) {
 			got, err := aas.Execute(tt.args.ctx, tt.args.input)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("APIAuthGenerateCode.Execute() error = %v, wantErr %v", err, tt.wantErr)
+
 				return
 			}
 			if !reflect.DeepEqual(got.Code.SessionID, tt.want.Code.SessionID) {
