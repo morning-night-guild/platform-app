@@ -126,7 +126,7 @@ func sign(t *testing.T, prv *rsa.PrivateKey, code string) auth.Signature {
 
 	signed, err := rsa.SignPSS(rand.Reader, prv, crypto.SHA256, hashed, nil)
 	if err != nil {
-		panic(err)
+		t.Fatal(err)
 	}
 
 	return auth.Signature(base64.StdEncoding.EncodeToString(signed))
