@@ -14,9 +14,9 @@
 <title>public.articles</title>
 <polygon fill="#efefef" stroke="transparent" points="46.5,-255.5 46.5,-290.5 299.5,-290.5 299.5,-255.5 46.5,-255.5"/>
 <polygon fill="none" stroke="#000000" points="46.5,-255.5 46.5,-290.5 299.5,-290.5 299.5,-255.5 46.5,-255.5"/>
-<text text-anchor="start" x="69.8709" y="-268.3" font-family="Arial Bold" font-size="18.00" fill="#000000">public.articles</text>
-<text text-anchor="start" x="178.8753" y="-268.3" font-family="Arial" font-size="14.00" fill="#000000"> </text>
-<text text-anchor="start" x="182.7659" y="-268.3" font-family="Arial" font-size="14.00" fill="#666666">[BASE TABLE]</text>
+<text text-anchor="start" x="54.7138" y="-268.3" font-family="Arial Bold" font-size="18.00" fill="#000000">public.articles</text>
+<text text-anchor="start" x="163.7182" y="-268.3" font-family="Arial" font-size="14.00" fill="#000000">    </text>
+<text text-anchor="start" x="197.923" y="-268.3" font-family="Arial" font-size="14.00" fill="#666666">[BASE TABLE]</text>
 <polygon fill="none" stroke="#000000" points="46.5,-225.5 46.5,-255.5 299.5,-255.5 299.5,-225.5 46.5,-225.5"/>
 <text text-anchor="start" x="53.5" y="-236.9" font-family="Arial" font-size="14.00" fill="#000000">id </text>
 <text text-anchor="start" x="68.2798" y="-236.9" font-family="Arial" font-size="14.00" fill="#666666">[uuid]</text>
