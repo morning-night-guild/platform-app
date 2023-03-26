@@ -63,7 +63,7 @@ func (aar *APIAuthRefresh) Execute(
 		return port.APIAuthRefreshOutput{}, err
 	}
 
-	if err := aar.sessionCache.Del(ctx, sid.String()); err != nil {
+	if err := aar.codeCache.Del(ctx, sid.String()); err != nil {
 		log.GetLogCtx(ctx).Warn(err.Error())
 	}
 
