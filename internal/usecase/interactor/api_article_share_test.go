@@ -38,7 +38,7 @@ func TestAPIArticleShareExecute(t *testing.T) {
 		{
 			name: "記事が共有できる",
 			fields: fields{
-				articleRPC: &mock.RPCArticle{
+				articleRPC: &mock.ArticleRPC{
 					T:   t,
 					ID:  id,
 					Err: nil,
@@ -67,7 +67,7 @@ func TestAPIArticleShareExecute(t *testing.T) {
 		{
 			name: "rpcでerrorが発生して記事の共有が共有できない",
 			fields: fields{
-				articleRPC: &mock.RPCArticle{
+				articleRPC: &mock.ArticleRPC{
 					T:   t,
 					ID:  id,
 					Err: errors.New("error"),

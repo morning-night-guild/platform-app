@@ -37,7 +37,7 @@ func TestCoreArticleShareExecute(t *testing.T) {
 		{
 			name: "記事を共有できる",
 			fields: fields{
-				articleRepository: &mock.RepositoryArticle{
+				articleRepository: &mock.ArticleRepository{
 					T:   t,
 					Err: nil,
 				},
@@ -65,7 +65,7 @@ func TestCoreArticleShareExecute(t *testing.T) {
 		{
 			name: "記事Repositoryのerrorを握りつぶさない",
 			fields: fields{
-				articleRepository: &mock.RepositoryArticle{
+				articleRepository: &mock.ArticleRepository{
 					T:   t,
 					Err: errors.New("article repository error"),
 				},

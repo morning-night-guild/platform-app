@@ -54,7 +54,7 @@ func TestAPIArticleListExecute(t *testing.T) {
 		{
 			name: "記事リストが取得できる",
 			fields: fields{
-				articleRPC: &mock.RPCArticle{
+				articleRPC: &mock.ArticleRPC{
 					T:        t,
 					Articles: articles,
 					Err:      nil,
@@ -75,7 +75,7 @@ func TestAPIArticleListExecute(t *testing.T) {
 		{
 			name: "rpcでerrorが発生して記事リストが取得できない",
 			fields: fields{
-				articleRPC: &mock.RPCArticle{
+				articleRPC: &mock.ArticleRPC{
 					T:        t,
 					Articles: nil,
 					Err:      errors.New("error"),

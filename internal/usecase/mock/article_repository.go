@@ -9,26 +9,26 @@ import (
 	"github.com/morning-night-guild/platform-app/internal/domain/value"
 )
 
-var _ repository.Article = (*RepositoryArticle)(nil)
+var _ repository.Article = (*ArticleRepository)(nil)
 
-type RepositoryArticle struct {
+type ArticleRepository struct {
 	T        *testing.T
 	Articles []model.Article
 	Err      error
 }
 
-func (ra *RepositoryArticle) Save(ctx context.Context, article model.Article) error {
-	ra.T.Helper()
+func (ar *ArticleRepository) Save(ctx context.Context, article model.Article) error {
+	ar.T.Helper()
 
-	return ra.Err
+	return ar.Err
 }
 
-func (ra *RepositoryArticle) FindAll(
+func (ar *ArticleRepository) FindAll(
 	ctx context.Context,
 	index value.Index,
 	size value.Size,
 ) ([]model.Article, error) {
-	ra.T.Helper()
+	ar.T.Helper()
 
-	return ra.Articles, ra.Err
+	return ar.Articles, ar.Err
 }

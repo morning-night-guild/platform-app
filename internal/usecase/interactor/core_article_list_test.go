@@ -39,7 +39,7 @@ func TestCoreArticleListExecute(t *testing.T) {
 		{
 			name: "記事一覧を取得できる",
 			fields: fields{
-				articleRepository: &mock.RepositoryArticle{
+				articleRepository: &mock.ArticleRepository{
 					T: t,
 					Articles: []model.Article{
 						{

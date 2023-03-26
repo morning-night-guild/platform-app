@@ -10,39 +10,39 @@ import (
 	"github.com/morning-night-guild/platform-app/internal/domain/value"
 )
 
-var _ rpc.Article = (*RPCArticle)(nil)
+var _ rpc.Article = (*ArticleRPC)(nil)
 
-type RPCArticle struct {
+type ArticleRPC struct {
 	T        *testing.T
 	ID       article.ID
 	Articles []model.Article
 	Err      error
 }
 
-func (ra *RPCArticle) Share(
+func (ar *ArticleRPC) Share(
 	ctx context.Context,
 	url article.URL,
 	title article.Title,
 	description article.Description,
 	thumbnail article.Thumbnail,
 ) (model.Article, error) {
-	ra.T.Helper()
+	ar.T.Helper()
 
 	return model.Article{
-		ID:          ra.ID,
+		ID:          ar.ID,
 		URL:         url,
 		Title:       title,
 		Description: description,
 		Thumbnail:   thumbnail,
-	}, ra.Err
+	}, ar.Err
 }
 
-func (ra *RPCArticle) List(
+func (ar *ArticleRPC) List(
 	ctx context.Context,
 	index value.Index,
 	size value.Size,
 ) ([]model.Article, error) {
-	ra.T.Helper()
+	ar.T.Helper()
 
-	return ra.Articles, ra.Err
+	return ar.Articles, ar.Err
 }
