@@ -15,18 +15,145 @@ externalDocs:
 servers:
   - url: http://localhost:8080/api
 tags:
+  - name: auth
+    description: 認証
   - name: article
     description: 記事
   - name: health
     description: ヘルスチェック
 paths:
+  /v1/auth/signup:
+    post:
+      tags:
+        - auth
+      summary: サインアップ
+      description: ユーザーを登録する
+      operationId: v1AuthSignUp
+      security:
+        - apiKey: []      
+      requestBody:
+        required: true
+        description: サインアップリクエストボディ
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/V1AuthSignUpRequestSchema'
+      responses:
+        '200':
+          description: OK
+        '400':
+          description: Bad Request
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal Server Error
+  /v1/auth/signin:
+    post:
+      tags:
+        - auth
+      summary: サインイン
+      description: ユーザーを認証する
+      operationId: v1AuthSignIn
+      requestBody:
+        required: true
+        description: サインインリクエストボディ
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/V1AuthSignInRequestSchema'
+      responses:
+        '200':
+          description: OK
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+  /v1/auth/verify:
+    get:
+      tags:
+        - auth
+      summary: 検証
+      description: 検証を行う
+      operationId: v1AuthVerify
+      security:
+        - authTokenCookie: []
+        - sessionTokenCookie: []      
+      responses:
+        '200':
+          description: OK
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V1AuthVerifyUnauthorizedResponseSchema'
+        '500':
+          description: Internal Server Error
+  /v1/auth/refresh:
+    get:
+      tags:
+        - auth
+      summary: リフレッシュ
+      description: セッショントークンとクライアント署名によりIDトークンを再発行する
+      operationId: v1AuthRefresh
+      security:
+        - sessionTokenCookie: []
+      parameters:
+        - name: code
+          in: query
+          description: 署名付きコード
+          required: true
+          explode: true
+          schema:
+            type: string
+        - name: signature
+          in: query
+          description: 署名
+          required: true
+          explode: true
+          schema:
+            type: string
+        - name: expiresIn
+          in: query
+          required: false
+          explode: true
+          schema:
+            type: integer
+            description: トークン有効期限(秒)
+            default: 86400
+            minimum: 0
+            maximum: 86400
+      responses:
+        '200':
+          description: OK
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal Server Error
+  /v1/auth/signout:
+    get:
+      tags:
+        - auth
+      summary: サインアウト
+      description: サインアウトする
+      operationId: v1AuthSignOut
+      security:
+        - authTokenCookie: []
+        - sessionTokenCookie: []      
+      responses:
+        '200':
+          description: OK
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal Server Error
   /v1/articles:
     get:
       tags:
         - article
       summary: 記事一覧
       description: 記事一覧を取得する
-      operationId: v1ListArticles
+      operationId: v1ArticleList
       parameters:
         - name: pageToken
           in: query
@@ -50,7 +177,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ListArticleResponse'
+                $ref: '#/components/schemas/V1ArticleListResponseSchema'
         '500':
           description: Internal Server Error
     post:
@@ -58,7 +185,7 @@ paths:
         - article
       summary: 記事共有
       description: 記事を共有する
-      operationId: v1ShareArticle
+      operationId: v1ArticleShare
       security:
         - apiKey: []
       requestBody:
@@ -67,7 +194,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/V1ShareArticleRequest'
+              $ref: '#/components/schemas/V1ArticleShareRequestSchema'
       responses:
         '200':
           description: 成功
@@ -102,8 +229,21 @@ paths:
         '500':
           description: Internal Server Error
 components:
+  securitySchemes:
+    apiKey:
+      type: apiKey
+      name: api-key
+      in: header
+    authTokenCookie:
+      type: apiKey
+      name: auth-token
+      in: cookie
+    sessionTokenCookie:
+      type: apiKey
+      name: session-token
+      in: cookie
   schemas:
-    Article:
+    ArticleSchema:
       type: object
       properties:
         id:
@@ -134,17 +274,71 @@ components:
           items:
             type: string
             example: tag
-    ListArticleResponse:
+    V1AuthSignUpRequestSchema:
+      type: object
+      properties:
+        email:
+          type: string
+          description: メールアドレス
+          format: email
+          example: morning.night.guild@example.com
+        password:
+          type: string
+          description: パスワード
+          example: password
+      required:
+        - email
+        - password
+    V1AuthSignInRequestSchema:
+      type: object
+      properties:
+        email:
+          type: string
+          description: メールアドレス
+          format: email
+          example: morning.night.guild@example.com
+        password:
+          type: string
+          description: パスワード
+          example: password
+        publicKey:
+          type: string
+          description: 公開鍵
+          format: base64
+        expiresIn:
+          type: integer
+          description: トークン有効期限(秒)
+          default: 86400
+          minimum: 0
+          maximum: 86400
+      required:
+        - email
+        - password
+        - publicKey
+    V1AuthVerifyUnauthorizedResponseSchema:
+      type: object
+      properties:
+        code:
+          type: string
+          description: |-
+            リフレッシュコード
+            このコードを使用してトークンを新たに取得することができます。
+            リフレッシュできる見込みがない場合(セッショントークンがない状態でのリクエスト)ではリフレッシュ用コードは払い出しません。
+          format: uuid
+          example: 00000000-0000-0000-0000-000000000000
+      required:
+        - code
+    V1ArticleListResponseSchema:
       type: object
       properties:
         articles:
           type: array
           items:
-            $ref: '#/components/schemas/Article'
+            $ref: '#/components/schemas/ArticleSchema'
         nextPageToken:
           type: string
           description: 次回リクエスト時に指定するページトークン
-    V1ShareArticleRequest:
+    V1ArticleShareRequestSchema:
       type: object
       properties:
         url:
@@ -167,8 +361,3 @@ components:
           example: https://example.com
       required:
         - url
-  securitySchemes:
-    apiKey:
-      type: apiKey
-      name: api-key
-      in: header

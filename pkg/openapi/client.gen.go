@@ -89,13 +89,32 @@ func WithRequestEditorFn(fn RequestEditorFn) ClientOption {
 
 // The interface specification for the client above.
 type ClientInterface interface {
-	// V1ListArticles request
-	V1ListArticles(ctx context.Context, params *V1ListArticlesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// V1ArticleList request
+	V1ArticleList(ctx context.Context, params *V1ArticleListParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// V1ShareArticle request with any body
-	V1ShareArticleWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// V1ArticleShare request with any body
+	V1ArticleShareWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	V1ShareArticle(ctx context.Context, body V1ShareArticleJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	V1ArticleShare(ctx context.Context, body V1ArticleShareJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// V1AuthRefresh request
+	V1AuthRefresh(ctx context.Context, params *V1AuthRefreshParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// V1AuthSignIn request with any body
+	V1AuthSignInWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	V1AuthSignIn(ctx context.Context, body V1AuthSignInJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// V1AuthSignOut request
+	V1AuthSignOut(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// V1AuthSignUp request with any body
+	V1AuthSignUpWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	V1AuthSignUp(ctx context.Context, body V1AuthSignUpJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// V1AuthVerify request
+	V1AuthVerify(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// V1HealthAPI request
 	V1HealthAPI(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -104,8 +123,8 @@ type ClientInterface interface {
 	V1HealthCore(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 }
 
-func (c *Client) V1ListArticles(ctx context.Context, params *V1ListArticlesParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewV1ListArticlesRequest(c.Server, params)
+func (c *Client) V1ArticleList(ctx context.Context, params *V1ArticleListParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewV1ArticleListRequest(c.Server, params)
 	if err != nil {
 		return nil, err
 	}
@@ -116,8 +135,8 @@ func (c *Client) V1ListArticles(ctx context.Context, params *V1ListArticlesParam
 	return c.Client.Do(req)
 }
 
-func (c *Client) V1ShareArticleWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewV1ShareArticleRequestWithBody(c.Server, contentType, body)
+func (c *Client) V1ArticleShareWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewV1ArticleShareRequestWithBody(c.Server, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -128,8 +147,92 @@ func (c *Client) V1ShareArticleWithBody(ctx context.Context, contentType string,
 	return c.Client.Do(req)
 }
 
-func (c *Client) V1ShareArticle(ctx context.Context, body V1ShareArticleJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewV1ShareArticleRequest(c.Server, body)
+func (c *Client) V1ArticleShare(ctx context.Context, body V1ArticleShareJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewV1ArticleShareRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) V1AuthRefresh(ctx context.Context, params *V1AuthRefreshParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewV1AuthRefreshRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) V1AuthSignInWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewV1AuthSignInRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) V1AuthSignIn(ctx context.Context, body V1AuthSignInJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewV1AuthSignInRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) V1AuthSignOut(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewV1AuthSignOutRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) V1AuthSignUpWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewV1AuthSignUpRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) V1AuthSignUp(ctx context.Context, body V1AuthSignUpJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewV1AuthSignUpRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) V1AuthVerify(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewV1AuthVerifyRequest(c.Server)
 	if err != nil {
 		return nil, err
 	}
@@ -164,8 +267,8 @@ func (c *Client) V1HealthCore(ctx context.Context, reqEditors ...RequestEditorFn
 	return c.Client.Do(req)
 }
 
-// NewV1ListArticlesRequest generates requests for V1ListArticles
-func NewV1ListArticlesRequest(server string, params *V1ListArticlesParams) (*http.Request, error) {
+// NewV1ArticleListRequest generates requests for V1ArticleList
+func NewV1ArticleListRequest(server string, params *V1ArticleListParams) (*http.Request, error) {
 	var err error
 
 	serverURL, err := url.Parse(server)
@@ -223,19 +326,19 @@ func NewV1ListArticlesRequest(server string, params *V1ListArticlesParams) (*htt
 	return req, nil
 }
 
-// NewV1ShareArticleRequest calls the generic V1ShareArticle builder with application/json body
-func NewV1ShareArticleRequest(server string, body V1ShareArticleJSONRequestBody) (*http.Request, error) {
+// NewV1ArticleShareRequest calls the generic V1ArticleShare builder with application/json body
+func NewV1ArticleShareRequest(server string, body V1ArticleShareJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewV1ShareArticleRequestWithBody(server, "application/json", bodyReader)
+	return NewV1ArticleShareRequestWithBody(server, "application/json", bodyReader)
 }
 
-// NewV1ShareArticleRequestWithBody generates requests for V1ShareArticle with any type of body
-func NewV1ShareArticleRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+// NewV1ArticleShareRequestWithBody generates requests for V1ArticleShare with any type of body
+func NewV1ArticleShareRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	serverURL, err := url.Parse(server)
@@ -259,6 +362,211 @@ func NewV1ShareArticleRequestWithBody(server string, contentType string, body io
 	}
 
 	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewV1AuthRefreshRequest generates requests for V1AuthRefresh
+func NewV1AuthRefreshRequest(server string, params *V1AuthRefreshParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v1/auth/refresh")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	queryValues := queryURL.Query()
+
+	if queryFrag, err := runtime.StyleParamWithLocation("form", true, "code", runtime.ParamLocationQuery, params.Code); err != nil {
+		return nil, err
+	} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+		return nil, err
+	} else {
+		for k, v := range parsed {
+			for _, v2 := range v {
+				queryValues.Add(k, v2)
+			}
+		}
+	}
+
+	if queryFrag, err := runtime.StyleParamWithLocation("form", true, "signature", runtime.ParamLocationQuery, params.Signature); err != nil {
+		return nil, err
+	} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+		return nil, err
+	} else {
+		for k, v := range parsed {
+			for _, v2 := range v {
+				queryValues.Add(k, v2)
+			}
+		}
+	}
+
+	if params.ExpiresIn != nil {
+
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "expiresIn", runtime.ParamLocationQuery, *params.ExpiresIn); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+	}
+
+	queryURL.RawQuery = queryValues.Encode()
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewV1AuthSignInRequest calls the generic V1AuthSignIn builder with application/json body
+func NewV1AuthSignInRequest(server string, body V1AuthSignInJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewV1AuthSignInRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewV1AuthSignInRequestWithBody generates requests for V1AuthSignIn with any type of body
+func NewV1AuthSignInRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v1/auth/signin")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewV1AuthSignOutRequest generates requests for V1AuthSignOut
+func NewV1AuthSignOutRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v1/auth/signout")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewV1AuthSignUpRequest calls the generic V1AuthSignUp builder with application/json body
+func NewV1AuthSignUpRequest(server string, body V1AuthSignUpJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewV1AuthSignUpRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewV1AuthSignUpRequestWithBody generates requests for V1AuthSignUp with any type of body
+func NewV1AuthSignUpRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v1/auth/signup")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewV1AuthVerifyRequest generates requests for V1AuthVerify
+func NewV1AuthVerifyRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v1/auth/verify")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
 
 	return req, nil
 }
@@ -360,13 +668,32 @@ func WithBaseURL(baseURL string) ClientOption {
 
 // ClientWithResponsesInterface is the interface specification for the client with responses above.
 type ClientWithResponsesInterface interface {
-	// V1ListArticles request
-	V1ListArticlesWithResponse(ctx context.Context, params *V1ListArticlesParams, reqEditors ...RequestEditorFn) (*V1ListArticlesResponse, error)
+	// V1ArticleList request
+	V1ArticleListWithResponse(ctx context.Context, params *V1ArticleListParams, reqEditors ...RequestEditorFn) (*V1ArticleListResponse, error)
 
-	// V1ShareArticle request with any body
-	V1ShareArticleWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*V1ShareArticleResponse, error)
+	// V1ArticleShare request with any body
+	V1ArticleShareWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*V1ArticleShareResponse, error)
 
-	V1ShareArticleWithResponse(ctx context.Context, body V1ShareArticleJSONRequestBody, reqEditors ...RequestEditorFn) (*V1ShareArticleResponse, error)
+	V1ArticleShareWithResponse(ctx context.Context, body V1ArticleShareJSONRequestBody, reqEditors ...RequestEditorFn) (*V1ArticleShareResponse, error)
+
+	// V1AuthRefresh request
+	V1AuthRefreshWithResponse(ctx context.Context, params *V1AuthRefreshParams, reqEditors ...RequestEditorFn) (*V1AuthRefreshResponse, error)
+
+	// V1AuthSignIn request with any body
+	V1AuthSignInWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*V1AuthSignInResponse, error)
+
+	V1AuthSignInWithResponse(ctx context.Context, body V1AuthSignInJSONRequestBody, reqEditors ...RequestEditorFn) (*V1AuthSignInResponse, error)
+
+	// V1AuthSignOut request
+	V1AuthSignOutWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*V1AuthSignOutResponse, error)
+
+	// V1AuthSignUp request with any body
+	V1AuthSignUpWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*V1AuthSignUpResponse, error)
+
+	V1AuthSignUpWithResponse(ctx context.Context, body V1AuthSignUpJSONRequestBody, reqEditors ...RequestEditorFn) (*V1AuthSignUpResponse, error)
+
+	// V1AuthVerify request
+	V1AuthVerifyWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*V1AuthVerifyResponse, error)
 
 	// V1HealthAPI request
 	V1HealthAPIWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*V1HealthAPIResponse, error)
@@ -375,14 +702,14 @@ type ClientWithResponsesInterface interface {
 	V1HealthCoreWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*V1HealthCoreResponse, error)
 }
 
-type V1ListArticlesResponse struct {
+type V1ArticleListResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *ListArticleResponse
+	JSON200      *V1ArticleListResponseSchema
 }
 
 // Status returns HTTPResponse.Status
-func (r V1ListArticlesResponse) Status() string {
+func (r V1ArticleListResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -390,20 +717,20 @@ func (r V1ListArticlesResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r V1ListArticlesResponse) StatusCode() int {
+func (r V1ArticleListResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
 	return 0
 }
 
-type V1ShareArticleResponse struct {
+type V1ArticleShareResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 }
 
 // Status returns HTTPResponse.Status
-func (r V1ShareArticleResponse) Status() string {
+func (r V1ArticleShareResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -411,7 +738,113 @@ func (r V1ShareArticleResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r V1ShareArticleResponse) StatusCode() int {
+func (r V1ArticleShareResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type V1AuthRefreshResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+}
+
+// Status returns HTTPResponse.Status
+func (r V1AuthRefreshResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r V1AuthRefreshResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type V1AuthSignInResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+}
+
+// Status returns HTTPResponse.Status
+func (r V1AuthSignInResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r V1AuthSignInResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type V1AuthSignOutResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+}
+
+// Status returns HTTPResponse.Status
+func (r V1AuthSignOutResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r V1AuthSignOutResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type V1AuthSignUpResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+}
+
+// Status returns HTTPResponse.Status
+func (r V1AuthSignUpResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r V1AuthSignUpResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type V1AuthVerifyResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON401      *V1AuthVerifyUnauthorizedResponseSchema
+}
+
+// Status returns HTTPResponse.Status
+func (r V1AuthVerifyResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r V1AuthVerifyResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -460,30 +893,91 @@ func (r V1HealthCoreResponse) StatusCode() int {
 	return 0
 }
 
-// V1ListArticlesWithResponse request returning *V1ListArticlesResponse
-func (c *ClientWithResponses) V1ListArticlesWithResponse(ctx context.Context, params *V1ListArticlesParams, reqEditors ...RequestEditorFn) (*V1ListArticlesResponse, error) {
-	rsp, err := c.V1ListArticles(ctx, params, reqEditors...)
+// V1ArticleListWithResponse request returning *V1ArticleListResponse
+func (c *ClientWithResponses) V1ArticleListWithResponse(ctx context.Context, params *V1ArticleListParams, reqEditors ...RequestEditorFn) (*V1ArticleListResponse, error) {
+	rsp, err := c.V1ArticleList(ctx, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseV1ListArticlesResponse(rsp)
+	return ParseV1ArticleListResponse(rsp)
 }
 
-// V1ShareArticleWithBodyWithResponse request with arbitrary body returning *V1ShareArticleResponse
-func (c *ClientWithResponses) V1ShareArticleWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*V1ShareArticleResponse, error) {
-	rsp, err := c.V1ShareArticleWithBody(ctx, contentType, body, reqEditors...)
+// V1ArticleShareWithBodyWithResponse request with arbitrary body returning *V1ArticleShareResponse
+func (c *ClientWithResponses) V1ArticleShareWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*V1ArticleShareResponse, error) {
+	rsp, err := c.V1ArticleShareWithBody(ctx, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseV1ShareArticleResponse(rsp)
+	return ParseV1ArticleShareResponse(rsp)
 }
 
-func (c *ClientWithResponses) V1ShareArticleWithResponse(ctx context.Context, body V1ShareArticleJSONRequestBody, reqEditors ...RequestEditorFn) (*V1ShareArticleResponse, error) {
-	rsp, err := c.V1ShareArticle(ctx, body, reqEditors...)
+func (c *ClientWithResponses) V1ArticleShareWithResponse(ctx context.Context, body V1ArticleShareJSONRequestBody, reqEditors ...RequestEditorFn) (*V1ArticleShareResponse, error) {
+	rsp, err := c.V1ArticleShare(ctx, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseV1ShareArticleResponse(rsp)
+	return ParseV1ArticleShareResponse(rsp)
+}
+
+// V1AuthRefreshWithResponse request returning *V1AuthRefreshResponse
+func (c *ClientWithResponses) V1AuthRefreshWithResponse(ctx context.Context, params *V1AuthRefreshParams, reqEditors ...RequestEditorFn) (*V1AuthRefreshResponse, error) {
+	rsp, err := c.V1AuthRefresh(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseV1AuthRefreshResponse(rsp)
+}
+
+// V1AuthSignInWithBodyWithResponse request with arbitrary body returning *V1AuthSignInResponse
+func (c *ClientWithResponses) V1AuthSignInWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*V1AuthSignInResponse, error) {
+	rsp, err := c.V1AuthSignInWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseV1AuthSignInResponse(rsp)
+}
+
+func (c *ClientWithResponses) V1AuthSignInWithResponse(ctx context.Context, body V1AuthSignInJSONRequestBody, reqEditors ...RequestEditorFn) (*V1AuthSignInResponse, error) {
+	rsp, err := c.V1AuthSignIn(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseV1AuthSignInResponse(rsp)
+}
+
+// V1AuthSignOutWithResponse request returning *V1AuthSignOutResponse
+func (c *ClientWithResponses) V1AuthSignOutWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*V1AuthSignOutResponse, error) {
+	rsp, err := c.V1AuthSignOut(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseV1AuthSignOutResponse(rsp)
+}
+
+// V1AuthSignUpWithBodyWithResponse request with arbitrary body returning *V1AuthSignUpResponse
+func (c *ClientWithResponses) V1AuthSignUpWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*V1AuthSignUpResponse, error) {
+	rsp, err := c.V1AuthSignUpWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseV1AuthSignUpResponse(rsp)
+}
+
+func (c *ClientWithResponses) V1AuthSignUpWithResponse(ctx context.Context, body V1AuthSignUpJSONRequestBody, reqEditors ...RequestEditorFn) (*V1AuthSignUpResponse, error) {
+	rsp, err := c.V1AuthSignUp(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseV1AuthSignUpResponse(rsp)
+}
+
+// V1AuthVerifyWithResponse request returning *V1AuthVerifyResponse
+func (c *ClientWithResponses) V1AuthVerifyWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*V1AuthVerifyResponse, error) {
+	rsp, err := c.V1AuthVerify(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseV1AuthVerifyResponse(rsp)
 }
 
 // V1HealthAPIWithResponse request returning *V1HealthAPIResponse
@@ -504,22 +998,22 @@ func (c *ClientWithResponses) V1HealthCoreWithResponse(ctx context.Context, reqE
 	return ParseV1HealthCoreResponse(rsp)
 }
 
-// ParseV1ListArticlesResponse parses an HTTP response from a V1ListArticlesWithResponse call
-func ParseV1ListArticlesResponse(rsp *http.Response) (*V1ListArticlesResponse, error) {
+// ParseV1ArticleListResponse parses an HTTP response from a V1ArticleListWithResponse call
+func ParseV1ArticleListResponse(rsp *http.Response) (*V1ArticleListResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &V1ListArticlesResponse{
+	response := &V1ArticleListResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest ListArticleResponse
+		var dest V1ArticleListResponseSchema
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -530,17 +1024,107 @@ func ParseV1ListArticlesResponse(rsp *http.Response) (*V1ListArticlesResponse, e
 	return response, nil
 }
 
-// ParseV1ShareArticleResponse parses an HTTP response from a V1ShareArticleWithResponse call
-func ParseV1ShareArticleResponse(rsp *http.Response) (*V1ShareArticleResponse, error) {
+// ParseV1ArticleShareResponse parses an HTTP response from a V1ArticleShareWithResponse call
+func ParseV1ArticleShareResponse(rsp *http.Response) (*V1ArticleShareResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &V1ShareArticleResponse{
+	response := &V1ArticleShareResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
+	}
+
+	return response, nil
+}
+
+// ParseV1AuthRefreshResponse parses an HTTP response from a V1AuthRefreshWithResponse call
+func ParseV1AuthRefreshResponse(rsp *http.Response) (*V1AuthRefreshResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &V1AuthRefreshResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	return response, nil
+}
+
+// ParseV1AuthSignInResponse parses an HTTP response from a V1AuthSignInWithResponse call
+func ParseV1AuthSignInResponse(rsp *http.Response) (*V1AuthSignInResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &V1AuthSignInResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	return response, nil
+}
+
+// ParseV1AuthSignOutResponse parses an HTTP response from a V1AuthSignOutWithResponse call
+func ParseV1AuthSignOutResponse(rsp *http.Response) (*V1AuthSignOutResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &V1AuthSignOutResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	return response, nil
+}
+
+// ParseV1AuthSignUpResponse parses an HTTP response from a V1AuthSignUpWithResponse call
+func ParseV1AuthSignUpResponse(rsp *http.Response) (*V1AuthSignUpResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &V1AuthSignUpResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	return response, nil
+}
+
+// ParseV1AuthVerifyResponse parses an HTTP response from a V1AuthVerifyWithResponse call
+func ParseV1AuthVerifyResponse(rsp *http.Response) (*V1AuthVerifyResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &V1AuthVerifyResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest V1AuthVerifyUnauthorizedResponseSchema
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
 	}
 
 	return response, nil

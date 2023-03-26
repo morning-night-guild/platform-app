@@ -13,7 +13,9 @@ import (
 	"github.com/morning-night-guild/platform-app/pkg/openapi"
 )
 
-func (hand *Handler) V1ListArticles(w http.ResponseWriter, r *http.Request, params openapi.V1ListArticlesParams) {
+// 記事共有
+// (POST /v1/articles)
+func (hand *Handler) V1ArticleList(w http.ResponseWriter, r *http.Request, params openapi.V1ArticleListParams) {
 	ctx := r.Context()
 
 	pageToken := ""
@@ -46,12 +48,12 @@ func (hand *Handler) V1ListArticles(w http.ResponseWriter, r *http.Request, para
 		return
 	}
 
-	articles := make([]openapi.Article, len(res.Articles))
+	articles := make([]openapi.ArticleSchema, len(res.Articles))
 
 	for i, article := range res.Articles {
 		id := uuid.MustParse(article.ID.String())
 		tags := article.TagList.StringSlice()
-		articles[i] = openapi.Article{
+		articles[i] = openapi.ArticleSchema{
 			Id:          &id,
 			Title:       hand.StringToPointer(article.Title.String()),
 			Url:         hand.StringToPointer(article.URL.String()),
@@ -63,7 +65,7 @@ func (hand *Handler) V1ListArticles(w http.ResponseWriter, r *http.Request, para
 
 	next := token.CreateNextToken(size).String()
 
-	rs := openapi.ListArticleResponse{
+	rs := openapi.V1ArticleListResponseSchema{
 		Articles:      &articles,
 		NextPageToken: &next,
 	}
@@ -75,7 +77,9 @@ func (hand *Handler) V1ListArticles(w http.ResponseWriter, r *http.Request, para
 	}
 }
 
-func (hand *Handler) V1ShareArticle(w http.ResponseWriter, r *http.Request) {
+// 記事共有
+// (POST /v1/articles)
+func (hand *Handler) V1ArticleShare(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	key := r.Header.Get("Api-Key")
@@ -87,7 +91,7 @@ func (hand *Handler) V1ShareArticle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var body openapi.V1ShareArticleRequest
+	var body openapi.V1ArticleShareRequestSchema
 
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		log.GetLogCtx(ctx).Warn("failed to decode request body", log.ErrorField(err))

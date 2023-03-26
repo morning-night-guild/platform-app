@@ -26,7 +26,7 @@ func TestAPIV1ListArticles(t *testing.T) {
 
 	type args struct {
 		r      *http.Request
-		params openapi.V1ListArticlesParams
+		params openapi.V1ArticleListParams
 	}
 
 	next := "next"
@@ -55,7 +55,7 @@ func TestAPIV1ListArticles(t *testing.T) {
 				r: &http.Request{
 					Method: http.MethodGet,
 				},
-				params: openapi.V1ListArticlesParams{
+				params: openapi.V1ArticleListParams{
 					PageToken:   &next,
 					MaxPageSize: 5,
 				},
@@ -80,7 +80,7 @@ func TestAPIV1ListArticles(t *testing.T) {
 				r: &http.Request{
 					Method: http.MethodGet,
 				},
-				params: openapi.V1ListArticlesParams{
+				params: openapi.V1ArticleListParams{
 					PageToken:   &next,
 					MaxPageSize: -5,
 				},
@@ -104,7 +104,7 @@ func TestAPIV1ListArticles(t *testing.T) {
 				r: &http.Request{
 					Method: http.MethodGet,
 				},
-				params: openapi.V1ListArticlesParams{
+				params: openapi.V1ArticleListParams{
 					PageToken:   &next,
 					MaxPageSize: 5,
 				},
@@ -119,7 +119,7 @@ func TestAPIV1ListArticles(t *testing.T) {
 			t.Parallel()
 			rest := handler.New(tt.fields.key, tt.fields.article, tt.fields.health)
 			got := httptest.NewRecorder()
-			rest.V1ListArticles(got, tt.args.r, tt.args.params)
+			rest.V1ArticleList(got, tt.args.r, tt.args.params)
 			if got.Code != tt.status {
 				t.Errorf("V1ListArticles() = %v, want %v", got.Code, tt.status)
 			}
@@ -141,7 +141,7 @@ func TestAPIV1ShareArticle(t *testing.T) {
 	}
 
 	type args struct {
-		body openapi.V1ShareArticleJSONRequestBody
+		body openapi.V1ArticleShareRequestSchema
 		r    *http.Request
 	}
 
@@ -165,7 +165,7 @@ func TestAPIV1ShareArticle(t *testing.T) {
 				}),
 			},
 			args: args{
-				body: openapi.V1ShareArticleRequest{
+				body: openapi.V1ArticleShareRequestSchema{
 					Url:         "https://example.com",
 					Title:       toPointer("title"),
 					Description: toPointer("description"),
@@ -194,7 +194,7 @@ func TestAPIV1ShareArticle(t *testing.T) {
 				}),
 			},
 			args: args{
-				body: openapi.V1ShareArticleRequest{
+				body: openapi.V1ArticleShareRequestSchema{
 					Url:         "https://example.com",
 					Title:       nil,
 					Description: nil,
@@ -223,7 +223,7 @@ func TestAPIV1ShareArticle(t *testing.T) {
 				}),
 			},
 			args: args{
-				body: openapi.V1ShareArticleRequest{
+				body: openapi.V1ArticleShareRequestSchema{
 					Url:         "https://example.com",
 					Title:       toPointer("title"),
 					Description: toPointer("description"),
@@ -248,7 +248,7 @@ func TestAPIV1ShareArticle(t *testing.T) {
 			got := httptest.NewRecorder()
 			buf, _ := json.Marshal(tt.args.body)
 			tt.args.r.Body = io.NopCloser(bytes.NewBuffer(buf))
-			rest.V1ShareArticle(got, tt.args.r)
+			rest.V1ArticleShare(got, tt.args.r)
 			if got.Code != tt.status {
 				t.Errorf("V1ShareArticle() = %v, want %v", got.Code, tt.status)
 			}
