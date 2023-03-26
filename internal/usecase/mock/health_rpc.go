@@ -10,12 +10,12 @@ import (
 var _ rpc.Health = (*RPCHealth)(nil)
 
 type RPCHealth struct {
-	T   *testing.T
-	Err error
+	T        *testing.T
+	CheckErr error
 }
 
 func (rh *RPCHealth) Check(ctx context.Context) error {
 	rh.T.Helper()
 
-	return rh.Err
+	return rh.CheckErr
 }

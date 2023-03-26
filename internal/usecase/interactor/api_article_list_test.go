@@ -2,7 +2,7 @@ package interactor_test
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	"reflect"
 	"testing"
 
@@ -57,7 +57,6 @@ func TestAPIArticleListExecute(t *testing.T) {
 				articleRPC: &mock.ArticleRPC{
 					T:        t,
 					Articles: articles,
-					Err:      nil,
 				},
 			},
 			args: args{
@@ -76,9 +75,8 @@ func TestAPIArticleListExecute(t *testing.T) {
 			name: "rpcでerrorが発生して記事リストが取得できない",
 			fields: fields{
 				articleRPC: &mock.ArticleRPC{
-					T:        t,
-					Articles: nil,
-					Err:      errors.New("error"),
+					T:       t,
+					ListErr: fmt.Errorf("test"),
 				},
 			},
 			args: args{
@@ -88,9 +86,7 @@ func TestAPIArticleListExecute(t *testing.T) {
 					Size:  value.Size(2),
 				},
 			},
-			want: port.APIArticleListOutput{
-				Articles: nil,
-			},
+			want:    port.APIArticleListOutput{},
 			wantErr: true,
 		},
 	}

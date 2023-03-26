@@ -14,8 +14,10 @@ var _ repository.User = (*UserRepository)(nil)
 type UserRepository struct {
 	T          *testing.T
 	User       model.User
-	Err        error
+	SaveErr    error
 	SaveAssert func(t *testing.T, item model.User)
+	FindErr    error
+	FindAssert func(t *testing.T, id user.UserID)
 }
 
 func (ur *UserRepository) Save(ctx context.Context, item model.User) error {
@@ -23,7 +25,7 @@ func (ur *UserRepository) Save(ctx context.Context, item model.User) error {
 
 	ur.SaveAssert(ur.T, item)
 
-	return ur.Err
+	return ur.SaveErr
 }
 
 func (ur *UserRepository) Find(
@@ -32,5 +34,5 @@ func (ur *UserRepository) Find(
 ) (model.User, error) {
 	ur.T.Helper()
 
-	return ur.User, ur.Err
+	return ur.User, ur.FindErr
 }

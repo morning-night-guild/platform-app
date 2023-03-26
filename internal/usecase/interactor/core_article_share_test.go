@@ -2,7 +2,7 @@ package interactor_test
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	"reflect"
 	"testing"
 
@@ -38,8 +38,7 @@ func TestCoreArticleShareExecute(t *testing.T) {
 			name: "記事を共有できる",
 			fields: fields{
 				articleRepository: &mock.ArticleRepository{
-					T:   t,
-					Err: nil,
+					T: t,
 				},
 			},
 			args: args{
@@ -66,8 +65,8 @@ func TestCoreArticleShareExecute(t *testing.T) {
 			name: "記事Repositoryのerrorを握りつぶさない",
 			fields: fields{
 				articleRepository: &mock.ArticleRepository{
-					T:   t,
-					Err: errors.New("article repository error"),
+					T:       t,
+					SaveErr: fmt.Errorf("article repository error"),
 				},
 			},
 			args: args{

@@ -11,17 +11,17 @@ import (
 var _ port.APIAuthSignUp = (*APIAuthSignUp)(nil)
 
 type APIAuthSignUp struct {
-	authRPC rpc.Auth
 	userRPC rpc.User
+	authRPC rpc.Auth
 }
 
 func NewAPIAuthSignUp(
-	authRPC rpc.Auth,
 	userRPC rpc.User,
+	authRPC rpc.Auth,
 ) APIAuthSignUp {
 	return APIAuthSignUp{
-		authRPC: authRPC,
 		userRPC: userRPC,
+		authRPC: authRPC,
 	}
 }
 

@@ -16,7 +16,6 @@ var _ port.APIAuthSignIn = (*APIAuthSignIn)(nil)
 type APIAuthSignIn struct {
 	secret       auth.Secret
 	authRPC      rpc.Auth
-	userRPC      rpc.User
 	authCache    cache.Cache[model.Auth]
 	sessionCache cache.Cache[model.Session]
 }
@@ -24,14 +23,12 @@ type APIAuthSignIn struct {
 func NewAPIAuthSignIn(
 	secret auth.Secret,
 	authRPC rpc.Auth,
-	userRPC rpc.User,
 	authCache cache.Cache[model.Auth],
 	sessionCache cache.Cache[model.Session],
 ) APIAuthSignIn {
 	return APIAuthSignIn{
 		secret:       secret,
 		authRPC:      authRPC,
-		userRPC:      userRPC,
 		authCache:    authCache,
 		sessionCache: sessionCache,
 	}
@@ -54,7 +51,7 @@ func (aas *APIAuthSignIn) Execute(
 
 	at := model.IssueAuth(user.UserID)
 
-	if err := aas.authCache.Set(ctx, at.UserID.String(), at, model.DefaultSessionExpiresIn); err != nil {
+	if err := aas.authCache.Set(ctx, at.UserID.String(), at, model.DefaultAuthExpiresIn); err != nil {
 		if err := aas.sessionCache.Del(ctx, session.SessionID.String()); err != nil {
 			log.GetLogCtx(ctx).Warn("failed to delete session", log.ErrorField(err))
 		}

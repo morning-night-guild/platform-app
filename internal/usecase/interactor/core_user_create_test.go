@@ -42,6 +42,8 @@ func TestCoreUserCreateExecute(t *testing.T) {
 						UserID: user.UserID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
 					},
 					SaveAssert: func(t *testing.T, item model.User) {
+						t.Helper()
+
 						if _, err := uuid.Parse(item.UserID.String()); err != nil {
 							t.Errorf("UserRepository.Save() got = %v, err %v", item, err)
 						}
@@ -56,13 +58,15 @@ func TestCoreUserCreateExecute(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "UserReository.Save()でエラーが発生した場合はエラーを返す",
+			name: "UserRepository.Save()でエラーが発生した場合はエラーを返す",
 			fields: fields{
 				userRepository: &mock.UserRepository{
-					T:          t,
-					User:       model.User{},
-					Err:        fmt.Errorf("test"),
-					SaveAssert: func(t *testing.T, item model.User) {},
+					T:       t,
+					User:    model.User{},
+					SaveErr: fmt.Errorf("test"),
+					SaveAssert: func(t *testing.T, item model.User) {
+						t.Helper()
+					},
 				},
 			},
 			args: args{

@@ -16,7 +16,8 @@ type ArticleRPC struct {
 	T        *testing.T
 	ID       article.ID
 	Articles []model.Article
-	Err      error
+	ShareErr error
+	ListErr  error
 }
 
 func (ar *ArticleRPC) Share(
@@ -34,7 +35,7 @@ func (ar *ArticleRPC) Share(
 		Title:       title,
 		Description: description,
 		Thumbnail:   thumbnail,
-	}, ar.Err
+	}, ar.ShareErr
 }
 
 func (ar *ArticleRPC) List(
@@ -44,5 +45,5 @@ func (ar *ArticleRPC) List(
 ) ([]model.Article, error) {
 	ar.T.Helper()
 
-	return ar.Articles, ar.Err
+	return ar.Articles, ar.ListErr
 }

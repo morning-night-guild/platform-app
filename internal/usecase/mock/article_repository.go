@@ -12,15 +12,16 @@ import (
 var _ repository.Article = (*ArticleRepository)(nil)
 
 type ArticleRepository struct {
-	T        *testing.T
-	Articles []model.Article
-	Err      error
+	T          *testing.T
+	Articles   []model.Article
+	SaveErr    error
+	FindAllErr error
 }
 
 func (ar *ArticleRepository) Save(ctx context.Context, article model.Article) error {
 	ar.T.Helper()
 
-	return ar.Err
+	return ar.SaveErr
 }
 
 func (ar *ArticleRepository) FindAll(
@@ -30,5 +31,5 @@ func (ar *ArticleRepository) FindAll(
 ) ([]model.Article, error) {
 	ar.T.Helper()
 
-	return ar.Articles, ar.Err
+	return ar.Articles, ar.FindAllErr
 }

@@ -51,7 +51,6 @@ func TestCoreArticleListExecute(t *testing.T) {
 							TagList:     article.TagList{},
 						},
 					},
-					Err: nil,
 				},
 			},
 			args: args{

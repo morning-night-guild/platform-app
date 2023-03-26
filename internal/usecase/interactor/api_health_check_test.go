@@ -2,7 +2,7 @@ package interactor_test
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	"reflect"
 	"testing"
 
@@ -35,8 +35,7 @@ func TestAPIHealthCheckExecute(t *testing.T) {
 			name: "ヘルスチェックが成功する",
 			fields: fields{
 				healthRPC: &mock.RPCHealth{
-					T:   t,
-					Err: nil,
+					T: t,
 				},
 			},
 			args: args{
@@ -50,8 +49,8 @@ func TestAPIHealthCheckExecute(t *testing.T) {
 			name: "ヘルスチェックが失敗する",
 			fields: fields{
 				healthRPC: &mock.RPCHealth{
-					T:   t,
-					Err: errors.New("error"),
+					T:        t,
+					CheckErr: fmt.Errorf("test"),
 				},
 			},
 			args: args{

@@ -2,7 +2,7 @@ package interactor_test
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	"reflect"
 	"testing"
 
@@ -39,9 +39,8 @@ func TestAPIArticleShareExecute(t *testing.T) {
 			name: "記事が共有できる",
 			fields: fields{
 				articleRPC: &mock.ArticleRPC{
-					T:   t,
-					ID:  id,
-					Err: nil,
+					T:  t,
+					ID: id,
 				},
 			},
 			args: args{
@@ -68,9 +67,9 @@ func TestAPIArticleShareExecute(t *testing.T) {
 			name: "rpcでerrorが発生して記事の共有が共有できない",
 			fields: fields{
 				articleRPC: &mock.ArticleRPC{
-					T:   t,
-					ID:  id,
-					Err: errors.New("error"),
+					T:        t,
+					ID:       id,
+					ShareErr: fmt.Errorf("test"),
 				},
 			},
 			args: args{
