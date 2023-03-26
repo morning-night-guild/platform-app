@@ -105,6 +105,7 @@ func TestAPIAuthRefreshExecute(t *testing.T) {
 			_, err := aar.Execute(tt.args.ctx, tt.args.input)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("APIAuthRefresh.Execute() error = %v, wantErr %v", err, tt.wantErr)
+
 				return
 			}
 			// if !reflect.DeepEqual(got, tt.want) {
