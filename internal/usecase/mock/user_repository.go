@@ -17,7 +17,7 @@ type UserRepository struct {
 	Err  error
 }
 
-func (ur *UserRepository) Save(ctx context.Context, User model.User) error {
+func (ur *UserRepository) Save(ctx context.Context, item model.User) error {
 	ur.T.Helper()
 
 	return ur.Err
