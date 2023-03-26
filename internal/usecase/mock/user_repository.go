@@ -12,13 +12,16 @@ import (
 var _ repository.User = (*UserRepository)(nil)
 
 type UserRepository struct {
-	T    *testing.T
-	User model.User
-	Err  error
+	T          *testing.T
+	User       model.User
+	Err        error
+	SaveAssert func(t *testing.T, item model.User)
 }
 
 func (ur *UserRepository) Save(ctx context.Context, item model.User) error {
 	ur.T.Helper()
+
+	ur.SaveAssert(ur.T, item)
 
 	return ur.Err
 }
