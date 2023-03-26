@@ -21,7 +21,7 @@ type Cache[V any] struct {
 	DelAssert func(t *testing.T, key string)
 }
 
-func (cc *Cache[V]) Get(ctx context.Context, key string) (V, error) { //nolint:ireturn
+func (cc *Cache[V]) Get(ctx context.Context, key string) (V, error) {
 	cc.T.Helper()
 
 	cc.GetAssert(cc.T, key)
