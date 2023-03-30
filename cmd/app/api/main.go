@@ -6,6 +6,7 @@ import (
 	"github.com/morning-night-guild/platform-app/internal/domain/model/auth"
 	"github.com/morning-night-guild/platform-app/internal/driver/config"
 	"github.com/morning-night-guild/platform-app/internal/driver/connect"
+	"github.com/morning-night-guild/platform-app/internal/driver/cookie"
 	"github.com/morning-night-guild/platform-app/internal/driver/cors"
 	"github.com/morning-night-guild/platform-app/internal/driver/env"
 	"github.com/morning-night-guild/platform-app/internal/driver/firebase"
@@ -101,7 +102,7 @@ func main() {
 		authVerify,
 		authRefresh,
 		authGenerateCode,
-		nil,
+		cookie.New(),
 	)
 
 	article := handler.NewArticle(articleList, articleShare)

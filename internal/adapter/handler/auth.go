@@ -152,7 +152,7 @@ func (hdl *Handler) V1AuthSignIn(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.GetLogCtx(ctx).Warn("failed to sign in", log.ErrorField(err))
 
-		hdl.HandleErrorStatus(w, err)
+		w.WriteHeader(http.StatusUnauthorized)
 
 		return
 	}
