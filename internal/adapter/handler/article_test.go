@@ -12,6 +12,7 @@ import (
 	"github.com/morning-night-guild/platform-app/internal/adapter/handler"
 	"github.com/morning-night-guild/platform-app/internal/adapter/mock"
 	"github.com/morning-night-guild/platform-app/internal/domain/model"
+	"github.com/morning-night-guild/platform-app/internal/domain/model/auth"
 	"github.com/morning-night-guild/platform-app/pkg/openapi"
 )
 
@@ -20,6 +21,8 @@ func TestAPIV1ListArticles(t *testing.T) {
 
 	type fields struct {
 		key     string
+		secret  auth.Secret
+		auth    *handler.Auth
 		article *handler.Article
 		health  *handler.Health
 	}
@@ -117,7 +120,13 @@ func TestAPIV1ListArticles(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			rest := handler.New(tt.fields.key, tt.fields.article, tt.fields.health)
+			rest := handler.New(
+				tt.fields.key,
+				tt.fields.secret,
+				tt.fields.auth,
+				tt.fields.article,
+				tt.fields.health,
+			)
 			got := httptest.NewRecorder()
 			rest.V1ArticleList(got, tt.args.r, tt.args.params)
 			if got.Code != tt.status {
@@ -136,6 +145,8 @@ func TestAPIV1ShareArticle(t *testing.T) {
 
 	type fields struct {
 		key     string
+		secret  auth.Secret
+		auth    *handler.Auth
 		article *handler.Article
 		health  *handler.Health
 	}
@@ -244,7 +255,13 @@ func TestAPIV1ShareArticle(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			rest := handler.New(tt.fields.key, tt.fields.article, tt.fields.health)
+			rest := handler.New(
+				tt.fields.key,
+				tt.fields.secret,
+				tt.fields.auth,
+				tt.fields.article,
+				tt.fields.health,
+			)
 			got := httptest.NewRecorder()
 			buf, _ := json.Marshal(tt.args.body)
 			tt.args.r.Body = io.NopCloser(bytes.NewBuffer(buf))

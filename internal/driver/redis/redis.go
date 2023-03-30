@@ -1,6 +1,7 @@
 package redis
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/morning-night-guild/platform-app/internal/adapter/kvs"
@@ -17,8 +18,14 @@ func New[T any]() *Redis[T] {
 }
 
 func (rds *Redis[T]) KVS(
-	url string,
+	client *redis.Client,
 ) (*kvs.KVS[T], error) {
+	return &kvs.KVS[T]{
+		Client: client,
+	}, nil
+}
+
+func NewRedis(url string) (*redis.Client, error) {
 	var opt *redis.Options
 
 	if env.Get().IsProd() {
@@ -37,7 +44,11 @@ func (rds *Redis[T]) KVS(
 		}
 	}
 
-	return &kvs.KVS[T]{
-		Client: redis.NewClient(opt),
-	}, nil
+	client := redis.NewClient(opt)
+
+	if err := client.Ping(context.Background()).Err(); err != nil {
+		return nil, err
+	}
+
+	return client, nil
 }

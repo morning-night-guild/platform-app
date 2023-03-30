@@ -21,8 +21,8 @@ type APIAuthVerify struct {
 func NewAPIAuthVerify(
 	secret auth.Secret,
 	authCache cache.Cache[model.Auth],
-) APIAuthVerify {
-	return APIAuthVerify{
+) *APIAuthVerify {
+	return &APIAuthVerify{
 		secret:    secret,
 		authCache: authCache,
 	}

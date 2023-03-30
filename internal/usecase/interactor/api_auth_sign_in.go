@@ -25,8 +25,8 @@ func NewAPIAuthSignIn(
 	authRPC rpc.Auth,
 	authCache cache.Cache[model.Auth],
 	sessionCache cache.Cache[model.Session],
-) APIAuthSignIn {
-	return APIAuthSignIn{
+) *APIAuthSignIn {
+	return &APIAuthSignIn{
 		secret:       secret,
 		authRPC:      authRPC,
 		authCache:    authCache,

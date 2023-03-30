@@ -8,13 +8,19 @@ import (
 )
 
 type APIConfig struct {
-	Port             string
-	APIKey           string
-	AppCoreURL       string
-	NewRelicAppName  string
-	NewRelicLicense  string
-	CORSAllowOrigins string
-	CORSDebugEnable  string
+	Port                string
+	APIKey              string
+	TokenSecret         string
+	CookieDomain        string
+	AppCoreURL          string
+	NewRelicAppName     string
+	NewRelicLicense     string
+	CORSAllowOrigins    string
+	CORSDebugEnable     string
+	RedisURL            string
+	FirebaseSecret      string
+	FirebaseAPIEndpoint string
+	FirebaseAPIKey      string
 }
 
 func NewAPI() APIConfig {
@@ -25,13 +31,19 @@ func NewAPI() APIConfig {
 	}
 
 	conf := APIConfig{
-		Port:             port,
-		APIKey:           os.Getenv("API_KEY"),
-		AppCoreURL:       os.Getenv("APP_CORE_URL"),
-		NewRelicAppName:  os.Getenv("NEWRELIC_APP_NAME"),
-		NewRelicLicense:  os.Getenv("NEWRELIC_LICENSE"),
-		CORSAllowOrigins: os.Getenv("CORS_ALLOW_ORIGINS"),
-		CORSDebugEnable:  os.Getenv("CORS_DEBUG_ENABLE"),
+		Port:                port,
+		APIKey:              os.Getenv("API_KEY"),
+		TokenSecret:         os.Getenv("TOKEN_SECRET"),
+		CookieDomain:        os.Getenv("COOKIE_DOMAIN"),
+		AppCoreURL:          os.Getenv("APP_CORE_URL"),
+		NewRelicAppName:     os.Getenv("NEWRELIC_APP_NAME"),
+		NewRelicLicense:     os.Getenv("NEWRELIC_LICENSE"),
+		CORSAllowOrigins:    os.Getenv("CORS_ALLOW_ORIGINS"),
+		CORSDebugEnable:     os.Getenv("CORS_DEBUG_ENABLE"),
+		RedisURL:            os.Getenv("REDIS_URL"),
+		FirebaseSecret:      os.Getenv("FIREBASE_SECRET"),
+		FirebaseAPIEndpoint: os.Getenv("FIREBASE_API_ENDPOINT"),
+		FirebaseAPIKey:      os.Getenv("FIREBASE_API_KEY"),
 	}
 
 	log.Log().Sugar().Infof("config: %+v", conf)

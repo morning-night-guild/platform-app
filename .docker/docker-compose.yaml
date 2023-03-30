@@ -1,4 +1,20 @@
 services:
+  redis:
+    container_name: ${APP_NAME}-redis
+    image: redis:7.0.10-alpine
+    ports:
+      - ${REDIS_PORT}:6379
+    restart: always
+  firebase:
+    container_name: ${APP_NAME}-firebase
+    build:
+      context: .
+      dockerfile: firebase/Dockerfile
+    ports:
+      - ${FIREBASE_PORT}:9099
+    volumes:
+      - ./firebase:/firebase
+    restart: always
   postgres-primary:
     container_name: ${APP_NAME}-postgres-primary
     image: postgres:14.7-alpine
@@ -84,8 +100,15 @@ services:
       NEWRELIC_LICENSE: ${NEWRELIC_LICENSE}
       CORS_ALLOW_ORIGINS: http://localhost:5173
       CORS_DEBUG_ENABLE: false
+      REDIS_URL: redis:6379
+      FIREBASE_SECRET: '{"type": "service_account","project_id": "emulator"}'
+      FIREBASE_API_ENDPOINT: http://firebase:9099/identitytoolkit.googleapis.com
+      FIREBASE_API_KEY: emulator
+      FIREBASE_AUTH_EMULATOR_HOST: firebase:9099
     volumes:
       - ../:/app
     restart: always
     depends_on:
       - app-core
+      - redis
+      - firebase

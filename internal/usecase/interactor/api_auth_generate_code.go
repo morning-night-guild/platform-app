@@ -19,8 +19,8 @@ type APIAuthGenerateCode struct {
 func NewAPIAuthGenerateCode(
 	secret auth.Secret,
 	codeCache cache.Cache[model.Code],
-) APIAuthGenerateCode {
-	return APIAuthGenerateCode{
+) *APIAuthGenerateCode {
+	return &APIAuthGenerateCode{
 		secret:    secret,
 		codeCache: codeCache,
 	}

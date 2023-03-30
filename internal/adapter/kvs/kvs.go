@@ -14,7 +14,7 @@ import (
 const prefix = "%s:%s"
 
 type Factory[T any] interface {
-	KVS(string) (*KVS[T], error)
+	KVS(*redis.Client) (*KVS[T], error)
 }
 
 var _ cache.Cache[any] = (*KVS[any])(nil)

@@ -22,8 +22,8 @@ func NewAPIAuthSignOut(
 	secret auth.Secret,
 	authCache cache.Cache[model.Auth],
 	sessionCache cache.Cache[model.Session],
-) APIAuthSignOut {
-	return APIAuthSignOut{
+) *APIAuthSignOut {
+	return &APIAuthSignOut{
 		secret:       secret,
 		authCache:    authCache,
 		sessionCache: sessionCache,

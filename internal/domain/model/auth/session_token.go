@@ -77,3 +77,7 @@ func (st SessionToken) GetID(secret Secret) SessionID {
 
 	return sid
 }
+
+func (st SessionToken) ToSecret(secret Secret) Secret {
+	return st.GetID(secret).ToSecret()
+}

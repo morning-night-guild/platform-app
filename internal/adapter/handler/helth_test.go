@@ -9,6 +9,7 @@ import (
 	"github.com/morning-night-guild/platform-app/internal/adapter/handler"
 	"github.com/morning-night-guild/platform-app/internal/adapter/mock"
 	"github.com/morning-night-guild/platform-app/internal/domain/model"
+	"github.com/morning-night-guild/platform-app/internal/domain/model/auth"
 )
 
 func TestAPIV1HealthAPI(t *testing.T) {
@@ -16,6 +17,8 @@ func TestAPIV1HealthAPI(t *testing.T) {
 
 	type fields struct {
 		key     string
+		secret  auth.Secret
+		auth    *handler.Auth
 		article *handler.Article
 		health  *handler.Health
 	}
@@ -57,7 +60,13 @@ func TestAPIV1HealthAPI(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			rest := handler.New(tt.fields.key, tt.fields.article, tt.fields.health)
+			rest := handler.New(
+				tt.fields.key,
+				tt.fields.secret,
+				tt.fields.auth,
+				tt.fields.article,
+				tt.fields.health,
+			)
 			got := httptest.NewRecorder()
 			rest.V1HealthAPI(got, tt.args.r)
 			if got.Code != tt.status {
@@ -72,6 +81,8 @@ func TestAPIV1HealthCore(t *testing.T) {
 
 	type fields struct {
 		key     string
+		secret  auth.Secret
+		auth    *handler.Auth
 		article *handler.Article
 		health  *handler.Health
 	}
@@ -135,7 +146,13 @@ func TestAPIV1HealthCore(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			rest := handler.New(tt.fields.key, tt.fields.article, tt.fields.health)
+			rest := handler.New(
+				tt.fields.key,
+				tt.fields.secret,
+				tt.fields.auth,
+				tt.fields.article,
+				tt.fields.health,
+			)
 			got := httptest.NewRecorder()
 			rest.V1HealthCore(got, tt.args.r)
 			if got.Code != tt.status {

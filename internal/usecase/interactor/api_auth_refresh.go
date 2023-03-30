@@ -23,8 +23,8 @@ func NewAPIAuthRefresh(
 	secret auth.Secret,
 	codeCache cache.Cache[model.Code],
 	sessionCache cache.Cache[model.Session],
-) APIAuthRefresh {
-	return APIAuthRefresh{
+) *APIAuthRefresh {
+	return &APIAuthRefresh{
 		secret:       secret,
 		codeCache:    codeCache,
 		sessionCache: sessionCache,

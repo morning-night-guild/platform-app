@@ -8,6 +8,7 @@ import (
 
 	"github.com/bufbuild/connect-go"
 	"github.com/morning-night-guild/platform-app/internal/adapter/handler"
+	"github.com/morning-night-guild/platform-app/internal/domain/model/auth"
 )
 
 func TestAPIHandleConnectError(t *testing.T) {
@@ -44,7 +45,7 @@ func TestAPIHandleConnectError(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			rest := handler.New("", nil, nil)
+			rest := handler.New("", auth.Secret(""), nil, nil, nil)
 			if got := rest.HandleConnectError(tt.args.ctx, tt.args.err); got != tt.want {
 				t.Errorf("API.HandleConnectError() = %v, want %v", got, tt.want)
 			}
@@ -86,7 +87,7 @@ func TestAPIPointerToString(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			rest := handler.New("", nil, nil)
+			rest := handler.New("", auth.Secret(""), nil, nil, nil)
 			if got := rest.PointerToString(tt.args.s); got != tt.want {
 				t.Errorf("API.PointerToString() = %v, want %v", got, tt.want)
 			}

@@ -18,8 +18,8 @@ type APIAuthSignUp struct {
 func NewAPIAuthSignUp(
 	userRPC rpc.User,
 	authRPC rpc.Auth,
-) APIAuthSignUp {
-	return APIAuthSignUp{
+) *APIAuthSignUp {
+	return &APIAuthSignUp{
 		userRPC: userRPC,
 		authRPC: authRPC,
 	}
