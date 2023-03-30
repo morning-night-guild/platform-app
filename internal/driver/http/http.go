@@ -11,6 +11,7 @@ import (
 	"github.com/morning-night-guild/platform-app/internal/driver/router"
 	"github.com/morning-night-guild/platform-app/pkg/connect/article/v1/articlev1connect"
 	"github.com/morning-night-guild/platform-app/pkg/connect/health/v1/healthv1connect"
+	"github.com/morning-night-guild/platform-app/pkg/connect/user/v1/userv1connect"
 	"github.com/morning-night-guild/platform-app/pkg/openapi"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
@@ -20,6 +21,7 @@ func NewConnect(
 	interceptor connect.UnaryInterceptorFunc,
 	nr *newrelic.NewRelic,
 	article *controller.Article,
+	user *controller.User,
 	health *controller.Health,
 ) http.Handler {
 	ic := connect.WithInterceptors(interceptor)
@@ -27,6 +29,7 @@ func NewConnect(
 	routes := []router.Route{
 		router.NewRoute(articlev1connect.NewArticleServiceHandler(article, ic)),
 		router.NewRoute(healthv1connect.NewHealthServiceHandler(health, ic)),
+		router.NewRoute(userv1connect.NewUserServiceHandler(user, ic)),
 	}
 
 	if nr != nil {

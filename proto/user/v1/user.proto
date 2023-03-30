@@ -31,4 +31,6 @@ message UpdateRequest {
 }
 
 // 更新レスポンス
-message UpdateResponse {}
+message UpdateResponse {
+  User user = 1;
+}

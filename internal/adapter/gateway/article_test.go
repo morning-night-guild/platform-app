@@ -2,7 +2,6 @@ package gateway_test
 
 import (
 	"context"
-	"fmt"
 	"reflect"
 	"testing"
 
@@ -12,40 +11,8 @@ import (
 	"github.com/morning-night-guild/platform-app/internal/domain/model"
 	"github.com/morning-night-guild/platform-app/internal/domain/model/article"
 	"github.com/morning-night-guild/platform-app/internal/domain/value"
-	"github.com/morning-night-guild/platform-app/pkg/ent"
 	"github.com/morning-night-guild/platform-app/pkg/ent/articletag"
-	"github.com/morning-night-guild/platform-app/pkg/ent/enttest"
 )
-
-var _ gateway.RDBFactory = (*RDBClientMock)(nil)
-
-type RDBClientMock struct {
-	t *testing.T
-}
-
-func NewRDBClientMock(t *testing.T) *RDBClientMock {
-	t.Helper()
-
-	return &RDBClientMock{
-		t: t,
-	}
-}
-
-func (rm *RDBClientMock) Of(dsn string) (*gateway.RDB, error) {
-	rm.t.Helper()
-
-	opts := []enttest.Option{
-		enttest.WithOptions(ent.Log(rm.t.Log)),
-	}
-
-	dataSourceName := fmt.Sprintf("file:%s?mode=memory&cache=shared&_fk=1", dsn)
-
-	db := enttest.Open(rm.t, "sqlite3", dataSourceName, opts...)
-
-	return &gateway.RDB{
-		Client: db,
-	}, nil
-}
 
 func TestCoreArticleSave(t *testing.T) {
 	t.Parallel()
@@ -53,16 +20,16 @@ func TestCoreArticleSave(t *testing.T) {
 	t.Run("記事を保存できる", func(t *testing.T) {
 		t.Parallel()
 
-		rdb, err := NewRDBClientMock(t).Of(uuid.NewString())
+		rdb, err := gateway.NewRDBClientMock(t).Of(uuid.NewString())
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		ag := gateway.NewArticle(rdb)
+		articleGateway := gateway.NewArticle(rdb)
 
 		ctx := context.Background()
 
-		ca := model.CreateArticle(
+		art := model.CreateArticle(
 			article.URL("https://example.com"),
 			article.Title("title"),
 			article.Description("description"),
@@ -70,11 +37,11 @@ func TestCoreArticleSave(t *testing.T) {
 			article.TagList{},
 		)
 
-		if err := ag.Save(ctx, ca); err != nil {
+		if err := articleGateway.Save(ctx, art); err != nil {
 			t.Error(err)
 		}
 
-		found, err := rdb.Article.Get(ctx, ca.ID.Value())
+		found, err := rdb.Article.Get(ctx, art.ID.Value())
 		if err != nil {
 			t.Error(err)
 		}
@@ -88,12 +55,12 @@ func TestCoreArticleSave(t *testing.T) {
 			article.TagList{},
 		)
 
-		if !reflect.DeepEqual(got, ca) {
-			t.Errorf("NewArticle() = %v, want %v", got, ca)
+		if !reflect.DeepEqual(got, art) {
+			t.Errorf("NewArticle() = %v, want %v", got, art)
 		}
 
 		// 同じURLを保存してもerrorにならないことを確認
-		if err := ag.Save(ctx, model.CreateArticle(
+		if err := articleGateway.Save(ctx, model.CreateArticle(
 			article.URL("https://example.com"),
 			article.Title("title"),
 			article.Description("description"),
@@ -107,16 +74,16 @@ func TestCoreArticleSave(t *testing.T) {
 	t.Run("タグを含む記事が保存できる", func(t *testing.T) {
 		t.Parallel()
 
-		rdb, err := NewRDBClientMock(t).Of(uuid.NewString())
+		rdb, err := gateway.NewRDBClientMock(t).Of(uuid.NewString())
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		ag := gateway.NewArticle(rdb)
+		articleGateway := gateway.NewArticle(rdb)
 
 		ctx := context.Background()
 
-		if err := ag.Save(ctx, model.CreateArticle(
+		if err := articleGateway.Save(ctx, model.CreateArticle(
 			article.URL("https://example.com"),
 			article.Title("title"),
 			article.Description("description"),
@@ -136,12 +103,12 @@ func TestCoreArticleSave(t *testing.T) {
 	t.Run("既にある記事に既にあるタグを保存しようとしてもエラーにならない", func(t *testing.T) {
 		t.Parallel()
 
-		rdb, err := NewRDBClientMock(t).Of(uuid.NewString())
+		rdb, err := gateway.NewRDBClientMock(t).Of(uuid.NewString())
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		ag := gateway.NewArticle(rdb)
+		articleGateway := gateway.NewArticle(rdb)
 
 		ctx := context.Background()
 
@@ -167,11 +134,11 @@ func TestCoreArticleSave(t *testing.T) {
 			}),
 		)
 
-		if err := ag.Save(ctx, a1); err != nil {
+		if err := articleGateway.Save(ctx, a1); err != nil {
 			t.Fatal(err)
 		}
 
-		if err := ag.Save(ctx, a2); err != nil {
+		if err := articleGateway.Save(ctx, a2); err != nil {
 			t.Fatal(err)
 		}
 
@@ -199,12 +166,12 @@ func TestArticleList(t *testing.T) {
 	t.Run("記事を一覧できる（単数）", func(t *testing.T) {
 		t.Parallel()
 
-		rdb, err := NewRDBClientMock(t).Of(uuid.NewString())
+		rdb, err := gateway.NewRDBClientMock(t).Of(uuid.NewString())
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		ag := gateway.NewArticle(rdb)
+		articleGateway := gateway.NewArticle(rdb)
 
 		ctx := context.Background()
 
@@ -219,7 +186,7 @@ func TestArticleList(t *testing.T) {
 			}),
 		)
 
-		if err := ag.Save(ctx, item1); err != nil {
+		if err := articleGateway.Save(ctx, item1); err != nil {
 			t.Fatal(err)
 		}
 
@@ -234,11 +201,11 @@ func TestArticleList(t *testing.T) {
 			}),
 		)
 
-		if err := ag.Save(ctx, item2); err != nil {
+		if err := articleGateway.Save(ctx, item2); err != nil {
 			t.Fatal(err)
 		}
 
-		got, err := ag.FindAll(ctx, value.Index(0), value.Size(1))
+		got, err := articleGateway.FindAll(ctx, value.Index(0), value.Size(1))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -253,12 +220,12 @@ func TestArticleList(t *testing.T) {
 	t.Run("オフセットを指定して記事を一覧できる（単数）", func(t *testing.T) {
 		t.Parallel()
 
-		rdb, err := NewRDBClientMock(t).Of(uuid.NewString())
+		rdb, err := gateway.NewRDBClientMock(t).Of(uuid.NewString())
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		ag := gateway.NewArticle(rdb)
+		articleGateway := gateway.NewArticle(rdb)
 
 		ctx := context.Background()
 
@@ -273,7 +240,7 @@ func TestArticleList(t *testing.T) {
 			}),
 		)
 
-		if err := ag.Save(ctx, item1); err != nil {
+		if err := articleGateway.Save(ctx, item1); err != nil {
 			t.Fatal(err)
 		}
 
@@ -288,11 +255,11 @@ func TestArticleList(t *testing.T) {
 			}),
 		)
 
-		if err := ag.Save(ctx, item2); err != nil {
+		if err := articleGateway.Save(ctx, item2); err != nil {
 			t.Fatal(err)
 		}
 
-		got, err := ag.FindAll(ctx, value.Index(1), value.Size(1))
+		got, err := articleGateway.FindAll(ctx, value.Index(1), value.Size(1))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -307,12 +274,12 @@ func TestArticleList(t *testing.T) {
 	t.Run("記事を一覧できる（複数）", func(t *testing.T) {
 		t.Parallel()
 
-		rdb, err := NewRDBClientMock(t).Of(uuid.NewString())
+		rdb, err := gateway.NewRDBClientMock(t).Of(uuid.NewString())
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		ag := gateway.NewArticle(rdb)
+		articleGateway := gateway.NewArticle(rdb)
 
 		ctx := context.Background()
 
@@ -327,7 +294,7 @@ func TestArticleList(t *testing.T) {
 			}),
 		)
 
-		if err := ag.Save(ctx, item1); err != nil {
+		if err := articleGateway.Save(ctx, item1); err != nil {
 			t.Fatal(err)
 		}
 
@@ -342,11 +309,11 @@ func TestArticleList(t *testing.T) {
 			}),
 		)
 
-		if err := ag.Save(ctx, item2); err != nil {
+		if err := articleGateway.Save(ctx, item2); err != nil {
 			t.Fatal(err)
 		}
 
-		got, err := ag.FindAll(ctx, value.Index(0), value.Size(2))
+		got, err := articleGateway.FindAll(ctx, value.Index(0), value.Size(2))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -361,12 +328,12 @@ func TestArticleList(t *testing.T) {
 	t.Run("保存されている記事数を超えるサイズを指定して記事を一覧できる", func(t *testing.T) {
 		t.Parallel()
 
-		rdb, err := NewRDBClientMock(t).Of(uuid.NewString())
+		rdb, err := gateway.NewRDBClientMock(t).Of(uuid.NewString())
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		ag := gateway.NewArticle(rdb)
+		articleGateway := gateway.NewArticle(rdb)
 
 		ctx := context.Background()
 
@@ -381,11 +348,11 @@ func TestArticleList(t *testing.T) {
 			}),
 		)
 
-		if err := ag.Save(ctx, item); err != nil {
+		if err := articleGateway.Save(ctx, item); err != nil {
 			t.Fatal(err)
 		}
 
-		got, err := ag.FindAll(ctx, value.Index(0), value.Size(2))
+		got, err := articleGateway.FindAll(ctx, value.Index(0), value.Size(2))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -400,12 +367,12 @@ func TestArticleList(t *testing.T) {
 	t.Run("保存されている記事数を超えてインデックスを指定して記事を一覧できる", func(t *testing.T) {
 		t.Parallel()
 
-		rdb, err := NewRDBClientMock(t).Of(uuid.NewString())
+		rdb, err := gateway.NewRDBClientMock(t).Of(uuid.NewString())
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		ag := gateway.NewArticle(rdb)
+		articleGateway := gateway.NewArticle(rdb)
 
 		ctx := context.Background()
 
@@ -420,11 +387,11 @@ func TestArticleList(t *testing.T) {
 			}),
 		)
 
-		if err := ag.Save(ctx, item); err != nil {
+		if err := articleGateway.Save(ctx, item); err != nil {
 			t.Fatal(err)
 		}
 
-		got, err := ag.FindAll(ctx, value.Index(2), value.Size(2))
+		got, err := articleGateway.FindAll(ctx, value.Index(2), value.Size(2))
 		if err != nil {
 			t.Fatal(err)
 		}

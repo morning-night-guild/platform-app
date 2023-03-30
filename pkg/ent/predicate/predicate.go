@@ -11,3 +11,6 @@ type Article func(*sql.Selector)
 
 // ArticleTag is the predicate function for articletag builders.
 type ArticleTag func(*sql.Selector)
+
+// User is the predicate function for user builders.
+type User func(*sql.Selector)

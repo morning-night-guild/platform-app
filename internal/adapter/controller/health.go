@@ -5,7 +5,10 @@ import (
 
 	"github.com/bufbuild/connect-go"
 	healthv1 "github.com/morning-night-guild/platform-app/pkg/connect/health/v1"
+	"github.com/morning-night-guild/platform-app/pkg/connect/health/v1/healthv1connect"
 )
+
+var _ healthv1connect.HealthServiceHandler = (*Health)(nil)
 
 // Health.
 type Health struct{}

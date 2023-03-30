@@ -8,7 +8,10 @@ import (
 	"github.com/morning-night-guild/platform-app/internal/domain/value"
 	"github.com/morning-night-guild/platform-app/internal/usecase/port"
 	articlev1 "github.com/morning-night-guild/platform-app/pkg/connect/article/v1"
+	"github.com/morning-night-guild/platform-app/pkg/connect/article/v1/articlev1connect"
 )
+
+var _ articlev1connect.ArticleServiceHandler = (*Article)(nil)
 
 // Article.
 type Article struct {

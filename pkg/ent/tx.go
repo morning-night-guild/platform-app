@@ -16,6 +16,8 @@ type Tx struct {
 	Article *ArticleClient
 	// ArticleTag is the client for interacting with the ArticleTag builders.
 	ArticleTag *ArticleTagClient
+	// User is the client for interacting with the User builders.
+	User *UserClient
 
 	// lazily loaded.
 	client     *Client
@@ -149,6 +151,7 @@ func (tx *Tx) Client() *Client {
 func (tx *Tx) init() {
 	tx.Article = NewArticleClient(tx.config)
 	tx.ArticleTag = NewArticleTagClient(tx.config)
+	tx.User = NewUserClient(tx.config)
 }
 
 // txDriver wraps the given dialect.Tx with a nop dialect.Driver implementation.

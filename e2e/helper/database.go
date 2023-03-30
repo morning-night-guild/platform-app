@@ -10,6 +10,7 @@ import (
 	_ "github.com/lib/pq"
 	"github.com/morning-night-guild/platform-app/pkg/ent"
 	"github.com/morning-night-guild/platform-app/pkg/ent/article"
+	"github.com/morning-night-guild/platform-app/pkg/ent/user"
 )
 
 type Database struct {
@@ -90,6 +91,14 @@ func (db *Database) DeleteArticleByTitle(title string) {
 	db.T.Helper()
 
 	if _, err := db.client.Article.Delete().Where(article.TitleEQ(title)).Exec(context.Background()); err != nil {
+		db.T.Error(err)
+	}
+}
+
+func (db *Database) DeleteUser(uid uuid.UUID) {
+	db.T.Helper()
+
+	if _, err := db.client.User.Delete().Where(user.IDEQ(uid)).Exec(context.Background()); err != nil {
 		db.T.Error(err)
 	}
 }
