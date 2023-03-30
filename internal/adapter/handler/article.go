@@ -14,7 +14,7 @@ import (
 )
 
 // 記事共有
-// (POST /v1/articles)
+// (POST /v1/articles).
 func (hand *Handler) V1ArticleList(w http.ResponseWriter, r *http.Request, params openapi.V1ArticleListParams) {
 	ctx := r.Context()
 
@@ -78,7 +78,7 @@ func (hand *Handler) V1ArticleList(w http.ResponseWriter, r *http.Request, param
 }
 
 // 記事共有
-// (POST /v1/articles)
+// (POST /v1/articles).
 func (hand *Handler) V1ArticleShare(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
