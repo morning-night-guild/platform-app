@@ -8,14 +8,14 @@ import (
 )
 
 // apiヘルスチェック
-// (GET /v1/health/api)
+// (GET /v1/health/api).
 func (hand *Handler) V1HealthAPI(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write([]byte("OK"))
 }
 
 // coreヘルスチェック
-// (GET /v1/health/core)
+// (GET /v1/health/core).
 func (hand *Handler) V1HealthCore(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
