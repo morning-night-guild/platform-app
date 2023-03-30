@@ -34,6 +34,9 @@ linters:
     - wastedassign
 issues:
   exclude-rules:
+    - path: kvs
+      linters:
+        - ireturn
     - path: mock
       linters:
         - ireturn

@@ -1,4 +1,4 @@
-package interactor
+package interactor_test
 
 import (
 	"context"
@@ -10,6 +10,7 @@ import (
 	"github.com/morning-night-guild/platform-app/internal/domain/model"
 	"github.com/morning-night-guild/platform-app/internal/domain/model/user"
 	"github.com/morning-night-guild/platform-app/internal/domain/repository"
+	"github.com/morning-night-guild/platform-app/internal/usecase/interactor"
 	"github.com/morning-night-guild/platform-app/internal/usecase/mock"
 	"github.com/morning-night-guild/platform-app/internal/usecase/port"
 )
@@ -131,12 +132,13 @@ func TestCoreUserUpdateExecute(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			cuu := &CoreUserUpdate{
-				userRepository: tt.fields.userRepository,
-			}
+			cuu := interactor.NewCoreUserUpdate(
+				tt.fields.userRepository,
+			)
 			got, err := cuu.Execute(tt.args.ctx, tt.args.input)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("CoreUserUpdate.Execute() error = %v, wantErr %v", err, tt.wantErr)
+
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {

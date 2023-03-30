@@ -24,7 +24,7 @@ type KVS[T any] struct {
 	Client *redis.Client
 }
 
-func (kvs *KVS[T]) Get(ctx context.Context, key string) (T, error) { //nolint:ireturn
+func (kvs *KVS[T]) Get(ctx context.Context, key string) (T, error) {
 	var value T
 
 	key = fmt.Sprintf(prefix, kvs.Prefix, key)
