@@ -29,7 +29,7 @@ func TestAppCoreE2EUserUpdate(t *testing.T) {
 
 		res1, err := client.User.Create(context.Background(), connect.NewRequest(req1))
 		if err != nil {
-			t.Errorf("failed to health check: %s", err)
+			t.Errorf("failed to create user: %s", err)
 		}
 
 		req2 := &userv1.UpdateRequest{
@@ -38,9 +38,37 @@ func TestAppCoreE2EUserUpdate(t *testing.T) {
 
 		res2, err := client.User.Update(context.Background(), connect.NewRequest(req2))
 		if err != nil {
-			t.Errorf("failed to health check: %s", err)
+			t.Errorf("failed to update user: %s", err)
 		}
 
 		db.DeleteUser(uuid.MustParse(res2.Msg.User.UserId))
+	})
+
+	t.Run("存在しないユーザーであるため更新に失敗する", func(t *testing.T) {
+		t.Parallel()
+
+		client := helper.NewConnectClient(t, http.DefaultClient, url)
+
+		req := &userv1.UpdateRequest{
+			UserId: uuid.New().String(),
+		}
+
+		if _, err := client.User.Update(context.Background(), connect.NewRequest(req)); err == nil {
+			t.Errorf("success to update user: %s", err)
+		}
+	})
+
+	t.Run("不正なIDであるため更新に失敗する", func(t *testing.T) {
+		t.Parallel()
+
+		client := helper.NewConnectClient(t, http.DefaultClient, url)
+
+		req := &userv1.UpdateRequest{
+			UserId: "uid",
+		}
+
+		if _, err := client.User.Update(context.Background(), connect.NewRequest(req)); err == nil {
+			t.Errorf("success to update user: %s", err)
+		}
 	})
 }
