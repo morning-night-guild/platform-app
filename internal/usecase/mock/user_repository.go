@@ -34,5 +34,7 @@ func (ur *UserRepository) Find(
 ) (model.User, error) {
 	ur.T.Helper()
 
+	ur.User.UserID = id
+
 	return ur.User, ur.FindErr
 }
