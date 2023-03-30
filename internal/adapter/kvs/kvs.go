@@ -21,7 +21,7 @@ var _ cache.Cache[any] = (*KVS[any])(nil)
 
 type KVS[T any] struct {
 	Prefix string
-	Client *redis.Client //nolint:ireturn
+	Client *redis.Client
 }
 
 func (kvs *KVS[T]) Get(ctx context.Context, key string) (T, error) { //nolint:ireturn
