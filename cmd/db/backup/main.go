@@ -49,12 +49,18 @@ func main() {
 }
 
 type Entity struct {
+	Users       []*ent.User
 	Articles    []*ent.Article
 	ArticleTags []*ent.ArticleTag
 }
 
 func Export(ctx context.Context, client *gateway.RDB) (Entity, error) {
 	log.GetLogCtx(ctx).Info("start export")
+
+	users, err := client.User.Query().All(ctx)
+	if err != nil {
+		return Entity{}, fmt.Errorf("failed to query users: %w", err)
+	}
 
 	articleTags, err := client.ArticleTag.Query().All(ctx)
 	if err != nil {
@@ -67,6 +73,7 @@ func Export(ctx context.Context, client *gateway.RDB) (Entity, error) {
 	}
 
 	return Entity{
+		Users:       users,
 		Articles:    articles,
 		ArticleTags: articleTags,
 	}, nil
@@ -79,6 +86,14 @@ func Import(ctx context.Context, client *gateway.RDB, entity Entity) error { //n
 	tx, err := client.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("failed to begin transaction: %w", err)
+	}
+
+	if _, err := tx.User.Delete().Exec(ctx); err != nil {
+		if err := tx.Rollback(); err != nil {
+			return fmt.Errorf("failed to rollback transaction: %w", err)
+		}
+
+		return fmt.Errorf("failed to delete users: %w", err)
 	}
 
 	if _, err := tx.ArticleTag.Delete().Exec(ctx); err != nil {
@@ -95,6 +110,22 @@ func Import(ctx context.Context, client *gateway.RDB, entity Entity) error { //n
 		}
 
 		return fmt.Errorf("failed to delete articles: %w", err)
+	}
+
+	userBulk := make([]*ent.UserCreate, len(entity.Users))
+	for i, user := range entity.Users {
+		userBulk[i] = tx.User.Create().
+			SetID(user.ID).
+			SetCreatedAt(user.CreatedAt).
+			SetUpdatedAt(user.UpdatedAt)
+	}
+
+	if _, err := tx.User.CreateBulk(userBulk...).Save(ctx); err != nil {
+		if err := tx.Rollback(); err != nil {
+			return fmt.Errorf("failed to rollback transaction: %w", err)
+		}
+
+		return fmt.Errorf("failed to bulk create users: %w", err)
 	}
 
 	articleBulk := make([]*ent.ArticleCreate, len(entity.Articles))
