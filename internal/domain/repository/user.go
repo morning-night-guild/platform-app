@@ -9,5 +9,5 @@ import (
 
 type User interface {
 	Save(context.Context, model.User) error
-	Find(context.Context, user.UserID) (model.User, error)
+	Find(context.Context, user.ID) (model.User, error)
 }

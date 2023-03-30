@@ -15,7 +15,7 @@ var _ rpc.Auth = (*AuthRPC)(nil)
 type AuthRPC struct {
 	T            *testing.T
 	User         model.User
-	SignUpAssert func(t *testing.T, userID user.UserID, email auth.EMail, password auth.Password)
+	SignUpAssert func(t *testing.T, userID user.ID, email auth.EMail, password auth.Password)
 	SignUpErr    error
 	SignInAssert func(t *testing.T, email auth.EMail, password auth.Password)
 	SignInErr    error
@@ -23,7 +23,7 @@ type AuthRPC struct {
 
 func (ar *AuthRPC) SignUp(
 	ctx context.Context,
-	userID user.UserID,
+	userID user.ID,
 	email auth.EMail,
 	password auth.Password,
 ) error {

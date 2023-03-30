@@ -14,8 +14,8 @@ func TestNewAuth(t *testing.T) {
 	t.Parallel()
 
 	type args struct {
-		authID    user.UserID
-		userID    user.UserID
+		authID    user.ID
+		userID    user.ID
 		issuedAt  time.Time
 		expiresAt time.Time
 	}
@@ -31,14 +31,14 @@ func TestNewAuth(t *testing.T) {
 		{
 			name: "認証情報が作成できる",
 			args: args{
-				authID:    user.UserID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
-				userID:    user.UserID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+				authID:    user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+				userID:    user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
 				issuedAt:  now,
 				expiresAt: now.Add(time.Hour * 24 * 30),
 			},
 			want: model.Auth{
-				AuthID:    user.UserID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
-				UserID:    user.UserID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+				AuthID:    user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+				UserID:    user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
 				IssuedAt:  now,
 				ExpiresAt: now.Add(time.Hour * 24 * 30),
 			},
@@ -47,8 +47,8 @@ func TestNewAuth(t *testing.T) {
 		{
 			name: "認証情報が作成できない",
 			args: args{
-				authID:    user.UserID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
-				userID:    user.UserID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+				authID:    user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+				userID:    user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
 				issuedAt:  now.Add(time.Hour),
 				expiresAt: now,
 			},
@@ -78,8 +78,8 @@ func TestAuthIsExpired(t *testing.T) {
 	t.Parallel()
 
 	type fields struct {
-		AuthID    user.UserID
-		UserID    user.UserID
+		AuthID    user.ID
+		ID        user.ID
 		IssuedAt  time.Time
 		ExpiresAt time.Time
 	}
@@ -94,8 +94,8 @@ func TestAuthIsExpired(t *testing.T) {
 		{
 			name: "有効期限切れ",
 			fields: fields{
-				AuthID:    user.UserID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
-				UserID:    user.UserID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+				AuthID:    user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+				ID:        user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
 				IssuedAt:  now,
 				ExpiresAt: now.Add(-time.Hour * 24 * 30),
 			},
@@ -104,8 +104,8 @@ func TestAuthIsExpired(t *testing.T) {
 		{
 			name: "有効期限内",
 			fields: fields{
-				AuthID:    user.UserID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
-				UserID:    user.UserID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+				AuthID:    user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+				ID:        user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
 				IssuedAt:  now,
 				ExpiresAt: now.Add(time.Hour * 24 * 30),
 			},
@@ -119,7 +119,7 @@ func TestAuthIsExpired(t *testing.T) {
 			t.Parallel()
 			at := model.Auth{
 				AuthID:    tt.fields.AuthID,
-				UserID:    tt.fields.UserID,
+				UserID:    tt.fields.ID,
 				IssuedAt:  tt.fields.IssuedAt,
 				ExpiresAt: tt.fields.ExpiresAt,
 			}

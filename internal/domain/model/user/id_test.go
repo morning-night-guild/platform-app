@@ -8,7 +8,7 @@ import (
 	"github.com/morning-night-guild/platform-app/internal/domain/model/user"
 )
 
-func TestNewUserID(t *testing.T) {
+func TestNewID(t *testing.T) {
 	t.Parallel()
 
 	type args struct {
@@ -18,7 +18,7 @@ func TestNewUserID(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		want    user.UserID
+		want    user.ID
 		wantErr bool
 	}{
 		{
@@ -26,7 +26,7 @@ func TestNewUserID(t *testing.T) {
 			args: args{
 				value: "01234567-0123-0123-0123-0123456789ab",
 			},
-			want:    user.UserID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+			want:    user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
 			wantErr: false,
 		},
 		{
@@ -34,7 +34,7 @@ func TestNewUserID(t *testing.T) {
 			args: args{
 				value: "id",
 			},
-			want:    user.UserID{},
+			want:    user.ID{},
 			wantErr: true,
 		},
 	}
@@ -43,14 +43,14 @@ func TestNewUserID(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			got, err := user.NewUserID(tt.args.value)
+			got, err := user.NewID(tt.args.value)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("NewUserID() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("NewID() error = %v, wantErr %v", err, tt.wantErr)
 
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("NewUserID() = %v, want %v", got, tt.want)
+				t.Errorf("NewID() = %v, want %v", got, tt.want)
 			}
 		})
 	}

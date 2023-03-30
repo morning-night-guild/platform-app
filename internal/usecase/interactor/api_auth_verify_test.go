@@ -46,8 +46,8 @@ func TestAPIAuthVerifyExecute(t *testing.T) {
 				authCache: &mock.Cache[model.Auth]{
 					T: t,
 					Value: model.Auth{
-						AuthID:    user.UserID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
-						UserID:    user.UserID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+						AuthID:    user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+						UserID:    user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
 						IssuedAt:  now,
 						ExpiresAt: now.Add(time.Hour * 24 * 30),
 					},
@@ -60,7 +60,7 @@ func TestAPIAuthVerifyExecute(t *testing.T) {
 				ctx: context.Background(),
 				input: port.APIAuthVerifyInput{
 					AuthToken: auth.GenerateAuthToken(
-						user.UserID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+						user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
 						auth.SessionID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")).ToSecret(),
 					),
 					SessionToken: auth.GenerateSessionToken(
@@ -89,7 +89,7 @@ func TestAPIAuthVerifyExecute(t *testing.T) {
 				ctx: context.Background(),
 				input: port.APIAuthVerifyInput{
 					AuthToken: auth.GenerateAuthToken(
-						user.UserID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+						user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
 						auth.SessionID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")).ToSecret(),
 					),
 					SessionToken: auth.GenerateSessionToken(
@@ -108,8 +108,8 @@ func TestAPIAuthVerifyExecute(t *testing.T) {
 				authCache: &mock.Cache[model.Auth]{
 					T: t,
 					Value: model.Auth{
-						AuthID:    user.UserID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
-						UserID:    user.UserID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+						AuthID:    user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+						UserID:    user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
 						IssuedAt:  now,
 						ExpiresAt: now.Add(-time.Hour),
 					},
@@ -122,7 +122,7 @@ func TestAPIAuthVerifyExecute(t *testing.T) {
 				ctx: context.Background(),
 				input: port.APIAuthVerifyInput{
 					AuthToken: auth.GenerateAuthToken(
-						user.UserID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+						user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
 						auth.SessionID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")).ToSecret(),
 					),
 					SessionToken: auth.GenerateSessionToken(

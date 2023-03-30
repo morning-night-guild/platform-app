@@ -67,7 +67,7 @@ func TestAPIAuthRefreshExecute(t *testing.T) {
 					T: t,
 					Value: model.Session{
 						SessionID: auth.SessionID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
-						UserID:    user.UserID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+						UserID:    user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
 						PublicKey: key.PublicKey,
 						IssuedAt:  now,
 						ExpiresAt: now.Add(model.DefaultSessionExpiresIn),

@@ -49,21 +49,21 @@ func TestAPIAuthSignUpExecute(t *testing.T) {
 				userRPC: &mock.UserRPC{
 					T: t,
 					User: model.User{
-						UserID: user.UserID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+						UserID: user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
 					},
 				},
 				authRPC: &mock.AuthRPC{
 					T: t,
 					SignUpAssert: func(
 						t *testing.T,
-						userID user.UserID,
+						userID user.ID,
 						email auth.EMail,
 						password auth.Password,
 					) {
 						t.Helper()
 
-						if !reflect.DeepEqual(userID, user.UserID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab"))) {
-							t.Errorf("userID = %v, want %v", userID, user.UserID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")))
+						if !reflect.DeepEqual(userID, user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab"))) {
+							t.Errorf("userID = %v, want %v", userID, user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")))
 						}
 						if !reflect.DeepEqual(email, auth.EMail("test@example.com")) {
 							t.Errorf("email = %v, want %v", email, auth.EMail("test@example.com"))
@@ -109,14 +109,14 @@ func TestAPIAuthSignUpExecute(t *testing.T) {
 				userRPC: &mock.UserRPC{
 					T: t,
 					User: model.User{
-						UserID: user.UserID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+						UserID: user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
 					},
 				},
 				authRPC: &mock.AuthRPC{
 					T: t,
 					SignUpAssert: func(
 						t *testing.T,
-						userID user.UserID,
+						userID user.ID,
 						email auth.EMail,
 						password auth.Password,
 					) {

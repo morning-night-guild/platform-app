@@ -9,5 +9,5 @@ import (
 
 type User interface {
 	Create(context.Context) (model.User, error)
-	Update(context.Context, user.UserID) (model.User, error)
+	Update(context.Context, user.ID) (model.User, error)
 }

@@ -58,7 +58,7 @@ func TestAPIAuthSignOutExecute(t *testing.T) {
 				ctx: context.Background(),
 				input: port.APIAuthSignOutInput{
 					AuthToken: auth.GenerateAuthToken(
-						user.UserID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+						user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
 						auth.SessionID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")).ToSecret(),
 					),
 					SessionToken: auth.GenerateSessionToken(
@@ -92,7 +92,7 @@ func TestAPIAuthSignOutExecute(t *testing.T) {
 				ctx: context.Background(),
 				input: port.APIAuthSignOutInput{
 					AuthToken: auth.GenerateAuthToken(
-						user.UserID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+						user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
 						auth.SessionID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")).ToSecret(),
 					),
 					SessionToken: auth.GenerateSessionToken(
@@ -126,7 +126,7 @@ func TestAPIAuthSignOutExecute(t *testing.T) {
 				ctx: context.Background(),
 				input: port.APIAuthSignOutInput{
 					AuthToken: auth.GenerateAuthToken(
-						user.UserID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+						user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
 						auth.SessionID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")).ToSecret(),
 					),
 					SessionToken: auth.GenerateSessionToken(

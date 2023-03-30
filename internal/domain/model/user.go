@@ -3,11 +3,11 @@ package model
 import "github.com/morning-night-guild/platform-app/internal/domain/model/user"
 
 type User struct {
-	UserID user.UserID
+	UserID user.ID
 }
 
 func NewUser(
-	userID user.UserID,
+	userID user.ID,
 ) User {
 	return User{
 		UserID: userID,
@@ -15,7 +15,7 @@ func NewUser(
 }
 
 func CreateUser() User {
-	id := user.GenerateUserID()
+	id := user.GenerateID()
 
 	return NewUser(id)
 }

@@ -47,7 +47,7 @@ func TestAPIAuthSignInExecute(t *testing.T) {
 				authRPC: &mock.AuthRPC{
 					T: t,
 					User: model.User{
-						UserID: user.UserID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+						UserID: user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
 					},
 					SignInAssert: func(t *testing.T, email auth.EMail, password auth.Password) {
 						t.Helper()
@@ -88,7 +88,7 @@ func TestAPIAuthSignInExecute(t *testing.T) {
 			},
 			want: port.APIAuthSignInOutput{
 				AuthToken: auth.GenerateAuthToken(
-					user.UserID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+					user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
 					auth.SessionID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")).ToSecret(),
 				),
 				SessionToken: auth.GenerateSessionToken(

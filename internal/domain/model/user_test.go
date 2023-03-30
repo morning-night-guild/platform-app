@@ -13,7 +13,7 @@ func TestNewUser(t *testing.T) {
 	t.Parallel()
 
 	type args struct {
-		userID user.UserID
+		userID user.ID
 	}
 
 	tests := []struct {
@@ -24,10 +24,10 @@ func TestNewUser(t *testing.T) {
 		{
 			name: "ユーザーを生成できる",
 			args: args{
-				userID: user.UserID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+				userID: user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
 			},
 			want: model.User{
-				UserID: user.UserID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+				UserID: user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
 			},
 		},
 	}

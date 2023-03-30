@@ -13,7 +13,7 @@ const DefaultSessionExpiresIn = time.Hour * 24 * 30
 
 type Session struct {
 	SessionID auth.SessionID `json:"sessionId"`
-	UserID    user.UserID    `json:"userId"`
+	UserID    user.ID        `json:"userId"`
 	PublicKey rsa.PublicKey  `json:"publicKey"`
 	IssuedAt  time.Time      `json:"issuedAt"`
 	ExpiresAt time.Time      `json:"expiresAt"`
@@ -21,7 +21,7 @@ type Session struct {
 
 func NewSession(
 	sessionID auth.SessionID,
-	userID user.UserID,
+	userID user.ID,
 	publicKey rsa.PublicKey,
 	issuedAt time.Time,
 	expiresAt time.Time,
@@ -42,7 +42,7 @@ func NewSession(
 }
 
 func IssueSession(
-	userID user.UserID,
+	userID user.ID,
 	publicKey rsa.PublicKey,
 ) Session {
 	now := time.Now()

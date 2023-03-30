@@ -17,7 +17,7 @@ type UserRepository struct {
 	SaveErr    error
 	SaveAssert func(t *testing.T, item model.User)
 	FindErr    error
-	FindAssert func(t *testing.T, id user.UserID)
+	FindAssert func(t *testing.T, id user.ID)
 }
 
 func (ur *UserRepository) Save(ctx context.Context, item model.User) error {
@@ -30,7 +30,7 @@ func (ur *UserRepository) Save(ctx context.Context, item model.User) error {
 
 func (ur *UserRepository) Find(
 	ctx context.Context,
-	id user.UserID,
+	id user.ID,
 ) (model.User, error) {
 	ur.T.Helper()
 

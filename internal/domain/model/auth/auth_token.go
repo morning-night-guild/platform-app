@@ -26,7 +26,7 @@ func NewAuthToken(
 }
 
 func GenerateAuthToken(
-	userID user.UserID,
+	userID user.ID,
 	secret Secret,
 ) AuthToken {
 	claims := jwt.MapClaims{
@@ -65,7 +65,7 @@ func (at AuthToken) String() string {
 	return string(at)
 }
 
-func (at AuthToken) GetUserID(secret Secret) user.UserID {
+func (at AuthToken) GetUserID(secret Secret) user.ID {
 	parsedToken, _ := jwt.Parse(at.String(), func(token *jwt.Token) (interface{}, error) {
 		return []byte(secret.String()), nil
 	})
@@ -74,7 +74,7 @@ func (at AuthToken) GetUserID(secret Secret) user.UserID {
 
 	id, _ := claims["sub"].(string)
 
-	uid, _ := user.NewUserID(id)
+	uid, _ := user.NewID(id)
 
 	return uid
 }

@@ -24,7 +24,7 @@ func (ur *UserRPC) Create(ctx context.Context) (model.User, error) {
 	return ur.User, ur.CreateErr
 }
 
-func (ur *UserRPC) Update(ctx context.Context, id user.UserID) (model.User, error) {
+func (ur *UserRPC) Update(ctx context.Context, id user.ID) (model.User, error) {
 	ur.T.Helper()
 
 	return ur.User, ur.UpdateErr

@@ -17,7 +17,7 @@ func TestNewSession(t *testing.T) {
 
 	type args struct {
 		sessionID auth.SessionID
-		userID    user.UserID
+		userID    user.ID
 		publicKey rsa.PublicKey
 		issuedAt  time.Time
 		expiresAt time.Time
@@ -35,14 +35,14 @@ func TestNewSession(t *testing.T) {
 			name: "セッションが作成できる",
 			args: args{
 				sessionID: auth.SessionID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
-				userID:    user.UserID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+				userID:    user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
 				publicKey: rsa.PublicKey{},
 				issuedAt:  now,
 				expiresAt: now.Add(time.Hour * 24 * 30),
 			},
 			want: model.Session{
 				SessionID: auth.SessionID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
-				UserID:    user.UserID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+				UserID:    user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
 				PublicKey: rsa.PublicKey{},
 				IssuedAt:  now,
 				ExpiresAt: now.Add(time.Hour * 24 * 30),
@@ -53,7 +53,7 @@ func TestNewSession(t *testing.T) {
 			name: "セッションが作成できない",
 			args: args{
 				sessionID: auth.SessionID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
-				userID:    user.UserID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+				userID:    user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
 				publicKey: rsa.PublicKey{},
 				issuedAt:  now.Add(time.Hour),
 				expiresAt: now,
@@ -85,7 +85,7 @@ func TestSessionIsExpired(t *testing.T) {
 
 	type fields struct {
 		SessionID auth.SessionID
-		UserID    user.UserID
+		UserID    user.ID
 		PublicKey rsa.PublicKey
 		IssuedAt  time.Time
 		ExpiresAt time.Time
@@ -102,7 +102,7 @@ func TestSessionIsExpired(t *testing.T) {
 			name: "有効期限切れ",
 			fields: fields{
 				SessionID: auth.SessionID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
-				UserID:    user.UserID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+				UserID:    user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
 				PublicKey: rsa.PublicKey{},
 				IssuedAt:  now,
 				ExpiresAt: now.Add(-time.Hour * 24 * 30),
@@ -113,7 +113,7 @@ func TestSessionIsExpired(t *testing.T) {
 			name: "有効期限内",
 			fields: fields{
 				SessionID: auth.SessionID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
-				UserID:    user.UserID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+				UserID:    user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
 				PublicKey: rsa.PublicKey{},
 				IssuedAt:  now,
 				ExpiresAt: now.Add(time.Hour * 24 * 30),

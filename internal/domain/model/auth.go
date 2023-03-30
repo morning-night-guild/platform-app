@@ -11,15 +11,15 @@ import (
 const DefaultAuthExpiresIn = time.Hour // 1 hour
 
 type Auth struct {
-	AuthID    user.UserID `json:"authId"`
-	UserID    user.UserID `json:"userId"`
-	IssuedAt  time.Time   `json:"issuedAt"`
-	ExpiresAt time.Time   `json:"expiresAt"`
+	AuthID    user.ID   `json:"authId"`
+	UserID    user.ID   `json:"userId"`
+	IssuedAt  time.Time `json:"issuedAt"`
+	ExpiresAt time.Time `json:"expiresAt"`
 }
 
 func NewAuth(
-	authID user.UserID,
-	userID user.UserID,
+	authID user.ID,
+	userID user.ID,
 	issuedAt time.Time,
 	expiresAt time.Time,
 ) (Auth, error) {
@@ -38,7 +38,7 @@ func NewAuth(
 }
 
 func IssueAuth(
-	userID user.UserID,
+	userID user.ID,
 ) Auth {
 	now := time.Now()
 
