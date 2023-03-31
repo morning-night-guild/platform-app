@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -310,7 +311,7 @@ func (hdl *Handler) V1AuthVerify(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.GetLogCtx(ctx).Warn("failed to get auth token cookie", log.ErrorField(err))
 
-		w.WriteHeader(http.StatusUnauthorized)
+		hdl.unauthorize(w, r, ctx, sessionToken)
 
 		return
 	}
@@ -319,7 +320,7 @@ func (hdl *Handler) V1AuthVerify(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.GetLogCtx(ctx).Warn("failed to new auth token", log.ErrorField(err))
 
-		hdl.HandleErrorStatus(w, err)
+		hdl.unauthorize(w, r, ctx, sessionToken)
 
 		return
 	}
@@ -332,7 +333,43 @@ func (hdl *Handler) V1AuthVerify(w http.ResponseWriter, r *http.Request) {
 	if _, err := hdl.auth.verify.Execute(ctx, input); err != nil {
 		log.GetLogCtx(ctx).Warn("failed to verify", log.ErrorField(err))
 
-		hdl.HandleErrorStatus(w, err)
+		hdl.unauthorize(w, r, ctx, sessionToken)
+
+		return
+	}
+
+	_, _ = w.Write([]byte("OK"))
+}
+
+func (hdl *Handler) unauthorize(
+	w http.ResponseWriter,
+	r *http.Request,
+	ctx context.Context,
+	sessionToken auth.SessionToken,
+) {
+	input := port.APIAuthGenerateCodeInput{
+		SessionToken: sessionToken,
+	}
+
+	output, err := hdl.auth.generateCode.Execute(ctx, input)
+	if err != nil {
+		log.GetLogCtx(ctx).Warn("failed to generate code", log.ErrorField(err))
+
+		w.WriteHeader(http.StatusInternalServerError)
+
+		return
+	}
+
+	res := openapi.V1AuthVerifyUnauthorizedResponseSchema{
+		Code: output.Code.CodeID.Value(),
+	}
+
+	w.WriteHeader(http.StatusUnauthorized)
+
+	if err := json.NewEncoder(w).Encode(res); err != nil {
+		log.GetLogCtx(ctx).Warn("failed to encode response body", log.ErrorField(err))
+
+		w.WriteHeader(http.StatusInternalServerError)
 
 		return
 	}

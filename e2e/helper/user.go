@@ -11,7 +11,6 @@ import (
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
-	"log"
 	"net/http"
 	"strings"
 	"testing"
@@ -137,8 +136,6 @@ func ExtractUserID(t *testing.T, cookies []*http.Cookie) string {
 			break
 		}
 	}
-
-	log.Printf("cookie: %+v", cookie)
 
 	payload := strings.Split(cookie.Value, ".")[1]
 
