@@ -118,7 +118,11 @@ func (at *Auth) SignIn(ctx context.Context, email auth.EMail, password auth.Pass
 
 		log.GetLogCtx(ctx).Warn(msg)
 
-		return model.User{}, err
+		if res.StatusCode == http.StatusUnauthorized {
+			return model.User{}, errors.NewUnauthorizedError("invalid email or password")
+		}
+
+		return model.User{}, errors.NewUnknownError("unknown error")
 	}
 
 	var resp SignInResponse

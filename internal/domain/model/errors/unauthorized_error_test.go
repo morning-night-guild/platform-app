@@ -7,7 +7,7 @@ import (
 	"github.com/morning-night-guild/platform-app/internal/domain/model/errors"
 )
 
-func TestAsUnknownError(t *testing.T) {
+func TestAsUnauthorizedError(t *testing.T) {
 	t.Parallel()
 
 	type args struct {
@@ -20,14 +20,14 @@ func TestAsUnknownError(t *testing.T) {
 		want bool
 	}{
 		{
-			name: "UnknownError型の場合はtrueを返す",
+			name: "UnauthorizedError型の場合はtrueを返す",
 			args: args{
-				err: errors.NewUnknownError("test"),
+				err: errors.NewUnauthorizedError("test"),
 			},
 			want: true,
 		},
 		{
-			name: "UnknownError型ではない場合はfalseを返す",
+			name: "UnauthorizedError型ではない場合はfalseを返す",
 			args: args{
 				err: fmt.Errorf("test"),
 			},
@@ -39,8 +39,8 @@ func TestAsUnknownError(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			if got := errors.AsUnknownError(tt.args.err); got != tt.want {
-				t.Errorf("AsUnknownError() = %v, want %v", got, tt.want)
+			if got := errors.AsUnauthorizedError(tt.args.err); got != tt.want {
+				t.Errorf("AsUnauthorizedError() = %v, want %v", got, tt.want)
 			}
 		})
 	}

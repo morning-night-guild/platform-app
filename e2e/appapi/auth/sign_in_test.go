@@ -11,6 +11,7 @@ import (
 	"github.com/deepmap/oapi-codegen/pkg/types"
 	"github.com/google/uuid"
 	"github.com/morning-night-guild/platform-app/e2e/helper"
+	"github.com/morning-night-guild/platform-app/internal/domain/model/auth"
 	"github.com/morning-night-guild/platform-app/pkg/openapi"
 )
 
@@ -62,6 +63,15 @@ func TestE2EAuthSighIn(t *testing.T) {
 		}
 
 		defer res.Body.Close()
+
+		for _, cookie := range res.Cookies() {
+			if cookie.Name != auth.AuthTokenKey && cookie.Name != auth.SessionTokenKey {
+				t.Errorf("failed to sign in: %s", cookie.Name)
+			}
+			if cookie.Value == "" {
+				t.Errorf("failed to sign in: %s", cookie.Value)
+			}
+		}
 
 		defer func() {
 			prv, err := rsa.GenerateKey(rand.Reader, 2048)
@@ -128,7 +138,13 @@ func TestE2EAuthSighIn(t *testing.T) {
 			t.Errorf("failed to auth sign in: %s", err)
 		}
 
+		defer res.Body.Close()
+
 		if res.StatusCode == http.StatusOK {
+			t.Errorf("success to auth sign in: %d", res.StatusCode)
+		}
+
+		if len(res.Cookies()) != 0 {
 			t.Errorf("success to auth sign in: %d", res.StatusCode)
 		}
 
@@ -197,7 +213,13 @@ func TestE2EAuthSighIn(t *testing.T) {
 			t.Errorf("failed to auth sign in: %s", err)
 		}
 
+		defer res.Body.Close()
+
 		if res.StatusCode == http.StatusOK {
+			t.Errorf("success to auth sign in: %d", res.StatusCode)
+		}
+
+		if len(res.Cookies()) != 0 {
 			t.Errorf("success to auth sign in: %d", res.StatusCode)
 		}
 

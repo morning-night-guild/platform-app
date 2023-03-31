@@ -128,8 +128,12 @@ func (hdl *Handler) HandleErrorStatus(
 		w.WriteHeader(http.StatusBadRequest)
 	case derr.AsURLError(err):
 		w.WriteHeader(http.StatusBadRequest)
+	case derr.AsUnauthorizedError(err):
+		w.WriteHeader(http.StatusUnauthorized)
 	case derr.AsNotFoundError(err):
 		w.WriteHeader(http.StatusNotFound)
+	case derr.AsUnknownError(err):
+		w.WriteHeader(http.StatusInternalServerError)
 	default:
 		w.WriteHeader(http.StatusInternalServerError)
 	}
