@@ -18,9 +18,11 @@ func New[T any]() *Redis[T] {
 }
 
 func (rds *Redis[T]) KVS(
+	prefix string,
 	client *redis.Client,
 ) (*kvs.KVS[T], error) {
 	return &kvs.KVS[T]{
+		Prefix: prefix,
 		Client: client,
 	}, nil
 }

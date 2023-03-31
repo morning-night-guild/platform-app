@@ -60,17 +60,17 @@ func main() {
 		panic(err)
 	}
 
-	authCache, err := redis.New[model.Auth]().KVS(rds)
+	authCache, err := redis.New[model.Auth]().KVS("auth", rds)
 	if err != nil {
 		panic(err)
 	}
 
-	sessionCache, err := redis.New[model.Session]().KVS(rds)
+	sessionCache, err := redis.New[model.Session]().KVS("session", rds)
 	if err != nil {
 		panic(err)
 	}
 
-	codeCache, err := redis.New[model.Code]().KVS(rds)
+	codeCache, err := redis.New[model.Code]().KVS("code", rds)
 	if err != nil {
 		panic(err)
 	}

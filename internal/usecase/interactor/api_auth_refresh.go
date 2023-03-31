@@ -39,7 +39,7 @@ func (aar *APIAuthRefresh) Execute(
 
 	code, err := aar.codeCache.Get(ctx, sid.String())
 	if err != nil {
-		return port.APIAuthRefreshOutput{}, err
+		return port.APIAuthRefreshOutput{}, errors.NewNotFoundError("code is not found", err)
 	}
 
 	if code.CodeID != input.CodeID {
@@ -60,7 +60,9 @@ func (aar *APIAuthRefresh) Execute(
 	}
 
 	if err := code.CodeID.Verify(input.Signature, &session.PublicKey); err != nil {
-		return port.APIAuthRefreshOutput{}, err
+		log.GetLogCtx(ctx).Warn("signature invalid", log.ErrorField(err))
+
+		return port.APIAuthRefreshOutput{}, errors.NewUnauthorizedError("signature invalid")
 	}
 
 	if err := aar.codeCache.Del(ctx, sid.String()); err != nil {
