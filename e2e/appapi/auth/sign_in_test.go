@@ -41,7 +41,11 @@ func TestE2EAuthSighIn(t *testing.T) {
 			Email:    types.Email(email),
 			Password: password,
 		}); err != nil || res.StatusCode != http.StatusOK {
+			defer res.Body.Close()
+
 			t.Fatalf("failed to auth sign up: %s", err)
+		} else {
+			defer res.Body.Close()
 		}
 
 		prv, err := rsa.GenerateKey(rand.Reader, 2048)
@@ -58,11 +62,11 @@ func TestE2EAuthSighIn(t *testing.T) {
 			t.Errorf("failed to auth sign in: %s", err)
 		}
 
+		defer res.Body.Close()
+
 		if res.StatusCode != http.StatusOK {
 			t.Errorf("failed to auth sign in: %d", res.StatusCode)
 		}
-
-		defer res.Body.Close()
 
 		for _, cookie := range res.Cookies() {
 			if cookie.Name != auth.AuthTokenKey && cookie.Name != auth.SessionTokenKey {
@@ -121,7 +125,11 @@ func TestE2EAuthSighIn(t *testing.T) {
 			Email:    types.Email(email),
 			Password: password,
 		}); err != nil || res.StatusCode != http.StatusOK {
+			defer res.Body.Close()
+
 			t.Fatalf("failed to auth sign up: %s", err)
+		} else {
+			defer res.Body.Close()
 		}
 
 		prv, err := rsa.GenerateKey(rand.Reader, 2048)
@@ -196,7 +204,11 @@ func TestE2EAuthSighIn(t *testing.T) {
 			Email:    types.Email(email),
 			Password: password,
 		}); err != nil || res.StatusCode != http.StatusOK {
+			defer res.Body.Close()
+
 			t.Fatalf("failed to auth sign up: %s", err)
+		} else {
+			defer res.Body.Close()
 		}
 
 		prv, err := rsa.GenerateKey(rand.Reader, 2048)

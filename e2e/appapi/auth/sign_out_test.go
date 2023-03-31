@@ -40,7 +40,11 @@ func TestE2EAuthSighOut(t *testing.T) {
 			Email:    types.Email(email),
 			Password: password,
 		}); err != nil || res.StatusCode != http.StatusOK {
+			defer res.Body.Close()
+
 			t.Fatalf("failed to auth sign up: %s", err)
+		} else {
+			defer res.Body.Close()
 		}
 
 		prv, err := rsa.GenerateKey(rand.Reader, 2048)
@@ -57,6 +61,8 @@ func TestE2EAuthSighOut(t *testing.T) {
 			t.Fatalf("failed to auth sign in: %s", err)
 		}
 
+		defer res.Body.Close()
+
 		if res.StatusCode != http.StatusOK {
 			t.Fatalf("failed to auth sign in: %d", res.StatusCode)
 		}
@@ -69,6 +75,8 @@ func TestE2EAuthSighOut(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to auth sign out: %s", err)
 		}
+
+		defer res.Body.Close()
 
 		if res.StatusCode != http.StatusOK {
 			t.Fatalf("failed to auth sign out: %d", res.StatusCode)

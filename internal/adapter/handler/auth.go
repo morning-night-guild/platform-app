@@ -311,7 +311,7 @@ func (hdl *Handler) V1AuthVerify(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.GetLogCtx(ctx).Warn("failed to get auth token cookie", log.ErrorField(err))
 
-		hdl.unauthorize(w, r, ctx, sessionToken)
+		hdl.unauthorize(ctx, w, sessionToken)
 
 		return
 	}
@@ -320,7 +320,7 @@ func (hdl *Handler) V1AuthVerify(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.GetLogCtx(ctx).Warn("failed to new auth token", log.ErrorField(err))
 
-		hdl.unauthorize(w, r, ctx, sessionToken)
+		hdl.unauthorize(ctx, w, sessionToken)
 
 		return
 	}
@@ -333,7 +333,7 @@ func (hdl *Handler) V1AuthVerify(w http.ResponseWriter, r *http.Request) {
 	if _, err := hdl.auth.verify.Execute(ctx, input); err != nil {
 		log.GetLogCtx(ctx).Warn("failed to verify", log.ErrorField(err))
 
-		hdl.unauthorize(w, r, ctx, sessionToken)
+		hdl.unauthorize(ctx, w, sessionToken)
 
 		return
 	}
@@ -342,9 +342,8 @@ func (hdl *Handler) V1AuthVerify(w http.ResponseWriter, r *http.Request) {
 }
 
 func (hdl *Handler) unauthorize(
-	w http.ResponseWriter,
-	r *http.Request,
 	ctx context.Context,
+	w http.ResponseWriter,
 	sessionToken auth.SessionToken,
 ) {
 	input := port.APIAuthGenerateCodeInput{

@@ -21,6 +21,8 @@ import (
 	"github.com/morning-night-guild/platform-app/pkg/openapi"
 )
 
+const bits = 2048
+
 type User struct {
 	T        *testing.T
 	EMail    string
@@ -44,14 +46,16 @@ func NewUser(
 
 	password := id
 
-	if _, err := client.Client.V1AuthSignUp(context.Background(), openapi.V1AuthSignUpJSONRequestBody{
+	if res, err := client.Client.V1AuthSignUp(context.Background(), openapi.V1AuthSignUpJSONRequestBody{
 		Email:    types.Email(email),
 		Password: password,
 	}); err != nil {
 		t.Fatalf("failed to auth sign up: %s", err)
+	} else {
+		defer res.Body.Close()
 	}
 
-	priv, err := rsa.GenerateKey(rand.Reader, 2048)
+	priv, err := rsa.GenerateKey(rand.Reader, bits)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -64,6 +68,8 @@ func NewUser(
 	if err != nil {
 		t.Fatalf("failed to auth sign in: %s", err)
 	}
+
+	defer res.Body.Close()
 
 	client.Client.Client = &http.Client{
 		Transport: NewCookiesTransport(t, res.Cookies()),
@@ -89,9 +95,11 @@ func Public(t *testing.T, private *rsa.PrivateKey) string {
 		t.Fatal(err)
 	}
 
-	pem.Encode(b, &pem.Block{
+	if err := pem.Encode(b, &pem.Block{
 		Bytes: bt,
-	})
+	}); err != nil {
+		t.Fatal(err)
+	}
 
 	remove := func(arr []string, i int) []string {
 		return append(arr[:i], arr[i+1:]...)
@@ -133,6 +141,7 @@ func ExtractUserID(t *testing.T, cookies []*http.Cookie) string {
 	for _, c := range cookies {
 		if c.Name == auth.AuthTokenKey {
 			cookie = c
+
 			break
 		}
 	}

@@ -17,6 +17,8 @@ func NewCookieTransport(
 	t *testing.T,
 	cookie string,
 ) *CookieTransport {
+	t.Helper()
+
 	return &CookieTransport{
 		t:         t,
 		Cookie:    cookie,
@@ -100,6 +102,7 @@ func NewOnlyIDTokenCookieTransport(
 	for _, c := range cookies {
 		if c.Name == auth.AuthTokenKey {
 			cookie = c
+
 			break
 		}
 	}
@@ -147,6 +150,7 @@ func NewOnlySessionTokenCookieTransport(
 	for _, c := range cookies {
 		if c.Name == auth.SessionTokenKey {
 			cookie = c
+
 			break
 		}
 	}
@@ -187,6 +191,8 @@ func NewAPIKeyTransport(
 	t *testing.T,
 	key string,
 ) *APIKeyTransport {
+	t.Helper()
+
 	return &APIKeyTransport{
 		t:         t,
 		APIKey:    key,

@@ -42,11 +42,11 @@ func TestE2EAuthSighUp(t *testing.T) {
 			t.Fatalf("failed to auth sign up: %s", err)
 		}
 
+		defer res.Body.Close()
+
 		if res.StatusCode != http.StatusOK {
 			t.Fatalf("failed to auth sign up: %d", res.StatusCode)
 		}
-
-		defer res.Body.Close()
 
 		defer func() {
 			prv, err := rsa.GenerateKey(rand.Reader, 2048)
@@ -93,6 +93,8 @@ func TestE2EAuthSighUp(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to auth sign up: %s", err)
 		}
+
+		defer res.Body.Close()
 
 		if res.StatusCode != http.StatusUnauthorized {
 			t.Fatalf("failed to auth sign up: %d", res.StatusCode)

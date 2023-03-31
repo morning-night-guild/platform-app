@@ -42,7 +42,11 @@ func TestE2EAuthVerify(t *testing.T) {
 			Email:    types.Email(email),
 			Password: password,
 		}); err != nil || res.StatusCode != http.StatusOK {
+			defer res.Body.Close()
+
 			t.Fatalf("failed to auth sign up: %s", err)
+		} else {
+			defer res.Body.Close()
 		}
 
 		prv, err := rsa.GenerateKey(rand.Reader, 2048)
@@ -59,6 +63,8 @@ func TestE2EAuthVerify(t *testing.T) {
 			t.Fatalf("failed to auth sign in: %s", err)
 		}
 
+		defer res.Body.Close()
+
 		if res.StatusCode != http.StatusOK {
 			t.Fatalf("failed to auth sign in: %d", res.StatusCode)
 		}
@@ -71,6 +77,8 @@ func TestE2EAuthVerify(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to verify in: %s", err)
 		}
+
+		defer res.Body.Close()
 
 		if res.StatusCode != http.StatusOK {
 			t.Fatalf("failed to verify in: %d", res.StatusCode)
@@ -124,7 +132,11 @@ func TestE2EAuthVerify(t *testing.T) {
 			Email:    types.Email(email),
 			Password: password,
 		}); err != nil || res.StatusCode != http.StatusOK {
+			defer res.Body.Close()
+
 			t.Fatalf("failed to auth sign up: %s", err)
+		} else {
+			defer res.Body.Close()
 		}
 
 		prv, err := rsa.GenerateKey(rand.Reader, 2048)
@@ -141,6 +153,8 @@ func TestE2EAuthVerify(t *testing.T) {
 			t.Fatalf("failed to auth sign in: %s", err)
 		}
 
+		defer res.Body.Close()
+
 		if res.StatusCode != http.StatusOK {
 			t.Fatalf("failed to auth sign in: %d", res.StatusCode)
 		}
@@ -153,6 +167,8 @@ func TestE2EAuthVerify(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to verify in: %s", err)
 		}
+
+		defer res.Body.Close()
 
 		if res.StatusCode == http.StatusOK {
 			t.Fatalf("success to verify in: %d", res.StatusCode)
@@ -210,7 +226,11 @@ func TestE2EAuthVerify(t *testing.T) {
 			Email:    types.Email(email),
 			Password: password,
 		}); err != nil || res.StatusCode != http.StatusOK {
+			defer res.Body.Close()
+
 			t.Fatalf("failed to auth sign up: %s", err)
+		} else {
+			defer res.Body.Close()
 		}
 
 		prv, err := rsa.GenerateKey(rand.Reader, 2048)
@@ -226,6 +246,8 @@ func TestE2EAuthVerify(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to auth sign in: %s", err)
 		}
+
+		defer res.Body.Close()
 
 		if res.StatusCode != http.StatusOK {
 			t.Fatalf("failed to auth sign in: %d", res.StatusCode)
@@ -255,6 +277,7 @@ func TestE2EAuthVerify(t *testing.T) {
 		var unauthorized openapi.V1AuthVerifyUnauthorizedResponseSchema
 		if err := json.Unmarshal(body, &unauthorized); err != nil {
 			t.Fatalf("failed marshal response: %s caused by %s", body, err)
+
 			return
 		}
 
