@@ -101,6 +101,7 @@ services:
       CORS_ALLOW_ORIGINS: http://localhost:5173
       CORS_DEBUG_ENABLE: false
       REDIS_URL: redis:6379
+      TOKEN_SECRET: local
       FIREBASE_SECRET: '{"type": "service_account","project_id": "emulator"}'
       FIREBASE_API_ENDPOINT: http://firebase:9099/identitytoolkit.googleapis.com
       FIREBASE_API_KEY: emulator

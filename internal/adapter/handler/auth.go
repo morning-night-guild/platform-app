@@ -187,12 +187,41 @@ func (hdl *Handler) V1AuthSignIn(w http.ResponseWriter, r *http.Request) {
 func (hdl *Handler) V1AuthSignOut(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	input := port.APIAuthSignOutInput{}
+	sessionTokenCookie, err := r.Cookie(auth.SessionTokenKey)
+	if err != nil {
+		log.GetLogCtx(ctx).Warn("failed to get session token cookie", log.ErrorField(err))
+
+		return
+	}
+
+	sessionToken, err := auth.NewSessionToken(sessionTokenCookie.Value, hdl.secret)
+	if err != nil {
+		log.GetLogCtx(ctx).Warn("failed to new session token", log.ErrorField(err))
+
+		return
+	}
+
+	authTokenCookie, err := r.Cookie(auth.AuthTokenKey)
+	if err != nil {
+		log.GetLogCtx(ctx).Warn("failed to get auth token cookie", log.ErrorField(err))
+
+		return
+	}
+
+	authToken, err := auth.NewAuthToken(authTokenCookie.Value, sessionToken.ToSecret(hdl.secret))
+	if err != nil {
+		log.GetLogCtx(ctx).Warn("failed to new auth token", log.ErrorField(err))
+
+		return
+	}
+
+	input := port.APIAuthSignOutInput{
+		AuthToken:    authToken,
+		SessionToken: sessionToken,
+	}
 
 	if _, err := hdl.auth.signOut.Execute(ctx, input); err != nil {
 		log.GetLogCtx(ctx).Warn("failed to sign out", log.ErrorField(err))
-
-		hdl.HandleErrorStatus(w, err)
 
 		return
 	}
