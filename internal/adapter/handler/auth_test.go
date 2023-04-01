@@ -7,6 +7,7 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"encoding/pem"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -92,6 +93,69 @@ func TestHandlerV1AuthRefresh(t *testing.T) {
 			},
 			status: http.StatusOK,
 		},
+		{
+			name: "Codeが不正な値で更新できない",
+			fields: fields{
+				secret: auth.Secret("secret"),
+				auth: handler.NewAuth(
+					&port.APIAuthSignUpMock{},
+					&port.APIAuthSignInMock{},
+					&port.APIAuthSignOutMock{},
+					&port.APIAuthVerifyMock{},
+					&port.APIAuthRefreshMock{},
+					&port.APIAuthGenerateCodeMock{},
+					Cookie(t),
+				),
+			},
+			args: args{
+				r: &http.Request{
+					Method: http.MethodGet,
+					Header: http.Header{},
+				},
+				cookie: &http.Cookie{
+					Name:  auth.SessionTokenKey,
+					Value: string(auth.GenerateSessionToken(auth.SessionID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")), "secret")),
+				},
+				params: openapi.V1AuthRefreshParams{
+					Signature: "signature",
+					Code:      "code",
+				},
+			},
+			status: http.StatusBadRequest,
+		},
+		{
+			name: "usecaseにてエラーが発生して更新できない",
+			fields: fields{
+				secret: auth.Secret("secret"),
+				auth: handler.NewAuth(
+					&port.APIAuthSignUpMock{},
+					&port.APIAuthSignInMock{},
+					&port.APIAuthSignOutMock{},
+					&port.APIAuthVerifyMock{},
+					&port.APIAuthRefreshMock{
+						T:   t,
+						Err: fmt.Errorf("test"),
+					},
+					&port.APIAuthGenerateCodeMock{},
+					Cookie(t),
+				),
+			},
+			args: args{
+				r: &http.Request{
+					Method: http.MethodGet,
+					Header: http.Header{},
+				},
+				cookie: &http.Cookie{
+					Name:  auth.SessionTokenKey,
+					Value: string(auth.GenerateSessionToken(auth.SessionID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")), "secret")),
+				},
+				params: openapi.V1AuthRefreshParams{
+					Signature: "signature",
+					Code:      uuid.New().String(),
+				},
+			},
+			status: http.StatusInternalServerError,
+		},
 	}
 
 	for _, tt := range tests {
@@ -169,6 +233,66 @@ func TestHandlerV1AuthSignIn(t *testing.T) {
 				},
 			},
 			status: http.StatusOK,
+		},
+		{
+			name: "メールアドレスが不正な値でサインインできない",
+			fields: fields{
+				secret: auth.Secret("secret"),
+				auth: handler.NewAuth(
+					&port.APIAuthSignUpMock{},
+					&port.APIAuthSignInMock{
+						T:            t,
+						AuthToken:    auth.GenerateAuthToken(user.GenerateID(), auth.SessionID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")).ToSecret()),
+						SessionToken: auth.GenerateSessionToken(auth.SessionID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")), auth.Secret("secret")),
+					},
+					&port.APIAuthSignOutMock{},
+					&port.APIAuthVerifyMock{},
+					&port.APIAuthRefreshMock{},
+					&port.APIAuthGenerateCodeMock{},
+					Cookie(t),
+				),
+			},
+			args: args{
+				r: &http.Request{
+					Method: http.MethodPost,
+				},
+				body: openapi.V1AuthSignInRequestSchema{
+					Email:     "email",
+					Password:  "password",
+					PublicKey: "key",
+				},
+			},
+			status: http.StatusBadRequest,
+		},
+		{
+			name: "公開鍵が不正な値でサインインできない",
+			fields: fields{
+				secret: auth.Secret("secret"),
+				auth: handler.NewAuth(
+					&port.APIAuthSignUpMock{},
+					&port.APIAuthSignInMock{
+						T:            t,
+						AuthToken:    auth.GenerateAuthToken(user.GenerateID(), auth.SessionID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")).ToSecret()),
+						SessionToken: auth.GenerateSessionToken(auth.SessionID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")), auth.Secret("secret")),
+					},
+					&port.APIAuthSignOutMock{},
+					&port.APIAuthVerifyMock{},
+					&port.APIAuthRefreshMock{},
+					&port.APIAuthGenerateCodeMock{},
+					Cookie(t),
+				),
+			},
+			args: args{
+				r: &http.Request{
+					Method: http.MethodPost,
+				},
+				body: openapi.V1AuthSignInRequestSchema{
+					Email:     "test@example.com",
+					Password:  "password",
+					PublicKey: "key",
+				},
+			},
+			status: http.StatusBadRequest,
 		},
 	}
 

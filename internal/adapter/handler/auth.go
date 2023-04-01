@@ -18,8 +18,6 @@ const path = "/"
 
 // リフレッシュ
 // (GET /v1/auth/refresh).
-//
-//nolint:funlen
 func (hdl *Handler) V1AuthRefresh(w http.ResponseWriter, r *http.Request, params openapi.V1AuthRefreshParams) {
 	ctx := r.Context()
 
@@ -27,7 +25,7 @@ func (hdl *Handler) V1AuthRefresh(w http.ResponseWriter, r *http.Request, params
 	if err != nil {
 		log.GetLogCtx(ctx).Warn("failed to new code id", log.ErrorField(err))
 
-		hdl.HandleErrorStatus(w, err)
+		w.WriteHeader(http.StatusBadRequest)
 
 		return
 	}
@@ -36,7 +34,7 @@ func (hdl *Handler) V1AuthRefresh(w http.ResponseWriter, r *http.Request, params
 	if err != nil {
 		log.GetLogCtx(ctx).Warn("failed to new signature", log.ErrorField(err))
 
-		hdl.HandleErrorStatus(w, err)
+		w.WriteHeader(http.StatusBadRequest)
 
 		return
 	}
@@ -93,8 +91,6 @@ func (hdl *Handler) V1AuthRefresh(w http.ResponseWriter, r *http.Request, params
 
 // サインイン
 // (POST /v1/auth/signin).
-//
-//nolint:funlen
 func (hdl *Handler) V1AuthSignIn(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
@@ -112,7 +108,7 @@ func (hdl *Handler) V1AuthSignIn(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.GetLogCtx(ctx).Warn("failed to decode public key", log.ErrorField(err))
 
-		hdl.HandleErrorStatus(w, err)
+		w.WriteHeader(http.StatusBadRequest)
 
 		return
 	}
@@ -121,7 +117,7 @@ func (hdl *Handler) V1AuthSignIn(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.GetLogCtx(ctx).Warn("failed to new email", log.ErrorField(err))
 
-		hdl.HandleErrorStatus(w, err)
+		w.WriteHeader(http.StatusBadRequest)
 
 		return
 	}
@@ -130,7 +126,7 @@ func (hdl *Handler) V1AuthSignIn(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.GetLogCtx(ctx).Warn("failed to new password", log.ErrorField(err))
 
-		hdl.HandleErrorStatus(w, err)
+		w.WriteHeader(http.StatusBadRequest)
 
 		return
 	}
@@ -141,7 +137,7 @@ func (hdl *Handler) V1AuthSignIn(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			log.GetLogCtx(ctx).Warn("failed to new expires in", log.ErrorField(err))
 
-			hdl.HandleErrorStatus(w, err)
+			w.WriteHeader(http.StatusBadRequest)
 
 			return
 		}
@@ -158,7 +154,7 @@ func (hdl *Handler) V1AuthSignIn(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.GetLogCtx(ctx).Warn("failed to sign in", log.ErrorField(err))
 
-		w.WriteHeader(http.StatusUnauthorized)
+		w.WriteHeader(http.StatusBadRequest)
 
 		return
 	}

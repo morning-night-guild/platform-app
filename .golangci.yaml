@@ -36,6 +36,9 @@ linters:
     - wastedassign
 issues:
   exclude-rules:
+    - path: handler
+      linters:
+        - funlen
     - path: kvs
       linters:
         - ireturn

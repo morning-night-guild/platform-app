@@ -27,6 +27,14 @@ func TestNewEMail(t *testing.T) {
 			want:    auth.EMail("test@example.com"),
 			wantErr: false,
 		},
+		{
+			name: "メールアドレスが作成できない",
+			args: args{
+				value: "email",
+			},
+			want:    auth.EMail(""),
+			wantErr: true,
+		},
 	}
 
 	for _, tt := range tests {

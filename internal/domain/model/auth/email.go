@@ -1,5 +1,11 @@
 package auth
 
+import (
+	"net/mail"
+
+	"github.com/morning-night-guild/platform-app/internal/domain/model/errors"
+)
+
 type EMail string
 
 func NewEMail(value string) (EMail, error) {
@@ -17,5 +23,9 @@ func (em EMail) String() string {
 }
 
 func (em EMail) validate() error {
+	if _, err := mail.ParseAddress(em.String()); err != nil {
+		return errors.NewValidationError("invalid email address")
+	}
+
 	return nil
 }
