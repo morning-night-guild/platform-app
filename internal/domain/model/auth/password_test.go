@@ -27,6 +27,14 @@ func TestNewPassword(t *testing.T) {
 			want:    auth.Password("password"),
 			wantErr: false,
 		},
+		{
+			name: "パスワードが作成できない",
+			args: args{
+				value: "",
+			},
+			want:    auth.Password(""),
+			wantErr: true,
+		},
 	}
 
 	for _, tt := range tests {

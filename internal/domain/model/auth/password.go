@@ -1,5 +1,7 @@
 package auth
 
+import "github.com/morning-night-guild/platform-app/internal/domain/model/errors"
+
 type Password string
 
 func NewPassword(value string) (Password, error) {
@@ -17,5 +19,9 @@ func (pw Password) String() string {
 }
 
 func (pw Password) validate() error {
+	if pw == "" {
+		return errors.NewValidationError("password is required")
+	}
+
 	return nil
 }

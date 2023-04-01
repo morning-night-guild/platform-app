@@ -259,7 +259,37 @@ func TestHandlerV1AuthSignIn(t *testing.T) {
 				body: openapi.V1AuthSignInRequestSchema{
 					Email:     "email",
 					Password:  "password",
-					PublicKey: "key",
+					PublicKey: GeneratePublicKey(t),
+				},
+			},
+			status: http.StatusBadRequest,
+		},
+		{
+			name: "パスワードが不正な値でサインインできない",
+			fields: fields{
+				secret: auth.Secret("secret"),
+				auth: handler.NewAuth(
+					&port.APIAuthSignUpMock{},
+					&port.APIAuthSignInMock{
+						T:            t,
+						AuthToken:    auth.GenerateAuthToken(user.GenerateID(), auth.SessionID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")).ToSecret()),
+						SessionToken: auth.GenerateSessionToken(auth.SessionID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")), auth.Secret("secret")),
+					},
+					&port.APIAuthSignOutMock{},
+					&port.APIAuthVerifyMock{},
+					&port.APIAuthRefreshMock{},
+					&port.APIAuthGenerateCodeMock{},
+					Cookie(t),
+				),
+			},
+			args: args{
+				r: &http.Request{
+					Method: http.MethodPost,
+				},
+				body: openapi.V1AuthSignInRequestSchema{
+					Email:     "test@example.com",
+					Password:  "",
+					PublicKey: GeneratePublicKey(t),
 				},
 			},
 			status: http.StatusBadRequest,
