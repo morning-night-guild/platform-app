@@ -50,7 +50,6 @@ func TestNewCodeID(t *testing.T) {
 			got, err := auth.NewCodeID(tt.args.value)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("NewCodeID() error = %v, wantErr %v", err, tt.wantErr)
-
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {

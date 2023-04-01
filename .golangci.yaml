@@ -1,5 +1,7 @@
 run:
   timeout: 10m
+  skip-dirs:
+    - pkg
 linters-settings:
   varnamelen:
     min-name-length: 1
@@ -37,9 +39,14 @@ issues:
     - path: kvs
       linters:
         - ireturn
-    - path: mock
+    - path: _mock\.go
       linters:
         - ireturn
+        - revive
+        - gochecknoglobals
+        - lll
+        - nlreturn
+        - wsl
     - path: _test\.go
       linters:
         - funlen
@@ -54,3 +61,4 @@ issues:
         - maintidx
         - lll
         - gocyclo
+        - nlreturn

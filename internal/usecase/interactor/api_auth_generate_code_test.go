@@ -11,7 +11,6 @@ import (
 	"github.com/morning-night-guild/platform-app/internal/domain/model"
 	"github.com/morning-night-guild/platform-app/internal/domain/model/auth"
 	"github.com/morning-night-guild/platform-app/internal/usecase/interactor"
-	"github.com/morning-night-guild/platform-app/internal/usecase/mock"
 	"github.com/morning-night-guild/platform-app/internal/usecase/port"
 )
 
@@ -41,7 +40,7 @@ func TestAPIAuthGenerateCodeExecute(t *testing.T) {
 			name: "コードが生成できる",
 			fields: fields{
 				secret: auth.Secret("secret"),
-				codeCache: &mock.Cache[model.Code]{
+				codeCache: &cache.CacheMock[model.Code]{
 					T: t,
 					SetAssert: func(t *testing.T, key string, value model.Code, ttl time.Duration) {
 						t.Helper()
@@ -80,7 +79,6 @@ func TestAPIAuthGenerateCodeExecute(t *testing.T) {
 			got, err := aas.Execute(tt.args.ctx, tt.args.input)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("APIAuthGenerateCode.Execute() error = %v, wantErr %v", err, tt.wantErr)
-
 				return
 			}
 			if !reflect.DeepEqual(got.Code.SessionID, tt.want.Code.SessionID) {

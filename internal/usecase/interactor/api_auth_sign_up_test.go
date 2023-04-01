@@ -6,13 +6,13 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
 	"github.com/morning-night-guild/platform-app/internal/domain/model"
 	"github.com/morning-night-guild/platform-app/internal/domain/model/auth"
 	"github.com/morning-night-guild/platform-app/internal/domain/model/user"
 	"github.com/morning-night-guild/platform-app/internal/domain/rpc"
 	"github.com/morning-night-guild/platform-app/internal/usecase/interactor"
-	"github.com/morning-night-guild/platform-app/internal/usecase/mock"
 	"github.com/morning-night-guild/platform-app/internal/usecase/port"
 )
 
@@ -20,8 +20,8 @@ func TestAPIAuthSignUpExecute(t *testing.T) {
 	t.Parallel()
 
 	type fields struct {
-		userRPC rpc.User
-		authRPC rpc.Auth
+		userRPC func(t *testing.T) rpc.User
+		authRPC func(t *testing.T) rpc.Auth
 	}
 
 	type args struct {
@@ -46,32 +46,26 @@ func TestAPIAuthSignUpExecute(t *testing.T) {
 				},
 			},
 			fields: fields{
-				userRPC: &mock.UserRPC{
-					T: t,
-					User: model.User{
+				userRPC: func(t *testing.T) rpc.User {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := rpc.NewMockUser(ctrl)
+					mock.EXPECT().Create(gomock.Any()).Return(model.User{
 						UserID: user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
-					},
+					}, nil)
+					return mock
 				},
-				authRPC: &mock.AuthRPC{
-					T: t,
-					SignUpAssert: func(
-						t *testing.T,
-						userID user.ID,
-						email auth.EMail,
-						password auth.Password,
-					) {
-						t.Helper()
-
-						if !reflect.DeepEqual(userID, user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab"))) {
-							t.Errorf("userID = %v, want %v", userID, user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")))
-						}
-						if !reflect.DeepEqual(email, auth.EMail("test@example.com")) {
-							t.Errorf("email = %v, want %v", email, auth.EMail("test@example.com"))
-						}
-						if !reflect.DeepEqual(password, auth.Password("password")) {
-							t.Errorf("password = %v, want %v", password, auth.Password("password"))
-						}
-					},
+				authRPC: func(t *testing.T) rpc.Auth {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := rpc.NewMockAuth(ctrl)
+					mock.EXPECT().SignUp(
+						gomock.Any(),
+						user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+						auth.EMail("test@example.com"),
+						auth.Password("password"),
+					).Return(nil)
+					return mock
 				},
 			},
 			want:    port.APIAuthSignUpOutput{},
@@ -87,11 +81,19 @@ func TestAPIAuthSignUpExecute(t *testing.T) {
 				},
 			},
 			fields: fields{
-				userRPC: &mock.UserRPC{
-					T:         t,
-					CreateErr: fmt.Errorf("test"),
+				userRPC: func(t *testing.T) rpc.User {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := rpc.NewMockUser(ctrl)
+					mock.EXPECT().Create(gomock.Any()).Return(model.User{}, fmt.Errorf("test"))
+					return mock
 				},
-				authRPC: &mock.AuthRPC{},
+				authRPC: func(t *testing.T) rpc.Auth {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := rpc.NewMockAuth(ctrl)
+					return mock
+				},
 			},
 			want:    port.APIAuthSignUpOutput{},
 			wantErr: true,
@@ -106,23 +108,26 @@ func TestAPIAuthSignUpExecute(t *testing.T) {
 				},
 			},
 			fields: fields{
-				userRPC: &mock.UserRPC{
-					T: t,
-					User: model.User{
+				userRPC: func(t *testing.T) rpc.User {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := rpc.NewMockUser(ctrl)
+					mock.EXPECT().Create(gomock.Any()).Return(model.User{
 						UserID: user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
-					},
+					}, nil)
+					return mock
 				},
-				authRPC: &mock.AuthRPC{
-					T: t,
-					SignUpAssert: func(
-						t *testing.T,
-						userID user.ID,
-						email auth.EMail,
-						password auth.Password,
-					) {
-						t.Helper()
-					},
-					SignUpErr: fmt.Errorf("test"),
+				authRPC: func(t *testing.T) rpc.Auth {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := rpc.NewMockAuth(ctrl)
+					mock.EXPECT().SignUp(
+						gomock.Any(),
+						user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+						auth.EMail("test@example.com"),
+						auth.Password("password"),
+					).Return(fmt.Errorf("test"))
+					return mock
 				},
 			},
 			want:    port.APIAuthSignUpOutput{},
@@ -135,13 +140,12 @@ func TestAPIAuthSignUpExecute(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			aas := interactor.NewAPIAuthSignUp(
-				tt.fields.userRPC,
-				tt.fields.authRPC,
+				tt.fields.userRPC(t),
+				tt.fields.authRPC(t),
 			)
 			got, err := aas.Execute(tt.args.ctx, tt.args.input)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("APIAuthSignUp.Execute() error = %v, wantErr %v", err, tt.wantErr)
-
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {

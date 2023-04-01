@@ -46,7 +46,6 @@ func TestNewID(t *testing.T) {
 			got, err := user.NewID(tt.args.value)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("NewID() error = %v, wantErr %v", err, tt.wantErr)
-
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {

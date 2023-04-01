@@ -46,7 +46,6 @@ func TestNewSessionID(t *testing.T) {
 			got, err := auth.NewSessionID(tt.args.value)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("NewSessionID() error = %v, wantErr %v", err, tt.wantErr)
-
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {

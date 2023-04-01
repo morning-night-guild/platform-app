@@ -6,12 +6,12 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
 	"github.com/morning-night-guild/platform-app/internal/domain/model"
 	"github.com/morning-night-guild/platform-app/internal/domain/model/article"
 	"github.com/morning-night-guild/platform-app/internal/domain/repository"
 	"github.com/morning-night-guild/platform-app/internal/usecase/interactor"
-	"github.com/morning-night-guild/platform-app/internal/usecase/mock"
 	"github.com/morning-night-guild/platform-app/internal/usecase/port"
 )
 
@@ -19,13 +19,15 @@ func TestCoreArticleShareExecute(t *testing.T) {
 	t.Parallel()
 
 	type fields struct {
-		articleRepository repository.Article
+		articleRepository func(t *testing.T) repository.Article
 	}
 
 	type args struct {
 		ctx   context.Context
 		input port.CoreArticleShareInput
 	}
+
+	id := uuid.New()
 
 	tests := []struct {
 		name    string
@@ -37,8 +39,15 @@ func TestCoreArticleShareExecute(t *testing.T) {
 		{
 			name: "記事を共有できる",
 			fields: fields{
-				articleRepository: &mock.ArticleRepository{
-					T: t,
+				articleRepository: func(t *testing.T) repository.Article {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := repository.NewMockArticle(ctrl)
+					mock.EXPECT().Save(
+						gomock.Any(),
+						gomock.Any(),
+					).Return(nil)
+					return mock
 				},
 			},
 			args: args{
@@ -52,7 +61,7 @@ func TestCoreArticleShareExecute(t *testing.T) {
 			},
 			want: port.CoreArticleShareOutput{
 				Article: model.Article{
-					ID:          article.ID{},
+					ID:          article.ID(id),
 					URL:         article.URL("https://example.com"),
 					Title:       article.Title("title"),
 					Description: article.Description("description"),
@@ -64,9 +73,15 @@ func TestCoreArticleShareExecute(t *testing.T) {
 		{
 			name: "記事Repositoryのerrorを握りつぶさない",
 			fields: fields{
-				articleRepository: &mock.ArticleRepository{
-					T:       t,
-					SaveErr: fmt.Errorf("article repository error"),
+				articleRepository: func(t *testing.T) repository.Article {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := repository.NewMockArticle(ctrl)
+					mock.EXPECT().Save(
+						gomock.Any(),
+						gomock.Any(),
+					).Return(fmt.Errorf("error"))
+					return mock
 				},
 			},
 			args: args{
@@ -87,11 +102,10 @@ func TestCoreArticleShareExecute(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			cas := interactor.NewCoreArticleShare(tt.fields.articleRepository)
+			cas := interactor.NewCoreArticleShare(tt.fields.articleRepository(t))
 			got, err := cas.Execute(tt.args.ctx, tt.args.input)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ShareInteractor.Execute() error = %v, wantErr %v", err, tt.wantErr)
-
 				return
 			}
 			if _, err := uuid.Parse(got.Article.ID.String()); err != nil {

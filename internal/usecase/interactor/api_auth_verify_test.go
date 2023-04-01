@@ -13,7 +13,6 @@ import (
 	"github.com/morning-night-guild/platform-app/internal/domain/model/auth"
 	"github.com/morning-night-guild/platform-app/internal/domain/model/user"
 	"github.com/morning-night-guild/platform-app/internal/usecase/interactor"
-	"github.com/morning-night-guild/platform-app/internal/usecase/mock"
 	"github.com/morning-night-guild/platform-app/internal/usecase/port"
 )
 
@@ -43,7 +42,7 @@ func TestAPIAuthVerifyExecute(t *testing.T) {
 			name: "検証できる",
 			fields: fields{
 				secret: auth.Secret("secret"),
-				authCache: &mock.Cache[model.Auth]{
+				authCache: &cache.CacheMock[model.Auth]{
 					T: t,
 					Value: model.Auth{
 						AuthID:    user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
@@ -76,7 +75,7 @@ func TestAPIAuthVerifyExecute(t *testing.T) {
 			name: "AuthがCacheに存在せず検証に失敗する",
 			fields: fields{
 				secret: auth.Secret("secret"),
-				authCache: &mock.Cache[model.Auth]{
+				authCache: &cache.CacheMock[model.Auth]{
 					T:      t,
 					Value:  model.Auth{},
 					GetErr: fmt.Errorf("test"),
@@ -105,7 +104,7 @@ func TestAPIAuthVerifyExecute(t *testing.T) {
 			name: "Authの有効期限が切れて検証に失敗する",
 			fields: fields{
 				secret: auth.Secret("secret"),
-				authCache: &mock.Cache[model.Auth]{
+				authCache: &cache.CacheMock[model.Auth]{
 					T: t,
 					Value: model.Auth{
 						AuthID:    user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
@@ -147,7 +146,6 @@ func TestAPIAuthVerifyExecute(t *testing.T) {
 			got, err := aav.Execute(tt.args.ctx, tt.args.input)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("APIAuthVerify.Execute() error = %v, wantErr %v", err, tt.wantErr)
-
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {

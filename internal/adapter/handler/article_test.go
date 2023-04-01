@@ -10,9 +10,9 @@ import (
 	"testing"
 
 	"github.com/morning-night-guild/platform-app/internal/adapter/handler"
-	"github.com/morning-night-guild/platform-app/internal/adapter/mock"
 	"github.com/morning-night-guild/platform-app/internal/domain/model"
 	"github.com/morning-night-guild/platform-app/internal/domain/model/auth"
+	"github.com/morning-night-guild/platform-app/internal/usecase/port"
 	"github.com/morning-night-guild/platform-app/pkg/openapi"
 )
 
@@ -44,13 +44,13 @@ func TestAPIV1ListArticles(t *testing.T) {
 			name: "記事が一覧できる",
 			fields: fields{
 				key: "key",
-				article: handler.NewArticle(mock.APIArticleList{
+				article: handler.NewArticle(port.APIArticleListMock{
 					T:        t,
 					Articles: []model.Article{},
-				}, mock.APIArticleShare{
+				}, port.APIArticleShareMock{
 					T: t,
 				}),
-				health: handler.NewHealth(&mock.APIHealthCheck{
+				health: handler.NewHealth(&port.APIHealthCheckMock{
 					T: t,
 				}),
 			},
@@ -69,13 +69,13 @@ func TestAPIV1ListArticles(t *testing.T) {
 			name: "sizeが不正な値で記事が一覧できない",
 			fields: fields{
 				key: "key",
-				article: handler.NewArticle(mock.APIArticleList{
+				article: handler.NewArticle(port.APIArticleListMock{
 					T:        t,
 					Articles: []model.Article{},
-				}, mock.APIArticleShare{
+				}, port.APIArticleShareMock{
 					T: t,
 				}),
-				health: handler.NewHealth(&mock.APIHealthCheck{
+				health: handler.NewHealth(&port.APIHealthCheckMock{
 					T: t,
 				}),
 			},
@@ -94,14 +94,14 @@ func TestAPIV1ListArticles(t *testing.T) {
 			name: "coreにてerrorが発生して記事が一覧できない",
 			fields: fields{
 				key: "key",
-				article: handler.NewArticle(mock.APIArticleList{
+				article: handler.NewArticle(port.APIArticleListMock{
 					T:        t,
 					Articles: []model.Article{},
 					Err:      errors.New("error"),
-				}, mock.APIArticleShare{
+				}, port.APIArticleShareMock{
 					T: t,
 				}),
-				health: handler.NewHealth(&mock.APIHealthCheck{}),
+				health: handler.NewHealth(&port.APIHealthCheckMock{}),
 			},
 			args: args{
 				r: &http.Request{
@@ -166,12 +166,12 @@ func TestAPIV1ShareArticle(t *testing.T) {
 			name: "記事が共有できる",
 			fields: fields{
 				key: "key",
-				article: handler.NewArticle(mock.APIArticleList{
+				article: handler.NewArticle(port.APIArticleListMock{
 					T: t,
-				}, mock.APIArticleShare{
+				}, port.APIArticleShareMock{
 					T: t,
 				}),
-				health: handler.NewHealth(&mock.APIHealthCheck{
+				health: handler.NewHealth(&port.APIHealthCheckMock{
 					T: t,
 				}),
 			},
@@ -195,12 +195,12 @@ func TestAPIV1ShareArticle(t *testing.T) {
 			name: "nil値が与えられても記事が共有できる",
 			fields: fields{
 				key: "key",
-				article: handler.NewArticle(mock.APIArticleList{
+				article: handler.NewArticle(port.APIArticleListMock{
 					T: t,
-				}, mock.APIArticleShare{
+				}, port.APIArticleShareMock{
 					T: t,
 				}),
-				health: handler.NewHealth(&mock.APIHealthCheck{
+				health: handler.NewHealth(&port.APIHealthCheckMock{
 					T: t,
 				}),
 			},
@@ -224,12 +224,12 @@ func TestAPIV1ShareArticle(t *testing.T) {
 			name: "Api-Keyがなくて記事が共有できない",
 			fields: fields{
 				key: "key",
-				article: handler.NewArticle(mock.APIArticleList{
+				article: handler.NewArticle(port.APIArticleListMock{
 					T: t,
-				}, mock.APIArticleShare{
+				}, port.APIArticleShareMock{
 					T: t,
 				}),
-				health: handler.NewHealth(&mock.APIHealthCheck{
+				health: handler.NewHealth(&port.APIHealthCheckMock{
 					T: t,
 				}),
 			},

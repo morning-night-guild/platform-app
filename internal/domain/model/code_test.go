@@ -64,7 +64,6 @@ func TestNewCode(t *testing.T) {
 			got, err := model.NewCode(tt.args.codeID, tt.args.sessionID, tt.args.issuedAt, tt.args.expiresAt)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("NewCode() error = %v, wantErr %v", err, tt.wantErr)
-
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {

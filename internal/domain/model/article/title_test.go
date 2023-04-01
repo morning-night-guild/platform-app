@@ -44,7 +44,6 @@ func TestNewTitle(t *testing.T) {
 			got, err := article.NewTitle(tt.args.t)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("NewTitle() error = %v, wantErr %v", err, tt.wantErr)
-
 				return
 			}
 			if got != tt.want {

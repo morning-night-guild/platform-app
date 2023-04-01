@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
 	"github.com/morning-night-guild/platform-app/internal/domain/cache"
 	"github.com/morning-night-guild/platform-app/internal/domain/model"
@@ -14,7 +15,6 @@ import (
 	"github.com/morning-night-guild/platform-app/internal/domain/model/user"
 	"github.com/morning-night-guild/platform-app/internal/domain/rpc"
 	"github.com/morning-night-guild/platform-app/internal/usecase/interactor"
-	"github.com/morning-night-guild/platform-app/internal/usecase/mock"
 	"github.com/morning-night-guild/platform-app/internal/usecase/port"
 )
 
@@ -23,7 +23,7 @@ func TestAPIAuthSignInExecute(t *testing.T) {
 
 	type fields struct {
 		secret       auth.Secret
-		authRPC      rpc.Auth
+		authRPC      func(t *testing.T) rpc.Auth
 		authCache    cache.Cache[model.Auth]
 		sessionCache cache.Cache[model.Session]
 	}
@@ -44,22 +44,20 @@ func TestAPIAuthSignInExecute(t *testing.T) {
 			name: "サインインできる",
 			fields: fields{
 				secret: auth.Secret("secret"),
-				authRPC: &mock.AuthRPC{
-					T: t,
-					User: model.User{
+				authRPC: func(t *testing.T) rpc.Auth {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := rpc.NewMockAuth(ctrl)
+					mock.EXPECT().SignIn(
+						gomock.Any(),
+						auth.EMail("test@example.com"),
+						auth.Password("password"),
+					).Return(model.User{
 						UserID: user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
-					},
-					SignInAssert: func(t *testing.T, email auth.EMail, password auth.Password) {
-						t.Helper()
-						if !reflect.DeepEqual(email, auth.EMail("test@example.com")) {
-							t.Errorf("email = %v, want %v", email, auth.EMail("test@example.com"))
-						}
-						if !reflect.DeepEqual(password, auth.Password("password")) {
-							t.Errorf("password = %v, want %v", password, auth.Password("password"))
-						}
-					},
+					}, nil)
+					return mock
 				},
-				authCache: &mock.Cache[model.Auth]{
+				authCache: &cache.CacheMock[model.Auth]{
 					T: t,
 					SetAssert: func(t *testing.T, key string, value model.Auth, ttl time.Duration) {
 						t.Helper()
@@ -68,7 +66,7 @@ func TestAPIAuthSignInExecute(t *testing.T) {
 						}
 					},
 				},
-				sessionCache: &mock.Cache[model.Session]{
+				sessionCache: &cache.CacheMock[model.Session]{
 					T: t,
 					SetAssert: func(t *testing.T, key string, value model.Session, ttl time.Duration) {
 						t.Helper()
@@ -106,14 +104,13 @@ func TestAPIAuthSignInExecute(t *testing.T) {
 			t.Parallel()
 			aas := interactor.NewAPIAuthSignIn(
 				tt.fields.secret,
-				tt.fields.authRPC,
+				tt.fields.authRPC(t),
 				tt.fields.authCache,
 				tt.fields.sessionCache,
 			)
 			_, err := aas.Execute(tt.args.ctx, tt.args.input)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("APIAuthSignIn.Execute() error = %v, wantErr %v", err, tt.wantErr)
-
 				return
 			}
 			// if !reflect.DeepEqual(got, tt.want) {

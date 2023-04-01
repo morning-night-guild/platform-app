@@ -44,7 +44,6 @@ func TestNewTag(t *testing.T) {
 			got, err := article.NewTag(tt.args.value)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("NewTag() error = %v, wantErr %v", err, tt.wantErr)
-
 				return
 			}
 			if got != tt.want {

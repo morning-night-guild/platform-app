@@ -40,7 +40,6 @@ func TestDecodePublicKey(t *testing.T) {
 			got, err := auth.DecodePublicKey(tt.args.key.String())
 			if (err != nil) != tt.wantErr {
 				t.Errorf("DecodePublicKey() error = %v, wantErr %v", err, tt.wantErr)
-
 				return
 			}
 			if !reflect.DeepEqual(got, tt.args.key.Key.PublicKey) {

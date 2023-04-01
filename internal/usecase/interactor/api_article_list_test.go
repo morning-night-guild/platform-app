@@ -6,12 +6,12 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/golang/mock/gomock"
 	"github.com/morning-night-guild/platform-app/internal/domain/model"
 	"github.com/morning-night-guild/platform-app/internal/domain/model/article"
 	"github.com/morning-night-guild/platform-app/internal/domain/rpc"
 	"github.com/morning-night-guild/platform-app/internal/domain/value"
 	"github.com/morning-night-guild/platform-app/internal/usecase/interactor"
-	"github.com/morning-night-guild/platform-app/internal/usecase/mock"
 	"github.com/morning-night-guild/platform-app/internal/usecase/port"
 )
 
@@ -19,7 +19,7 @@ func TestAPIArticleListExecute(t *testing.T) {
 	t.Parallel()
 
 	type fields struct {
-		articleRPC rpc.Article
+		articleRPC func(t *testing.T) rpc.Article
 	}
 
 	type args struct {
@@ -54,9 +54,12 @@ func TestAPIArticleListExecute(t *testing.T) {
 		{
 			name: "記事リストが取得できる",
 			fields: fields{
-				articleRPC: &mock.ArticleRPC{
-					T:        t,
-					Articles: articles,
+				articleRPC: func(t *testing.T) rpc.Article {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := rpc.NewMockArticle(ctrl)
+					mock.EXPECT().List(gomock.Any(), value.Index(0), value.Size(2)).Return(articles, nil)
+					return mock
 				},
 			},
 			args: args{
@@ -74,9 +77,12 @@ func TestAPIArticleListExecute(t *testing.T) {
 		{
 			name: "rpcでerrorが発生して記事リストが取得できない",
 			fields: fields{
-				articleRPC: &mock.ArticleRPC{
-					T:       t,
-					ListErr: fmt.Errorf("test"),
+				articleRPC: func(t *testing.T) rpc.Article {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := rpc.NewMockArticle(ctrl)
+					mock.EXPECT().List(gomock.Any(), value.Index(0), value.Size(2)).Return(nil, fmt.Errorf("test"))
+					return mock
 				},
 			},
 			args: args{
@@ -95,11 +101,10 @@ func TestAPIArticleListExecute(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			aal := interactor.NewAPIArticleList(tt.fields.articleRPC)
+			aal := interactor.NewAPIArticleList(tt.fields.articleRPC(t))
 			got, err := aal.Execute(tt.args.ctx, tt.args.input)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("APIArticleList.Execute() error = %v, wantErr %v", err, tt.wantErr)
-
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {

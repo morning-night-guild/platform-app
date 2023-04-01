@@ -12,7 +12,6 @@ import (
 	"github.com/morning-night-guild/platform-app/internal/domain/model/auth"
 	"github.com/morning-night-guild/platform-app/internal/domain/model/user"
 	"github.com/morning-night-guild/platform-app/internal/usecase/interactor"
-	"github.com/morning-night-guild/platform-app/internal/usecase/mock"
 	"github.com/morning-night-guild/platform-app/internal/usecase/port"
 )
 
@@ -41,13 +40,13 @@ func TestAPIAuthSignOutExecute(t *testing.T) {
 			name: "サインアウトできる",
 			fields: fields{
 				secret: auth.Secret("secret"),
-				authCache: &mock.Cache[model.Auth]{
+				authCache: &cache.CacheMock[model.Auth]{
 					T: t,
 					DelAssert: func(t *testing.T, key string) {
 						t.Helper()
 					},
 				},
-				sessionCache: &mock.Cache[model.Session]{
+				sessionCache: &cache.CacheMock[model.Session]{
 					T: t,
 					DelAssert: func(t *testing.T, key string) {
 						t.Helper()
@@ -74,14 +73,14 @@ func TestAPIAuthSignOutExecute(t *testing.T) {
 			name: "AuthCache.Del()でエラーが発生してもサインアウトできる",
 			fields: fields{
 				secret: auth.Secret("secret"),
-				authCache: &mock.Cache[model.Auth]{
+				authCache: &cache.CacheMock[model.Auth]{
 					T:      t,
 					DelErr: fmt.Errorf("test"),
 					DelAssert: func(t *testing.T, key string) {
 						t.Helper()
 					},
 				},
-				sessionCache: &mock.Cache[model.Session]{
+				sessionCache: &cache.CacheMock[model.Session]{
 					T: t,
 					DelAssert: func(t *testing.T, key string) {
 						t.Helper()
@@ -108,13 +107,13 @@ func TestAPIAuthSignOutExecute(t *testing.T) {
 			name: "SessionCache.Del()でエラーが発生してもサインアウトできる",
 			fields: fields{
 				secret: auth.Secret("secret"),
-				authCache: &mock.Cache[model.Auth]{
+				authCache: &cache.CacheMock[model.Auth]{
 					T: t,
 					DelAssert: func(t *testing.T, key string) {
 						t.Helper()
 					},
 				},
-				sessionCache: &mock.Cache[model.Session]{
+				sessionCache: &cache.CacheMock[model.Session]{
 					T:      t,
 					DelErr: fmt.Errorf("test"),
 					DelAssert: func(t *testing.T, key string) {
@@ -152,7 +151,6 @@ func TestAPIAuthSignOutExecute(t *testing.T) {
 			got, err := aas.Execute(tt.args.ctx, tt.args.input)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("APIAuthSignOut.Execute() error = %v, wantErr %v", err, tt.wantErr)
-
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {

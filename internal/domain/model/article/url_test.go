@@ -52,7 +52,6 @@ func TestNewURL(t *testing.T) {
 			got, err := article.NewURL(tt.args.u)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("NewURL() error = %v, wantErr %v", err, tt.wantErr)
-
 				return
 			}
 			if got != tt.want {

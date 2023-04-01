@@ -70,7 +70,6 @@ func TestNewSession(t *testing.T) {
 			got, err := model.NewSession(tt.args.sessionID, tt.args.userID, tt.args.publicKey, tt.args.issuedAt, tt.args.expiresAt)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("NewSession() error = %v, wantErr %v", err, tt.wantErr)
-
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {

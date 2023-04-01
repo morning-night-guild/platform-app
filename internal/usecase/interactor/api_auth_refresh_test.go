@@ -15,7 +15,6 @@ import (
 	"github.com/morning-night-guild/platform-app/internal/domain/model/auth"
 	"github.com/morning-night-guild/platform-app/internal/domain/model/user"
 	"github.com/morning-night-guild/platform-app/internal/usecase/interactor"
-	"github.com/morning-night-guild/platform-app/internal/usecase/mock"
 	"github.com/morning-night-guild/platform-app/internal/usecase/port"
 )
 
@@ -48,7 +47,7 @@ func TestAPIAuthRefreshExecute(t *testing.T) {
 			name: "リフレッシュできる",
 			fields: fields{
 				secret: auth.Secret("secret"),
-				codeCache: &mock.Cache[model.Code]{
+				codeCache: &cache.CacheMock[model.Code]{
 					T: t,
 					Value: model.Code{
 						CodeID:    auth.CodeID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
@@ -63,7 +62,7 @@ func TestAPIAuthRefreshExecute(t *testing.T) {
 						t.Helper()
 					},
 				},
-				sessionCache: &mock.Cache[model.Session]{
+				sessionCache: &cache.CacheMock[model.Session]{
 					T: t,
 					Value: model.Session{
 						SessionID: auth.SessionID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
@@ -105,7 +104,6 @@ func TestAPIAuthRefreshExecute(t *testing.T) {
 			_, err := aar.Execute(tt.args.ctx, tt.args.input)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("APIAuthRefresh.Execute() error = %v, wantErr %v", err, tt.wantErr)
-
 				return
 			}
 			// if !reflect.DeepEqual(got, tt.want) {

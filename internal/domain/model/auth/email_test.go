@@ -36,7 +36,6 @@ func TestNewEMail(t *testing.T) {
 			got, err := auth.NewEMail(tt.args.value)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("NewEMail() error = %v, wantErr %v", err, tt.wantErr)
-
 				return
 			}
 			if got != tt.want {

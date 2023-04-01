@@ -6,12 +6,12 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
 	"github.com/morning-night-guild/platform-app/internal/domain/model"
 	"github.com/morning-night-guild/platform-app/internal/domain/model/user"
 	"github.com/morning-night-guild/platform-app/internal/domain/repository"
 	"github.com/morning-night-guild/platform-app/internal/usecase/interactor"
-	"github.com/morning-night-guild/platform-app/internal/usecase/mock"
 	"github.com/morning-night-guild/platform-app/internal/usecase/port"
 )
 
@@ -19,7 +19,7 @@ func TestCoreUserUpdateExecute(t *testing.T) {
 	t.Parallel()
 
 	type fields struct {
-		userRepository repository.User
+		userRepository func(t *testing.T) repository.User
 	}
 
 	type args struct {
@@ -37,27 +37,15 @@ func TestCoreUserUpdateExecute(t *testing.T) {
 		{
 			name: "ユーザーが更新できる",
 			fields: fields{
-				userRepository: &mock.UserRepository{
-					T: t,
-					User: model.User{
+				userRepository: func(t *testing.T) repository.User {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := repository.NewMockUser(ctrl)
+					mock.EXPECT().Find(gomock.Any(), gomock.Any()).Return(model.User{
 						UserID: user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
-					},
-					SaveAssert: func(t *testing.T, item model.User) {
-						t.Helper()
-
-						if _, err := uuid.Parse(item.UserID.String()); err != nil {
-							t.Errorf("UserRepository.Save() got = %v, err %v", item, err)
-						}
-					},
-					FindAssert: func(t *testing.T, id user.ID) {
-						t.Helper()
-
-						want := user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab"))
-
-						if !reflect.DeepEqual(id, want) {
-							t.Errorf("UserRepository.Find() id = %v, want %v", id, want)
-						}
-					},
+					}, nil)
+					mock.EXPECT().Save(gomock.Any(), gomock.Any()).Return(nil)
+					return mock
 				},
 			},
 			args: args{
@@ -76,15 +64,12 @@ func TestCoreUserUpdateExecute(t *testing.T) {
 		{
 			name: "UserRepository.Find()でエラーが発生してユーザーが更新できない",
 			fields: fields{
-				userRepository: &mock.UserRepository{
-					T: t,
-					User: model.User{
-						UserID: user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
-					},
-					FindErr: fmt.Errorf("test"),
-					FindAssert: func(t *testing.T, id user.ID) {
-						t.Helper()
-					},
+				userRepository: func(t *testing.T) repository.User {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := repository.NewMockUser(ctrl)
+					mock.EXPECT().Find(gomock.Any(), user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab"))).Return(model.User{}, fmt.Errorf("test"))
+					return mock
 				},
 			},
 			args: args{
@@ -101,18 +86,15 @@ func TestCoreUserUpdateExecute(t *testing.T) {
 		{
 			name: "UserRepository.Save()でエラーが発生してユーザーが更新できない",
 			fields: fields{
-				userRepository: &mock.UserRepository{
-					T: t,
-					User: model.User{
+				userRepository: func(t *testing.T) repository.User {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := repository.NewMockUser(ctrl)
+					mock.EXPECT().Find(gomock.Any(), user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab"))).Return(model.User{
 						UserID: user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
-					},
-					FindAssert: func(t *testing.T, id user.ID) {
-						t.Helper()
-					},
-					SaveErr: fmt.Errorf("test"),
-					SaveAssert: func(t *testing.T, item model.User) {
-						t.Helper()
-					},
+					}, nil)
+					mock.EXPECT().Save(gomock.Any(), gomock.Any()).Return(fmt.Errorf("test"))
+					return mock
 				},
 			},
 			args: args{
@@ -133,12 +115,11 @@ func TestCoreUserUpdateExecute(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			cuu := interactor.NewCoreUserUpdate(
-				tt.fields.userRepository,
+				tt.fields.userRepository(t),
 			)
 			got, err := cuu.Execute(tt.args.ctx, tt.args.input)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("CoreUserUpdate.Execute() error = %v, wantErr %v", err, tt.wantErr)
-
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {

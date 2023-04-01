@@ -7,9 +7,9 @@ import (
 	"testing"
 
 	"github.com/morning-night-guild/platform-app/internal/adapter/handler"
-	"github.com/morning-night-guild/platform-app/internal/adapter/mock"
 	"github.com/morning-night-guild/platform-app/internal/domain/model"
 	"github.com/morning-night-guild/platform-app/internal/domain/model/auth"
+	"github.com/morning-night-guild/platform-app/internal/usecase/port"
 )
 
 func TestAPIV1HealthAPI(t *testing.T) {
@@ -37,13 +37,13 @@ func TestAPIV1HealthAPI(t *testing.T) {
 			name: "ヘルスチェックが成功する",
 			fields: fields{
 				key: "key",
-				article: handler.NewArticle(mock.APIArticleList{
+				article: handler.NewArticle(port.APIArticleListMock{
 					T:        t,
 					Articles: []model.Article{},
-				}, mock.APIArticleShare{
+				}, port.APIArticleShareMock{
 					T: t,
 				}),
-				health: handler.NewHealth(&mock.APIHealthCheck{
+				health: handler.NewHealth(&port.APIHealthCheckMock{
 					T: t,
 				}),
 			},
@@ -101,13 +101,13 @@ func TestAPIV1HealthCore(t *testing.T) {
 			name: "ヘルスチェックが成功する",
 			fields: fields{
 				key: "key",
-				article: handler.NewArticle(mock.APIArticleList{
+				article: handler.NewArticle(port.APIArticleListMock{
 					T:        t,
 					Articles: []model.Article{},
-				}, mock.APIArticleShare{
+				}, port.APIArticleShareMock{
 					T: t,
 				}),
-				health: handler.NewHealth(&mock.APIHealthCheck{
+				health: handler.NewHealth(&port.APIHealthCheckMock{
 					T: t,
 				}),
 			},
@@ -122,13 +122,13 @@ func TestAPIV1HealthCore(t *testing.T) {
 			name: "Coreでエラーが発生してヘルスチェックが失敗する",
 			fields: fields{
 				key: "key",
-				article: handler.NewArticle(mock.APIArticleList{
+				article: handler.NewArticle(port.APIArticleListMock{
 					T:        t,
 					Articles: []model.Article{},
-				}, mock.APIArticleShare{
+				}, port.APIArticleShareMock{
 					T: t,
 				}),
-				health: handler.NewHealth(&mock.APIHealthCheck{
+				health: handler.NewHealth(&port.APIHealthCheckMock{
 					T:   t,
 					Err: errors.New("error"),
 				}),

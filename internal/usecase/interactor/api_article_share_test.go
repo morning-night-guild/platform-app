@@ -6,11 +6,11 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/golang/mock/gomock"
 	"github.com/morning-night-guild/platform-app/internal/domain/model"
 	"github.com/morning-night-guild/platform-app/internal/domain/model/article"
 	"github.com/morning-night-guild/platform-app/internal/domain/rpc"
 	"github.com/morning-night-guild/platform-app/internal/usecase/interactor"
-	"github.com/morning-night-guild/platform-app/internal/usecase/mock"
 	"github.com/morning-night-guild/platform-app/internal/usecase/port"
 )
 
@@ -18,7 +18,7 @@ func TestAPIArticleShareExecute(t *testing.T) {
 	t.Parallel()
 
 	type fields struct {
-		articleRPC rpc.Article
+		articleRPC func(t *testing.T) rpc.Article
 	}
 
 	type args struct {
@@ -38,9 +38,24 @@ func TestAPIArticleShareExecute(t *testing.T) {
 		{
 			name: "記事が共有できる",
 			fields: fields{
-				articleRPC: &mock.ArticleRPC{
-					T:  t,
-					ID: id,
+				articleRPC: func(t *testing.T) rpc.Article {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := rpc.NewMockArticle(ctrl)
+					mock.EXPECT().Share(
+						gomock.Any(),
+						article.URL("https://example.com"),
+						article.Title("title"),
+						article.Description("description"),
+						article.Thumbnail("https://example.com"),
+					).Return(model.Article{
+						ID:          id,
+						Title:       article.Title("title"),
+						URL:         article.URL("https://example.com"),
+						Description: article.Description("description"),
+						Thumbnail:   article.Thumbnail("https://example.com"),
+					}, nil)
+					return mock
 				},
 			},
 			args: args{
@@ -66,10 +81,18 @@ func TestAPIArticleShareExecute(t *testing.T) {
 		{
 			name: "rpcでerrorが発生して記事の共有が共有できない",
 			fields: fields{
-				articleRPC: &mock.ArticleRPC{
-					T:        t,
-					ID:       id,
-					ShareErr: fmt.Errorf("test"),
+				articleRPC: func(t *testing.T) rpc.Article {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := rpc.NewMockArticle(ctrl)
+					mock.EXPECT().Share(
+						gomock.Any(),
+						article.URL("https://example.com"),
+						article.Title("title"),
+						article.Description("description"),
+						article.Thumbnail("https://example.com"),
+					).Return(model.Article{}, fmt.Errorf("error"))
+					return mock
 				},
 			},
 			args: args{
@@ -92,11 +115,10 @@ func TestAPIArticleShareExecute(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			aas := interactor.NewAPIArticleShare(tt.fields.articleRPC)
+			aas := interactor.NewAPIArticleShare(tt.fields.articleRPC(t))
 			got, err := aas.Execute(tt.args.ctx, tt.args.input)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("APIArticleShare.Execute() error = %v, wantErr %v", err, tt.wantErr)
-
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {

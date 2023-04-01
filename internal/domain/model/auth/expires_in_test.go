@@ -68,7 +68,6 @@ func TestNewExpiresIn(t *testing.T) {
 			got, err := auth.NewExpiresIn(tt.args.value)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("NewExpiresIn() error = %v, wantErr %v", err, tt.wantErr)
-
 				return
 			}
 			if got != tt.want {
