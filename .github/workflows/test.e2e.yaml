@@ -23,6 +23,12 @@ jobs:
           - 5432:5432
         options: >-
           --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+      redis:
+        image: redis:7.0.10
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping" --health-interval 10s --health-timeout 5s --health-retries 5
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -34,6 +40,13 @@ jobs:
         env:
           DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable
         run: go run cmd/db/migrate/main.go
+      - name: Run firebase authentication
+        working-directory: ./.docker/firebase
+        run: |
+          npm install -g firebase-tools
+          firebase emulators:start --project=emulator &
+          echo FIREBASE_PID=$! >> $GITHUB_ENV
+          sleep 20
       - name: Run app core
         env:
           PORT: "8888"
@@ -49,6 +62,12 @@ jobs:
           APP_CORE_URL: http://localhost:8888
           DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable
           CORS_ALLOW_ORIGINS: http://localhost:5173
+          REDIS_URL: localhost:6379
+          TOKEN_SECRET: local
+          FIREBASE_SECRET: '{"type": "service_account","project_id": "emulator"}'
+          FIREBASE_API_ENDPOINT: http://localhost:9099/identitytoolkit.googleapis.com
+          FIREBASE_API_KEY: emulator
+          FIREBASE_AUTH_EMULATOR_HOST: localhost:9099
         run: | # サーバー起動待機のためにsleepを導入 TODO health check 待機でも良いかも
           go run cmd/app/api/main.go &
           echo APP_API_PID=$! >> $GITHUB_ENV
@@ -65,3 +84,4 @@ jobs:
         run: |
           kill ${{ env.APP_CORE_PID }}
           kill ${{ env.APP_API_PID }}
+          kill ${{ env.FIREBASE_PID }}
