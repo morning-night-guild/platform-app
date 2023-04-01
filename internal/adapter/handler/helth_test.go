@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/morning-night-guild/platform-app/internal/adapter/handler"
-	"github.com/morning-night-guild/platform-app/internal/domain/model"
 	"github.com/morning-night-guild/platform-app/internal/domain/model/auth"
 	"github.com/morning-night-guild/platform-app/internal/usecase/port"
 )
@@ -37,12 +36,6 @@ func TestAPIV1HealthAPI(t *testing.T) {
 			name: "ヘルスチェックが成功する",
 			fields: fields{
 				key: "key",
-				article: handler.NewArticle(port.APIArticleListMock{
-					T:        t,
-					Articles: []model.Article{},
-				}, port.APIArticleShareMock{
-					T: t,
-				}),
 				health: handler.NewHealth(&port.APIHealthCheckMock{
 					T: t,
 				}),
@@ -60,7 +53,7 @@ func TestAPIV1HealthAPI(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			rest := handler.New(
+			hdl := handler.New(
 				tt.fields.key,
 				tt.fields.secret,
 				tt.fields.auth,
@@ -68,7 +61,7 @@ func TestAPIV1HealthAPI(t *testing.T) {
 				tt.fields.health,
 			)
 			got := httptest.NewRecorder()
-			rest.V1HealthAPI(got, tt.args.r)
+			hdl.V1HealthAPI(got, tt.args.r)
 			if got.Code != tt.status {
 				t.Errorf("V1HealthAPI() = %v, want %v", got.Code, tt.status)
 			}
@@ -100,13 +93,6 @@ func TestAPIV1HealthCore(t *testing.T) {
 		{
 			name: "ヘルスチェックが成功する",
 			fields: fields{
-				key: "key",
-				article: handler.NewArticle(port.APIArticleListMock{
-					T:        t,
-					Articles: []model.Article{},
-				}, port.APIArticleShareMock{
-					T: t,
-				}),
 				health: handler.NewHealth(&port.APIHealthCheckMock{
 					T: t,
 				}),
@@ -121,13 +107,6 @@ func TestAPIV1HealthCore(t *testing.T) {
 		{
 			name: "Coreでエラーが発生してヘルスチェックが失敗する",
 			fields: fields{
-				key: "key",
-				article: handler.NewArticle(port.APIArticleListMock{
-					T:        t,
-					Articles: []model.Article{},
-				}, port.APIArticleShareMock{
-					T: t,
-				}),
 				health: handler.NewHealth(&port.APIHealthCheckMock{
 					T:   t,
 					Err: errors.New("error"),
@@ -146,7 +125,7 @@ func TestAPIV1HealthCore(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			rest := handler.New(
+			hdl := handler.New(
 				tt.fields.key,
 				tt.fields.secret,
 				tt.fields.auth,
@@ -154,7 +133,7 @@ func TestAPIV1HealthCore(t *testing.T) {
 				tt.fields.health,
 			)
 			got := httptest.NewRecorder()
-			rest.V1HealthCore(got, tt.args.r)
+			hdl.V1HealthCore(got, tt.args.r)
 			if got.Code != tt.status {
 				t.Errorf("V1HealthCore() = %v, want %v", got.Code, tt.status)
 			}

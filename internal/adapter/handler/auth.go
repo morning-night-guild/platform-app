@@ -74,12 +74,17 @@ func (hdl *Handler) V1AuthRefresh(w http.ResponseWriter, r *http.Request, params
 		return
 	}
 
+	expires := model.DefaultAuthExpiresIn
+	if params.ExpiresIn != nil {
+		expires = time.Duration(*params.ExpiresIn * int(time.Second))
+	}
+
 	http.SetCookie(w, &http.Cookie{
 		Name:     auth.AuthTokenKey,
 		Value:    output.AuthToken.String(),
 		Path:     path,
 		Domain:   hdl.auth.cookie.Domain(),
-		Expires:  time.Now().Add(model.DefaultAuthExpiresIn),
+		Expires:  time.Now().Add(expires),
 		Secure:   hdl.auth.cookie.Secure(),
 		HttpOnly: hdl.auth.cookie.HTTPOnly(),
 		SameSite: hdl.auth.cookie.SameSite(),

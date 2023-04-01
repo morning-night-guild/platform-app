@@ -44,15 +44,15 @@ func TestAPIV1ListArticles(t *testing.T) {
 			name: "記事が一覧できる",
 			fields: fields{
 				key: "key",
-				article: handler.NewArticle(port.APIArticleListMock{
-					T:        t,
-					Articles: []model.Article{},
-				}, port.APIArticleShareMock{
-					T: t,
-				}),
-				health: handler.NewHealth(&port.APIHealthCheckMock{
-					T: t,
-				}),
+				article: handler.NewArticle(
+					port.APIArticleListMock{
+						T:        t,
+						Articles: []model.Article{},
+					},
+					port.APIArticleShareMock{
+						T: t,
+					},
+				),
 			},
 			args: args{
 				r: &http.Request{
@@ -69,15 +69,15 @@ func TestAPIV1ListArticles(t *testing.T) {
 			name: "sizeが不正な値で記事が一覧できない",
 			fields: fields{
 				key: "key",
-				article: handler.NewArticle(port.APIArticleListMock{
-					T:        t,
-					Articles: []model.Article{},
-				}, port.APIArticleShareMock{
-					T: t,
-				}),
-				health: handler.NewHealth(&port.APIHealthCheckMock{
-					T: t,
-				}),
+				article: handler.NewArticle(
+					port.APIArticleListMock{
+						T:        t,
+						Articles: []model.Article{},
+					},
+					port.APIArticleShareMock{
+						T: t,
+					},
+				),
 			},
 			args: args{
 				r: &http.Request{
@@ -94,14 +94,16 @@ func TestAPIV1ListArticles(t *testing.T) {
 			name: "coreにてerrorが発生して記事が一覧できない",
 			fields: fields{
 				key: "key",
-				article: handler.NewArticle(port.APIArticleListMock{
-					T:        t,
-					Articles: []model.Article{},
-					Err:      errors.New("error"),
-				}, port.APIArticleShareMock{
-					T: t,
-				}),
-				health: handler.NewHealth(&port.APIHealthCheckMock{}),
+				article: handler.NewArticle(
+					port.APIArticleListMock{
+						T:        t,
+						Articles: []model.Article{},
+						Err:      errors.New("error"),
+					},
+					port.APIArticleShareMock{
+						T: t,
+					},
+				),
 			},
 			args: args{
 				r: &http.Request{
@@ -120,7 +122,7 @@ func TestAPIV1ListArticles(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			rest := handler.New(
+			hdl := handler.New(
 				tt.fields.key,
 				tt.fields.secret,
 				tt.fields.auth,
@@ -128,7 +130,7 @@ func TestAPIV1ListArticles(t *testing.T) {
 				tt.fields.health,
 			)
 			got := httptest.NewRecorder()
-			rest.V1ArticleList(got, tt.args.r, tt.args.params)
+			hdl.V1ArticleList(got, tt.args.r, tt.args.params)
 			if got.Code != tt.status {
 				t.Errorf("V1ListArticles() = %v, want %v", got.Code, tt.status)
 			}
@@ -166,14 +168,14 @@ func TestAPIV1ShareArticle(t *testing.T) {
 			name: "記事が共有できる",
 			fields: fields{
 				key: "key",
-				article: handler.NewArticle(port.APIArticleListMock{
-					T: t,
-				}, port.APIArticleShareMock{
-					T: t,
-				}),
-				health: handler.NewHealth(&port.APIHealthCheckMock{
-					T: t,
-				}),
+				article: handler.NewArticle(
+					port.APIArticleListMock{
+						T: t,
+					},
+					port.APIArticleShareMock{
+						T: t,
+					},
+				),
 			},
 			args: args{
 				body: openapi.V1ArticleShareRequestSchema{
@@ -195,14 +197,14 @@ func TestAPIV1ShareArticle(t *testing.T) {
 			name: "nil値が与えられても記事が共有できる",
 			fields: fields{
 				key: "key",
-				article: handler.NewArticle(port.APIArticleListMock{
-					T: t,
-				}, port.APIArticleShareMock{
-					T: t,
-				}),
-				health: handler.NewHealth(&port.APIHealthCheckMock{
-					T: t,
-				}),
+				article: handler.NewArticle(
+					port.APIArticleListMock{
+						T: t,
+					},
+					port.APIArticleShareMock{
+						T: t,
+					},
+				),
 			},
 			args: args{
 				body: openapi.V1ArticleShareRequestSchema{
@@ -224,14 +226,14 @@ func TestAPIV1ShareArticle(t *testing.T) {
 			name: "Api-Keyがなくて記事が共有できない",
 			fields: fields{
 				key: "key",
-				article: handler.NewArticle(port.APIArticleListMock{
-					T: t,
-				}, port.APIArticleShareMock{
-					T: t,
-				}),
-				health: handler.NewHealth(&port.APIHealthCheckMock{
-					T: t,
-				}),
+				article: handler.NewArticle(
+					port.APIArticleListMock{
+						T: t,
+					},
+					port.APIArticleShareMock{
+						T: t,
+					},
+				),
 			},
 			args: args{
 				body: openapi.V1ArticleShareRequestSchema{
@@ -255,7 +257,7 @@ func TestAPIV1ShareArticle(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			rest := handler.New(
+			hdl := handler.New(
 				tt.fields.key,
 				tt.fields.secret,
 				tt.fields.auth,
@@ -265,7 +267,7 @@ func TestAPIV1ShareArticle(t *testing.T) {
 			got := httptest.NewRecorder()
 			buf, _ := json.Marshal(tt.args.body)
 			tt.args.r.Body = io.NopCloser(bytes.NewBuffer(buf))
-			rest.V1ArticleShare(got, tt.args.r)
+			hdl.V1ArticleShare(got, tt.args.r)
 			if got.Code != tt.status {
 				t.Errorf("V1ShareArticle() = %v, want %v", got.Code, tt.status)
 			}

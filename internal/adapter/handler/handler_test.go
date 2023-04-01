@@ -87,8 +87,14 @@ func TestAPIPointerToString(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			rest := handler.New("", auth.Secret(""), nil, nil, nil)
-			if got := rest.PointerToString(tt.args.s); got != tt.want {
+			hdl := handler.New(
+				"",
+				auth.Secret(""),
+				nil,
+				nil,
+				nil,
+			)
+			if got := hdl.PointerToString(tt.args.s); got != tt.want {
 				t.Errorf("API.PointerToString() = %v, want %v", got, tt.want)
 			}
 		})

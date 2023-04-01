@@ -50,13 +50,6 @@ type Auth struct {
 	cookie       Cookie
 }
 
-type Cookie interface {
-	Domain() string
-	Secure() bool
-	HTTPOnly() bool
-	SameSite() http.SameSite
-}
-
 func NewAuth(
 	signUp port.APIAuthSignUp,
 	signIn port.APIAuthSignIn,
