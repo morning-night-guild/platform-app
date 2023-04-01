@@ -27,6 +27,13 @@ func TestAsURLError(t *testing.T) {
 			want: true,
 		},
 		{
+			name: "URLError型の場合はtrueを返す",
+			args: args{
+				err: errors.NewURLError("test", fmt.Errorf("test")),
+			},
+			want: true,
+		},
+		{
 			name: "URLError型ではない場合はfalseを返す",
 			args: args{
 				err: fmt.Errorf("test"),

@@ -14,17 +14,27 @@ type NotFoundError struct {
 // NewNotFoundError NotFoundエラーのファクトリー関数.
 func NewNotFoundError(
 	msg string,
-	err error,
+	errs ...error,
 ) NotFoundError {
+	if len(errs) == 0 {
+		return NotFoundError{
+			msg: msg,
+		}
+	}
+
 	return NotFoundError{
 		msg: msg,
-		err: err,
+		err: errs[0],
 	}
 }
 
 // Error エラーメソッド.
 func (nfe NotFoundError) Error() string {
-	return fmt.Errorf("%s: %w", nfe.msg, nfe.err).Error()
+	if nfe.err != nil {
+		return fmt.Errorf("%s: %w", nfe.msg, nfe.err).Error()
+	}
+
+	return nfe.msg
 }
 
 // AsNotFoundError NotFoundError型に変換できるかどうかを判定する.

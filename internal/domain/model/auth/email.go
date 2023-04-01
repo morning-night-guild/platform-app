@@ -24,7 +24,7 @@ func (em EMail) String() string {
 
 func (em EMail) validate() error {
 	if _, err := mail.ParseAddress(em.String()); err != nil {
-		return errors.NewValidationError("invalid email address")
+		return errors.NewValidationError("invalid email address", err)
 	}
 
 	return nil

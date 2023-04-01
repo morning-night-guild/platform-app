@@ -22,7 +22,14 @@ func TestAsNotFoundError(t *testing.T) {
 		{
 			name: "NotFoundError型の場合はtrueを返す",
 			args: args{
-				err: errors.NewNotFoundError("test", nil),
+				err: errors.NewNotFoundError("test"),
+			},
+			want: true,
+		},
+		{
+			name: "NotFoundError型の場合はtrueを返す",
+			args: args{
+				err: errors.NewNotFoundError("test", fmt.Errorf("test")),
 			},
 			want: true,
 		},

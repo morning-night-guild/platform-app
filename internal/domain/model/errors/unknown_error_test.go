@@ -27,6 +27,13 @@ func TestAsUnknownError(t *testing.T) {
 			want: true,
 		},
 		{
+			name: "UnknownError型の場合はtrueを返す",
+			args: args{
+				err: errors.NewUnknownError("test", fmt.Errorf("test")),
+			},
+			want: true,
+		},
+		{
 			name: "UnknownError型ではない場合はfalseを返す",
 			args: args{
 				err: fmt.Errorf("test"),

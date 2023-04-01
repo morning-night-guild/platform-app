@@ -27,6 +27,13 @@ func TestAsValidationError(t *testing.T) {
 			want: true,
 		},
 		{
+			name: "ValidationError型の場合はtrueを返す",
+			args: args{
+				err: errors.NewValidationError("test", fmt.Errorf("test")),
+			},
+			want: true,
+		},
+		{
 			name: "ValidationError型ではない場合はfalseを返す",
 			args: args{
 				err: fmt.Errorf("test"),

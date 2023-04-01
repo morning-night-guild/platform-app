@@ -1,21 +1,39 @@
 package errors
 
-import "errors"
+import (
+	"errors"
+	"fmt"
+)
 
 // URLError URLに関するエラー.
 type URLError struct {
 	msg string
+	err error
 }
 
 // NewURLError URLエラーのファクトリー関数.
-func NewURLError(msg string) URLError {
+func NewURLError(
+	msg string,
+	errs ...error,
+) URLError {
+	if len(errs) == 0 {
+		return URLError{
+			msg: msg,
+		}
+	}
+
 	return URLError{
 		msg: msg,
+		err: errs[0],
 	}
 }
 
 // Error エラーメソッド.
 func (ue URLError) Error() string {
+	if ue.err != nil {
+		return fmt.Errorf("%s: %w", ue.msg, ue.err).Error()
+	}
+
 	return ue.msg
 }
 

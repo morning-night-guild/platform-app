@@ -1,21 +1,39 @@
 package errors
 
-import "errors"
+import (
+	"errors"
+	"fmt"
+)
 
 // ValidationError 値オブジェクト生成時に発生するバリデーションエラー.
 type ValidationError struct {
 	msg string
+	err error
 }
 
 // NewValidationError バリデーションエラーのファクトリー関数.
-func NewValidationError(msg string) ValidationError {
+func NewValidationError(
+	msg string,
+	errs ...error,
+) ValidationError {
+	if len(errs) == 0 {
+		return ValidationError{
+			msg: msg,
+		}
+	}
+
 	return ValidationError{
 		msg: msg,
+		err: errs[0],
 	}
 }
 
 // Error エラーメソッド.
 func (ve ValidationError) Error() string {
+	if ve.err != nil {
+		return fmt.Errorf("%s: %w", ve.msg, ve.err).Error()
+	}
+
 	return ve.msg
 }
 

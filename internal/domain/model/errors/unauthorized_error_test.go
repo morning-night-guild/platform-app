@@ -27,6 +27,13 @@ func TestAsUnauthorizedError(t *testing.T) {
 			want: true,
 		},
 		{
+			name: "UnauthorizedError型の場合はtrueを返す",
+			args: args{
+				err: errors.NewUnauthorizedError("test", fmt.Errorf("test")),
+			},
+			want: true,
+		},
+		{
 			name: "UnauthorizedError型ではない場合はfalseを返す",
 			args: args{
 				err: fmt.Errorf("test"),
