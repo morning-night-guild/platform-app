@@ -22,13 +22,17 @@ import (
 	"github.com/morning-night-guild/platform-app/pkg/openapi"
 )
 
-func Cookie(t *testing.T) handler.Cookie {
+func Cookie(t *testing.T) *handler.MockCookie {
+	t.Helper()
+
 	ctrl := gomock.NewController(t)
+
 	cookie := handler.NewMockCookie(ctrl)
 	cookie.EXPECT().Domain().Return("localhost").AnyTimes()
 	cookie.EXPECT().Secure().Return(false).AnyTimes()
 	cookie.EXPECT().HTTPOnly().Return(true).AnyTimes()
 	cookie.EXPECT().SameSite().Return(http.SameSiteDefaultMode).AnyTimes()
+
 	return cookie
 }
 
@@ -144,7 +148,7 @@ func TestHandlerV1AuthSignIn(t *testing.T) {
 					&port.APIAuthSignUpMock{},
 					&port.APIAuthSignInMock{
 						T:            t,
-						AuthToken:    auth.GenerateAuthToken(user.GenerateID(), auth.Secret(auth.SessionID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")).ToSecret())),
+						AuthToken:    auth.GenerateAuthToken(user.GenerateID(), auth.SessionID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")).ToSecret()),
 						SessionToken: auth.GenerateSessionToken(auth.SessionID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")), auth.Secret("secret")),
 					},
 					&port.APIAuthSignOutMock{},
@@ -272,7 +276,7 @@ func TestHandlerV1AuthSignOut(t *testing.T) {
 				cookies: []*http.Cookie{
 					{
 						Name:  auth.AuthTokenKey,
-						Value: auth.GenerateAuthToken(user.GenerateID(), auth.Secret(auth.SessionID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")).ToSecret())).String(),
+						Value: auth.GenerateAuthToken(user.GenerateID(), auth.SessionID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")).ToSecret()).String(),
 					},
 					{
 						Name:  auth.SessionTokenKey,
@@ -424,7 +428,7 @@ func TestHandlerV1AuthVerify(t *testing.T) {
 				cookies: []*http.Cookie{
 					{
 						Name:  auth.AuthTokenKey,
-						Value: auth.GenerateAuthToken(user.GenerateID(), auth.Secret(auth.SessionID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")).ToSecret())).String(),
+						Value: auth.GenerateAuthToken(user.GenerateID(), auth.SessionID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")).ToSecret()).String(),
 					},
 					{
 						Name:  auth.SessionTokenKey,
