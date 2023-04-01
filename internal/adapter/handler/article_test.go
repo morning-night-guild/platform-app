@@ -16,7 +16,7 @@ import (
 	"github.com/morning-night-guild/platform-app/pkg/openapi"
 )
 
-func TestAPIV1ListArticles(t *testing.T) {
+func TestHandlerV1ListArticles(t *testing.T) {
 	t.Parallel()
 
 	type fields struct {
@@ -138,7 +138,7 @@ func TestAPIV1ListArticles(t *testing.T) {
 	}
 }
 
-func TestAPIV1ShareArticle(t *testing.T) {
+func TestHandlerV1ShareArticle(t *testing.T) {
 	t.Parallel()
 
 	toPointer := func(s string) *string {
@@ -154,8 +154,8 @@ func TestAPIV1ShareArticle(t *testing.T) {
 	}
 
 	type args struct {
-		body openapi.V1ArticleShareRequestSchema
 		r    *http.Request
+		body openapi.V1ArticleShareRequestSchema
 	}
 
 	tests := []struct {
@@ -178,17 +178,17 @@ func TestAPIV1ShareArticle(t *testing.T) {
 				),
 			},
 			args: args{
-				body: openapi.V1ArticleShareRequestSchema{
-					Url:         "https://example.com",
-					Title:       toPointer("title"),
-					Description: toPointer("description"),
-					Thumbnail:   toPointer("https://example.com/thumbnail"),
-				},
 				r: &http.Request{
 					Method: http.MethodPost,
 					Header: http.Header{
 						"Api-Key": []string{"key"},
 					},
+				},
+				body: openapi.V1ArticleShareRequestSchema{
+					Url:         "https://example.com",
+					Title:       toPointer("title"),
+					Description: toPointer("description"),
+					Thumbnail:   toPointer("https://example.com/thumbnail"),
 				},
 			},
 			status: http.StatusOK,
@@ -207,17 +207,17 @@ func TestAPIV1ShareArticle(t *testing.T) {
 				),
 			},
 			args: args{
-				body: openapi.V1ArticleShareRequestSchema{
-					Url:         "https://example.com",
-					Title:       nil,
-					Description: nil,
-					Thumbnail:   nil,
-				},
 				r: &http.Request{
 					Method: http.MethodPost,
 					Header: http.Header{
 						"Api-Key": []string{"key"},
 					},
+				},
+				body: openapi.V1ArticleShareRequestSchema{
+					Url:         "https://example.com",
+					Title:       nil,
+					Description: nil,
+					Thumbnail:   nil,
 				},
 			},
 			status: http.StatusOK,
@@ -236,17 +236,17 @@ func TestAPIV1ShareArticle(t *testing.T) {
 				),
 			},
 			args: args{
-				body: openapi.V1ArticleShareRequestSchema{
-					Url:         "https://example.com",
-					Title:       toPointer("title"),
-					Description: toPointer("description"),
-					Thumbnail:   toPointer("https://example.com/thumbnail"),
-				},
 				r: &http.Request{
 					Method: http.MethodPost,
 					Header: http.Header{
 						"Api-Key": []string{""},
 					},
+				},
+				body: openapi.V1ArticleShareRequestSchema{
+					Url:         "https://example.com",
+					Title:       toPointer("title"),
+					Description: toPointer("description"),
+					Thumbnail:   toPointer("https://example.com/thumbnail"),
 				},
 			},
 			status: http.StatusUnauthorized,

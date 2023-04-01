@@ -11,7 +11,7 @@ import (
 	"github.com/morning-night-guild/platform-app/internal/usecase/port"
 )
 
-func TestAPIV1HealthAPI(t *testing.T) {
+func TestHandlerV1HealthAPI(t *testing.T) {
 	t.Parallel()
 
 	type fields struct {
@@ -69,7 +69,7 @@ func TestAPIV1HealthAPI(t *testing.T) {
 	}
 }
 
-func TestAPIV1HealthCore(t *testing.T) {
+func TestHandlerV1HealthCore(t *testing.T) {
 	t.Parallel()
 
 	type fields struct {

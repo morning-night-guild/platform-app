@@ -11,7 +11,7 @@ import (
 	"github.com/morning-night-guild/platform-app/internal/domain/model/auth"
 )
 
-func TestAPIHandleConnectError(t *testing.T) {
+func TestHandleConnectError(t *testing.T) {
 	t.Parallel()
 
 	type args struct {
@@ -53,7 +53,7 @@ func TestAPIHandleConnectError(t *testing.T) {
 	}
 }
 
-func TestAPIPointerToString(t *testing.T) {
+func TestHandlerPointerToString(t *testing.T) {
 	t.Parallel()
 
 	type args struct {
