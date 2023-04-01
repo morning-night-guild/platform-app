@@ -63,7 +63,7 @@ jobs:
           DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable
           CORS_ALLOW_ORIGINS: http://localhost:5173
           REDIS_URL: localhost:6379
-          TOKEN_SECRET: local
+          TOKEN_SECRET: secret
           FIREBASE_SECRET: '{"type": "service_account","project_id": "emulator"}'
           FIREBASE_API_ENDPOINT: http://localhost:9099/identitytoolkit.googleapis.com
           FIREBASE_API_KEY: emulator
