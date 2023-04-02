@@ -10,7 +10,7 @@ import (
 type APIConfig struct {
 	Port                string
 	APIKey              string
-	TokenSecret         string
+	JWTSecret           string
 	CookieDomain        string
 	AppCoreURL          string
 	NewRelicAppName     string
@@ -33,7 +33,7 @@ func NewAPI() APIConfig {
 	conf := APIConfig{
 		Port:                port,
 		APIKey:              os.Getenv("API_KEY"),
-		TokenSecret:         os.Getenv("TOKEN_SECRET"),
+		JWTSecret:           os.Getenv("JWT_SECRET"),
 		CookieDomain:        os.Getenv("COOKIE_DOMAIN"),
 		AppCoreURL:          os.Getenv("APP_CORE_URL"),
 		NewRelicAppName:     os.Getenv("NEWRELIC_APP_NAME"),

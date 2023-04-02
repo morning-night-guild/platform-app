@@ -75,7 +75,7 @@ func main() {
 		panic(err)
 	}
 
-	secret := auth.Secret(cfg.TokenSecret)
+	secret := auth.Secret(cfg.JWTSecret)
 
 	authSignUp := interactor.NewAPIAuthSignUp(userRPC, authRPC)
 
@@ -102,7 +102,7 @@ func main() {
 		authVerify,
 		authRefresh,
 		authGenerateCode,
-		cookie.New(),
+		cookie.New(cfg.CookieDomain),
 	)
 
 	article := handler.NewArticle(articleList, articleShare)

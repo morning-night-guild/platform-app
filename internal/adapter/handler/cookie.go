@@ -7,6 +7,5 @@ import "net/http"
 type Cookie interface {
 	Domain() string
 	Secure() bool
-	HTTPOnly() bool
 	SameSite() http.SameSite
 }

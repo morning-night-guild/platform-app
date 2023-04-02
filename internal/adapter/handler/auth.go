@@ -84,7 +84,7 @@ func (hdl *Handler) V1AuthRefresh(w http.ResponseWriter, r *http.Request, params
 		Domain:   hdl.auth.cookie.Domain(),
 		Expires:  time.Now().Add(expires),
 		Secure:   hdl.auth.cookie.Secure(),
-		HttpOnly: hdl.auth.cookie.HTTPOnly(),
+		HttpOnly: true,
 		SameSite: hdl.auth.cookie.SameSite(),
 	})
 }
@@ -168,7 +168,7 @@ func (hdl *Handler) V1AuthSignIn(w http.ResponseWriter, r *http.Request) {
 		Domain:   hdl.auth.cookie.Domain(),
 		Expires:  now.Add(model.DefaultAuthExpiresIn),
 		Secure:   hdl.auth.cookie.Secure(),
-		HttpOnly: hdl.auth.cookie.HTTPOnly(),
+		HttpOnly: true,
 		SameSite: hdl.auth.cookie.SameSite(),
 	})
 
@@ -179,7 +179,7 @@ func (hdl *Handler) V1AuthSignIn(w http.ResponseWriter, r *http.Request) {
 		Domain:   hdl.auth.cookie.Domain(),
 		Expires:  now.Add(model.DefaultSessionExpiresIn),
 		Secure:   hdl.auth.cookie.Secure(),
-		HttpOnly: hdl.auth.cookie.HTTPOnly(),
+		HttpOnly: true,
 		SameSite: hdl.auth.cookie.SameSite(),
 	})
 }

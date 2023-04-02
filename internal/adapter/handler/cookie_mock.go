@@ -48,20 +48,6 @@ func (mr *MockCookieMockRecorder) Domain() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Domain", reflect.TypeOf((*MockCookie)(nil).Domain))
 }
 
-// HTTPOnly mocks base method.
-func (m *MockCookie) HTTPOnly() bool {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "HTTPOnly")
-	ret0, _ := ret[0].(bool)
-	return ret0
-}
-
-// HTTPOnly indicates an expected call of HTTPOnly.
-func (mr *MockCookieMockRecorder) HTTPOnly() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HTTPOnly", reflect.TypeOf((*MockCookie)(nil).HTTPOnly))
-}
-
 // SameSite mocks base method.
 func (m *MockCookie) SameSite() http.SameSite {
 	m.ctrl.T.Helper()

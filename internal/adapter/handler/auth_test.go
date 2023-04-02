@@ -32,7 +32,6 @@ func Cookie(t *testing.T) *handler.MockCookie {
 	cookie := handler.NewMockCookie(ctrl)
 	cookie.EXPECT().Domain().Return("localhost").AnyTimes()
 	cookie.EXPECT().Secure().Return(false).AnyTimes()
-	cookie.EXPECT().HTTPOnly().Return(true).AnyTimes()
 	cookie.EXPECT().SameSite().Return(http.SameSiteDefaultMode).AnyTimes()
 
 	return cookie

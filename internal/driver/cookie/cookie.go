@@ -8,24 +8,30 @@ import (
 
 var _ handler.Cookie = (*Cookie)(nil)
 
-type Cookie struct{}
+type Cookie struct {
+	domain string
+}
 
-func New() *Cookie {
-	return &Cookie{}
+func New(
+	domain string,
+) *Cookie {
+	return &Cookie{
+		domain: domain,
+	}
 }
 
 func (ck *Cookie) Domain() string {
-	return "localhost"
-}
-
-func (ck *Cookie) HTTPOnly() bool {
-	return true
+	return ck.domain
 }
 
 func (ck *Cookie) SameSite() http.SameSite {
-	return http.SameSiteDefaultMode
+	if ck.domain == "" {
+		return http.SameSiteDefaultMode
+	}
+
+	return http.SameSiteNoneMode
 }
 
 func (ck *Cookie) Secure() bool {
-	return true
+	return ck.domain != ""
 }
