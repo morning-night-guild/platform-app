@@ -43,7 +43,7 @@ func GenerateToken(t *testing.T) struct{ AuthTokenString, SessionTokenString str
 
 	sid := auth.GenerateSessionID()
 
-	st := auth.GenerateSessionToken(sid, auth.NewSecret("secret"))
+	st := auth.GenerateSessionToken(sid, auth.Secret("secret"))
 
 	at := auth.GenerateAuthToken(user.GenerateID(), sid.ToSecret())
 
