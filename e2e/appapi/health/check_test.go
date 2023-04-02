@@ -2,6 +2,7 @@ package health_test
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"reflect"
 	"testing"
@@ -27,7 +28,7 @@ func TestAppAPIE2EHealthCheck(t *testing.T) {
 		defer res.Body.Close()
 
 		if !reflect.DeepEqual(res.StatusCode, http.StatusOK) {
-			t.Errorf("Articles actual = %v, want %v", res.StatusCode, http.StatusOK)
+			t.Errorf("api health check status code = %v, want %v", res.StatusCode, http.StatusOK)
 		}
 	})
 
@@ -44,7 +45,22 @@ func TestAppAPIE2EHealthCheck(t *testing.T) {
 		defer res.Body.Close()
 
 		if !reflect.DeepEqual(res.StatusCode, http.StatusOK) {
-			t.Errorf("Articles actual = %v, want %v", res.StatusCode, http.StatusOK)
+			t.Errorf("core health check status code = %v, want %v", res.StatusCode, http.StatusOK)
+		}
+	})
+
+	t.Run("healthチェックが成功する", func(t *testing.T) {
+		t.Parallel()
+
+		res, err := http.Get(fmt.Sprintf("%s/health", url)) //nolint:noctx
+		if err != nil {
+			t.Fatalf("failed to health check: %s", err)
+		}
+
+		defer res.Body.Close()
+
+		if !reflect.DeepEqual(res.StatusCode, http.StatusOK) {
+			t.Errorf("health = %v, want %v", res.StatusCode, http.StatusOK)
 		}
 	})
 }

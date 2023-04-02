@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/bufbuild/connect-go"
+	grpchealth "github.com/bufbuild/connect-grpchealth-go"
 	"github.com/go-chi/chi/v5"
 	"github.com/morning-night-guild/platform-app/internal/adapter/controller"
 	"github.com/morning-night-guild/platform-app/internal/driver/middleware"
@@ -40,11 +41,14 @@ func NewConnect(
 
 	mux := router.New(routes...).Mux()
 
+	mux.Handle(grpchealth.NewHandler(grpchealth.NewStaticChecker()))
+
 	return h2c.NewHandler(mux, &http2.Server{})
 }
 
 const (
-	baseURL = "/api"
+	baseURL   = "/api"
+	healthURL = "/health"
 )
 
 func NewOpenAPI(
@@ -55,6 +59,8 @@ func NewOpenAPI(
 	router := chi.NewRouter()
 
 	router.Use(cors)
+
+	router.Get(healthURL, func(w http.ResponseWriter, r *http.Request) {})
 
 	return openapi.HandlerWithOptions(si, openapi.ChiServerOptions{
 		BaseURL:     baseURL,
