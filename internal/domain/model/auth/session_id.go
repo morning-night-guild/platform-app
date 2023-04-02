@@ -1,6 +1,9 @@
 package auth
 
-import "github.com/google/uuid"
+import (
+	"github.com/google/uuid"
+	"github.com/morning-night-guild/platform-app/internal/domain/model/errors"
+)
 
 type SessionID uuid.UUID
 
@@ -8,7 +11,7 @@ type SessionID uuid.UUID
 func NewSessionID(value string) (SessionID, error) {
 	sid, err := uuid.Parse(value)
 	if err != nil {
-		return SessionID{}, err
+		return SessionID{}, errors.NewValidationError("invalid session id", err)
 	}
 
 	return SessionID(sid), nil

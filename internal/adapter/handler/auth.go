@@ -257,7 +257,7 @@ func (hdl *Handler) V1AuthSignUp(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.GetLogCtx(ctx).Warn("failed to new email", log.ErrorField(err))
 
-		hdl.HandleErrorStatus(w, err)
+		w.WriteHeader(http.StatusBadRequest)
 
 		return
 	}
@@ -266,7 +266,7 @@ func (hdl *Handler) V1AuthSignUp(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.GetLogCtx(ctx).Warn("failed to new password", log.ErrorField(err))
 
-		hdl.HandleErrorStatus(w, err)
+		w.WriteHeader(http.StatusBadRequest)
 
 		return
 	}

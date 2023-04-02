@@ -388,7 +388,7 @@ func TestHandlerV1AuthSignIn(t *testing.T) {
 				body: openapi.V1AuthSignInRequestSchema{
 					Email:     "test@example.com",
 					Password:  "password",
-					PublicKey: "key",
+					PublicKey: GeneratePublicKey(t),
 				},
 			},
 			status: http.StatusBadRequest,
@@ -798,7 +798,7 @@ func TestHandlerV1AuthSignUp(t *testing.T) {
 					},
 				},
 				body: openapi.V1AuthSignUpRequestSchema{
-					Email:    "test@email.com",
+					Email:    "test@example.com",
 					Password: "",
 				},
 			},
@@ -971,7 +971,7 @@ func TestHandlerV1AuthVerify(t *testing.T) {
 				},
 				cookies: []*http.Cookie{
 					{
-						Name:  auth.AuthTokenKey,
+						Name:  auth.SessionTokenKey,
 						Value: "token",
 					},
 				},
@@ -1038,6 +1038,10 @@ func TestHandlerV1AuthVerify(t *testing.T) {
 				cookies: []*http.Cookie{
 					{
 						Name:  auth.SessionTokenKey,
+						Value: token.SessionTokenString,
+					},
+					{
+						Name:  auth.AuthTokenKey,
 						Value: "token",
 					},
 				},
@@ -1080,6 +1084,44 @@ func TestHandlerV1AuthVerify(t *testing.T) {
 				},
 			},
 			status: http.StatusUnauthorized,
+		},
+		{
+			name: "code生成でエラーが発生して検証できない",
+			fields: fields{
+				secret: auth.Secret("secret"),
+				auth: handler.NewAuth(
+					&port.APIAuthSignUpMock{},
+					&port.APIAuthSignInMock{},
+					&port.APIAuthSignOutMock{},
+					&port.APIAuthVerifyMock{
+						T:   t,
+						Err: fmt.Errorf("test"),
+					},
+					&port.APIAuthRefreshMock{},
+					&port.APIAuthGenerateCodeMock{
+						T:   t,
+						Err: fmt.Errorf("test"),
+					},
+					Cookie(t),
+				),
+			},
+			args: args{
+				r: &http.Request{
+					Method: http.MethodGet,
+					Header: http.Header{},
+				},
+				cookies: []*http.Cookie{
+					{
+						Name:  auth.AuthTokenKey,
+						Value: token.AuthTokenString,
+					},
+					{
+						Name:  auth.SessionTokenKey,
+						Value: token.SessionTokenString,
+					},
+				},
+			},
+			status: http.StatusInternalServerError,
 		},
 	}
 	for _, tt := range tests {
