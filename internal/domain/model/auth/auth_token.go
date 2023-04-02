@@ -2,6 +2,7 @@ package auth
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/morning-night-guild/platform-app/internal/domain/model/errors"
@@ -29,8 +30,11 @@ func GenerateAuthToken(
 	userID user.ID,
 	secret Secret,
 ) AuthToken {
+	now := time.Now()
+
 	claims := jwt.MapClaims{
 		"sub": userID.String(),
+		"iat": now.Unix(),
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)

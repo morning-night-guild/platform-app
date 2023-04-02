@@ -2,6 +2,7 @@ package auth
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/morning-night-guild/platform-app/internal/domain/model/errors"
@@ -28,8 +29,11 @@ func GenerateSessionToken(
 	sessionID SessionID,
 	secret Secret,
 ) SessionToken {
+	now := time.Now()
+
 	claims := jwt.MapClaims{
 		"sub": sessionID.String(),
+		"iat": now.Unix(),
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
