@@ -1,6 +1,10 @@
-package auth
+package auth_test
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/morning-night-guild/platform-app/internal/domain/model/auth"
+)
 
 func TestNewSignature(t *testing.T) {
 	t.Parallel()
@@ -12,7 +16,7 @@ func TestNewSignature(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		want    Signature
+		want    auth.Signature
 		wantErr bool
 	}{
 		{
@@ -20,7 +24,7 @@ func TestNewSignature(t *testing.T) {
 			args: args{
 				value: "signature",
 			},
-			want:    Signature("signature"),
+			want:    auth.Signature("signature"),
 			wantErr: false,
 		},
 		{
@@ -28,7 +32,7 @@ func TestNewSignature(t *testing.T) {
 			args: args{
 				value: "",
 			},
-			want:    Signature(""),
+			want:    auth.Signature(""),
 			wantErr: true,
 		},
 	}
@@ -37,7 +41,7 @@ func TestNewSignature(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			got, err := NewSignature(tt.args.value)
+			got, err := auth.NewSignature(tt.args.value)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("NewSignature() error = %v, wantErr %v", err, tt.wantErr)
 				return

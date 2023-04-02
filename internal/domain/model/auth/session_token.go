@@ -12,7 +12,7 @@ const SessionTokenKey = "session-token"
 
 type SessionToken string
 
-func NewSessionToken(
+func ParseSessionToken(
 	token string,
 	secret Secret,
 ) (SessionToken, error) {

@@ -13,7 +13,7 @@ const AuthTokenKey = "auth-token"
 
 type AuthToken string //nolint:revive
 
-func NewAuthToken(
+func ParseAuthToken(
 	token string,
 	secret Secret,
 ) (AuthToken, error) {

@@ -48,7 +48,7 @@ func (hdl *Handler) V1AuthRefresh(w http.ResponseWriter, r *http.Request, params
 		return
 	}
 
-	sessionToken, err := auth.NewSessionToken(sessionTokenCookie.Value, hdl.secret)
+	sessionToken, err := auth.ParseSessionToken(sessionTokenCookie.Value, hdl.secret)
 	if err != nil {
 		log.GetLogCtx(ctx).Warn("failed to new session token", log.ErrorField(err))
 
@@ -196,7 +196,7 @@ func (hdl *Handler) V1AuthSignOut(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sessionToken, err := auth.NewSessionToken(sessionTokenCookie.Value, hdl.secret)
+	sessionToken, err := auth.ParseSessionToken(sessionTokenCookie.Value, hdl.secret)
 	if err != nil {
 		log.GetLogCtx(ctx).Warn("failed to new session token", log.ErrorField(err))
 
@@ -210,7 +210,7 @@ func (hdl *Handler) V1AuthSignOut(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	authToken, err := auth.NewAuthToken(authTokenCookie.Value, sessionToken.ToSecret(hdl.secret))
+	authToken, err := auth.ParseAuthToken(authTokenCookie.Value, sessionToken.ToSecret(hdl.secret))
 	if err != nil {
 		log.GetLogCtx(ctx).Warn("failed to new auth token", log.ErrorField(err))
 
@@ -299,7 +299,7 @@ func (hdl *Handler) V1AuthVerify(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sessionToken, err := auth.NewSessionToken(sessionTokenCookie.Value, hdl.secret)
+	sessionToken, err := auth.ParseSessionToken(sessionTokenCookie.Value, hdl.secret)
 	if err != nil {
 		log.GetLogCtx(ctx).Warn("failed to new session token", log.ErrorField(err))
 
@@ -317,7 +317,7 @@ func (hdl *Handler) V1AuthVerify(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	authToken, err := auth.NewAuthToken(authTokenCookie.Value, sessionToken.ToSecret(hdl.secret))
+	authToken, err := auth.ParseAuthToken(authTokenCookie.Value, sessionToken.ToSecret(hdl.secret))
 	if err != nil {
 		log.GetLogCtx(ctx).Warn("failed to new auth token", log.ErrorField(err))
 
