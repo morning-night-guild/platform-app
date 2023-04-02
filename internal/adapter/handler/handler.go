@@ -6,6 +6,8 @@ import (
 	"net/http"
 
 	"github.com/bufbuild/connect-go"
+	"github.com/morning-night-guild/platform-app/internal/domain/model/auth"
+	derr "github.com/morning-night-guild/platform-app/internal/domain/model/errors"
 	"github.com/morning-night-guild/platform-app/internal/usecase/port"
 	"github.com/morning-night-guild/platform-app/pkg/log"
 	"github.com/morning-night-guild/platform-app/pkg/openapi"
@@ -16,8 +18,56 @@ var _ openapi.ServerInterface = (*Handler)(nil)
 
 type Handler struct {
 	key     string
+	secret  auth.Secret
+	auth    *Auth
 	article *Article
 	health  *Health
+}
+
+func New(
+	key string,
+	secret auth.Secret,
+	auth *Auth,
+	article *Article,
+	health *Health,
+) *Handler {
+	return &Handler{
+		key:     key,
+		secret:  secret,
+		auth:    auth,
+		article: article,
+		health:  health,
+	}
+}
+
+type Auth struct {
+	signUp       port.APIAuthSignUp
+	signIn       port.APIAuthSignIn
+	signOut      port.APIAuthSignOut
+	verify       port.APIAuthVerify
+	refresh      port.APIAuthRefresh
+	generateCode port.APIAuthGenerateCode
+	cookie       Cookie
+}
+
+func NewAuth(
+	signUp port.APIAuthSignUp,
+	signIn port.APIAuthSignIn,
+	signOut port.APIAuthSignOut,
+	verify port.APIAuthVerify,
+	refresh port.APIAuthRefresh,
+	generateCode port.APIAuthGenerateCode,
+	cookie Cookie,
+) *Auth {
+	return &Auth{
+		signUp:       signUp,
+		signIn:       signIn,
+		signOut:      signOut,
+		verify:       verify,
+		refresh:      refresh,
+		generateCode: generateCode,
+		cookie:       cookie,
+	}
 }
 
 type Article struct {
@@ -47,19 +97,7 @@ func NewHealth(
 	}
 }
 
-func New(
-	key string,
-	article *Article,
-	health *Health,
-) *Handler {
-	return &Handler{
-		key:     key,
-		article: article,
-		health:  health,
-	}
-}
-
-func (hand *Handler) HandleConnectError(ctx context.Context, err error) int {
+func (hdl *Handler) HandleConnectError(ctx context.Context, err error) int {
 	if connectErr := new(connect.Error); errors.As(err, &connectErr) {
 		code := connect.CodeOf(connectErr)
 		if code == connect.CodeInvalidArgument {
@@ -74,7 +112,27 @@ func (hand *Handler) HandleConnectError(ctx context.Context, err error) int {
 	return http.StatusInternalServerError
 }
 
-func (hand *Handler) PointerToString(s *string) string {
+func (hdl *Handler) HandleErrorStatus(
+	w http.ResponseWriter,
+	err error,
+) {
+	switch {
+	case derr.AsValidationError(err):
+		w.WriteHeader(http.StatusBadRequest)
+	case derr.AsURLError(err):
+		w.WriteHeader(http.StatusBadRequest)
+	case derr.AsUnauthorizedError(err):
+		w.WriteHeader(http.StatusUnauthorized)
+	case derr.AsNotFoundError(err):
+		w.WriteHeader(http.StatusNotFound)
+	case derr.AsUnknownError(err):
+		w.WriteHeader(http.StatusInternalServerError)
+	default:
+		w.WriteHeader(http.StatusInternalServerError)
+	}
+}
+
+func (hdl *Handler) PointerToString(s *string) string {
 	if s == nil {
 		return ""
 	}
@@ -82,7 +140,7 @@ func (hand *Handler) PointerToString(s *string) string {
 	return *s
 }
 
-func (hand *Handler) StringToPointer(s string) *string {
+func (hdl *Handler) StringToPointer(s string) *string {
 	return &s
 }
 

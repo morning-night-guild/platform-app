@@ -2,13 +2,13 @@ package interactor_test
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	"reflect"
 	"testing"
 
+	"github.com/golang/mock/gomock"
 	"github.com/morning-night-guild/platform-app/internal/domain/rpc"
 	"github.com/morning-night-guild/platform-app/internal/usecase/interactor"
-	"github.com/morning-night-guild/platform-app/internal/usecase/mock"
 	"github.com/morning-night-guild/platform-app/internal/usecase/port"
 )
 
@@ -16,7 +16,7 @@ func TestAPIHealthCheckExecute(t *testing.T) {
 	t.Parallel()
 
 	type fields struct {
-		healthRPC rpc.Health
+		healthRPC func(t *testing.T) rpc.Health
 	}
 
 	type args struct {
@@ -34,9 +34,12 @@ func TestAPIHealthCheckExecute(t *testing.T) {
 		{
 			name: "ヘルスチェックが成功する",
 			fields: fields{
-				healthRPC: &mock.RPCHealth{
-					T:   t,
-					Err: nil,
+				healthRPC: func(t *testing.T) rpc.Health {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := rpc.NewMockHealth(ctrl)
+					mock.EXPECT().Check(gomock.Any()).Return(nil)
+					return mock
 				},
 			},
 			args: args{
@@ -49,9 +52,12 @@ func TestAPIHealthCheckExecute(t *testing.T) {
 		{
 			name: "ヘルスチェックが失敗する",
 			fields: fields{
-				healthRPC: &mock.RPCHealth{
-					T:   t,
-					Err: errors.New("error"),
+				healthRPC: func(t *testing.T) rpc.Health {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := rpc.NewMockHealth(ctrl)
+					mock.EXPECT().Check(gomock.Any()).Return(fmt.Errorf("error"))
+					return mock
 				},
 			},
 			args: args{
@@ -67,11 +73,10 @@ func TestAPIHealthCheckExecute(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			ahc := interactor.NewAPIHealthCheck(tt.fields.healthRPC)
+			ahc := interactor.NewAPIHealthCheck(tt.fields.healthRPC(t))
 			got, err := ahc.Execute(tt.args.ctx, tt.args.input)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("APIHealthCheck.Execute() error = %v, wantErr %v", err, tt.wantErr)
-
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {

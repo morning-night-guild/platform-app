@@ -18,8 +18,9 @@ jobs:
           go-version-file: go.mod
       - name: Build
         run: go build ./...
-      - name: Lint
+      - name: Golangci-lint
         uses: golangci/golangci-lint-action@v3
         with:
           version: v1.50.1
           args: --allow-parallel-runners
+          skip-cache: true

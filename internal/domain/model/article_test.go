@@ -63,7 +63,6 @@ func TestNewArticle(t *testing.T) {
 			)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("NewArticle() error = %v, wantErr %v", err, tt.wantErr)
-
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {

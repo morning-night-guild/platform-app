@@ -40,6 +40,14 @@ func TestControllerHandleConnectError(t *testing.T) {
 			wantCode: connect.CodeInvalidArgument,
 		},
 		{
+			name: "NotFoundエラーがNotFoundに変換できる",
+			args: args{
+				ctx: context.Background(),
+				err: me.NewNotFoundError("", nil),
+			},
+			wantCode: connect.CodeNotFound,
+		},
+		{
 			name: "未知のエラーがInternalに変換できる",
 			args: args{
 				ctx: context.Background(),

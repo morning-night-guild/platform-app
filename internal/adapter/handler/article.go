@@ -13,9 +13,9 @@ import (
 	"github.com/morning-night-guild/platform-app/pkg/openapi"
 )
 
-// 記事共有
-// (POST /v1/articles).
-func (hand *Handler) V1ArticleList(w http.ResponseWriter, r *http.Request, params openapi.V1ArticleListParams) {
+// 記事一覧
+// (GET /v1/articles).
+func (hdl *Handler) V1ArticleList(w http.ResponseWriter, r *http.Request, params openapi.V1ArticleListParams) {
 	ctx := r.Context()
 
 	pageToken := ""
@@ -39,7 +39,7 @@ func (hand *Handler) V1ArticleList(w http.ResponseWriter, r *http.Request, param
 		Size:  size,
 	}
 
-	res, err := hand.article.list.Execute(ctx, input)
+	output, err := hdl.article.list.Execute(ctx, input)
 	if err != nil {
 		log.GetLogCtx(ctx).Warn("failed to list articles", log.ErrorField(err))
 
@@ -48,30 +48,30 @@ func (hand *Handler) V1ArticleList(w http.ResponseWriter, r *http.Request, param
 		return
 	}
 
-	articles := make([]openapi.ArticleSchema, len(res.Articles))
+	articles := make([]openapi.ArticleSchema, len(output.Articles))
 
-	for i, article := range res.Articles {
+	for i, article := range output.Articles {
 		id := uuid.MustParse(article.ID.String())
 		tags := article.TagList.StringSlice()
 		articles[i] = openapi.ArticleSchema{
 			Id:          &id,
-			Title:       hand.StringToPointer(article.Title.String()),
-			Url:         hand.StringToPointer(article.URL.String()),
-			Description: hand.StringToPointer(article.Description.String()),
-			Thumbnail:   hand.StringToPointer(article.Thumbnail.String()),
+			Title:       hdl.StringToPointer(article.Title.String()),
+			Url:         hdl.StringToPointer(article.URL.String()),
+			Description: hdl.StringToPointer(article.Description.String()),
+			Thumbnail:   hdl.StringToPointer(article.Thumbnail.String()),
 			Tags:        &tags,
 		}
 	}
 
 	next := token.CreateNextToken(size).String()
 
-	rs := openapi.V1ArticleListResponseSchema{
+	res := openapi.V1ArticleListResponseSchema{
 		Articles:      &articles,
 		NextPageToken: &next,
 	}
 
-	if err := json.NewEncoder(w).Encode(rs); err != nil {
-		log.GetLogCtx(ctx).Warn("failed to encode response", log.ErrorField(err))
+	if err := json.NewEncoder(w).Encode(res); err != nil {
+		log.GetLogCtx(ctx).Warn("failed to encode outputponse", log.ErrorField(err))
 
 		w.WriteHeader(http.StatusInternalServerError)
 	}
@@ -79,11 +79,11 @@ func (hand *Handler) V1ArticleList(w http.ResponseWriter, r *http.Request, param
 
 // 記事共有
 // (POST /v1/articles).
-func (hand *Handler) V1ArticleShare(w http.ResponseWriter, r *http.Request) {
+func (hdl *Handler) V1ArticleShare(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	key := r.Header.Get("Api-Key")
-	if key != hand.key {
+	if key != hdl.key {
 		log.GetLogCtx(ctx).Warn(fmt.Sprintf("invalid api key. api key = %s", key))
 
 		w.WriteHeader(http.StatusUnauthorized)
@@ -103,13 +103,13 @@ func (hand *Handler) V1ArticleShare(w http.ResponseWriter, r *http.Request) {
 
 	input := port.APIArticleShareInput{
 		URL:         article.URL(body.Url),
-		Title:       article.Title(hand.PointerToString(body.Title)),
-		Description: article.Description(hand.PointerToString(body.Description)),
-		Thumbnail:   article.Thumbnail(hand.PointerToString(body.Thumbnail)),
+		Title:       article.Title(hdl.PointerToString(body.Title)),
+		Description: article.Description(hdl.PointerToString(body.Description)),
+		Thumbnail:   article.Thumbnail(hdl.PointerToString(body.Thumbnail)),
 	}
 
-	if _, err := hand.article.share.Execute(ctx, input); err != nil {
-		w.WriteHeader(hand.HandleConnectError(ctx, err))
+	if _, err := hdl.article.share.Execute(ctx, input); err != nil {
+		w.WriteHeader(hdl.HandleConnectError(ctx, err))
 
 		return
 	}

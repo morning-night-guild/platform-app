@@ -95,7 +95,6 @@ func TestNewTagList(t *testing.T) {
 			got, err := article.NewTagList(tt.args.value)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("NewTagList() error = %v, wantErr %v", err, tt.wantErr)
-
 				return
 			}
 			sort.Slice(got, func(i, j int) bool { return got[i].String() < got[j].String() })

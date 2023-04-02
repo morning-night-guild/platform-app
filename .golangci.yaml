@@ -1,5 +1,7 @@
 run:
   timeout: 10m
+  skip-dirs:
+    - pkg
 linters-settings:
   varnamelen:
     min-name-length: 1
@@ -34,6 +36,20 @@ linters:
     - wastedassign
 issues:
   exclude-rules:
+    - path: handler
+      linters:
+        - funlen
+    - path: kvs
+      linters:
+        - ireturn
+    - path: _mock\.go
+      linters:
+        - ireturn
+        - revive
+        - gochecknoglobals
+        - lll
+        - nlreturn
+        - wsl
     - path: _test\.go
       linters:
         - funlen
@@ -47,3 +63,5 @@ issues:
         - gocognit
         - maintidx
         - lll
+        - gocyclo
+        - nlreturn

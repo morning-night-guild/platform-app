@@ -52,7 +52,6 @@ func TestNewThumbnail(t *testing.T) {
 			got, err := article.NewThumbnail(tt.args.t)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("NewThumbnail() error = %v, wantErr %v", err, tt.wantErr)
-
 				return
 			}
 			if got != tt.want {

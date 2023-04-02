@@ -1,0 +1,45 @@
+package errors
+
+import (
+	"errors"
+	"fmt"
+)
+
+// NotFoundError リソースが存在しないときに発生するエラー.
+type NotFoundError struct {
+	msg string
+	err error
+}
+
+// NewNotFoundError NotFoundエラーのファクトリー関数.
+func NewNotFoundError(
+	msg string,
+	errs ...error,
+) NotFoundError {
+	if len(errs) == 0 {
+		return NotFoundError{
+			msg: msg,
+		}
+	}
+
+	return NotFoundError{
+		msg: msg,
+		err: errs[0],
+	}
+}
+
+// Error エラーメソッド.
+func (nfe NotFoundError) Error() string {
+	if nfe.err != nil {
+		return fmt.Errorf("%s: %w", nfe.msg, nfe.err).Error()
+	}
+
+	return nfe.msg
+}
+
+// AsNotFoundError NotFoundError型に変換できるかどうかを判定する.
+func AsNotFoundError(err error) bool {
+	var target NotFoundError
+
+	return errors.As(err, &target)
+}

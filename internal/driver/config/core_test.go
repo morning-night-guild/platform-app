@@ -1,7 +1,6 @@
 package config_test
 
 import (
-	"os"
 	"reflect"
 	"testing"
 
@@ -73,11 +72,11 @@ func TestNewCore(t *testing.T) { //nolint:tparallel
 	for _, tt := range tests { //nolint:paralleltest
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			os.Setenv("PORT", tt.args.Port)
-			os.Setenv("DATABASE_URL", tt.args.DSN)
-			os.Setenv("API_KEY", tt.args.APIKey)
-			os.Setenv("NEWRELIC_APP_NAME", tt.args.NewRelicAppName)
-			os.Setenv("NEWRELIC_LICENSE", tt.args.NewRelicLicense)
+			t.Setenv("PORT", tt.args.Port)
+			t.Setenv("DATABASE_URL", tt.args.DSN)
+			t.Setenv("API_KEY", tt.args.APIKey)
+			t.Setenv("NEWRELIC_APP_NAME", tt.args.NewRelicAppName)
+			t.Setenv("NEWRELIC_LICENSE", tt.args.NewRelicLicense)
 			if got := config.NewCore(); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("NewCore() = %v, want %v", got, tt.want)
 			}

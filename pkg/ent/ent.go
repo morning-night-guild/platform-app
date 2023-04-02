@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/morning-night-guild/platform-app/pkg/ent/article"
 	"github.com/morning-night-guild/platform-app/pkg/ent/articletag"
+	"github.com/morning-night-guild/platform-app/pkg/ent/user"
 )
 
 // ent aliases to avoid import conflicts in user's code.
@@ -68,6 +69,7 @@ func columnChecker(table string) func(string) error {
 	checks := map[string]func(string) bool{
 		article.Table:    article.ValidColumn,
 		articletag.Table: articletag.ValidColumn,
+		user.Table:       user.ValidColumn,
 	}
 	check, ok := checks[table]
 	if !ok {

@@ -36,7 +36,6 @@ func TestNewDescription(t *testing.T) {
 			got, err := article.NewDescription(tt.args.value)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("NewDescription() error = %v, wantErr %v", err, tt.wantErr)
-
 				return
 			}
 			if got != tt.want {

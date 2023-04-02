@@ -25,7 +25,7 @@ func New(allowOrigins []string, debug bool) (openapi.MiddlewareFunc, error) {
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
 		ExposedHeaders:   []string{"Link"},
-		AllowCredentials: false,
+		AllowCredentials: true,
 		Debug:            debug,
 		MaxAge:           maxAge,
 	}), nil

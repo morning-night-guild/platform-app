@@ -25,13 +25,21 @@ func main() {
 
 	articleRepo := gateway.NewArticle(rdb)
 
+	userRepo := gateway.NewUser(rdb)
+
 	articleShare := interactor.NewCoreArticleShare(articleRepo)
 
 	articleList := interactor.NewCoreArticleList(articleRepo)
 
+	userCreate := interactor.NewCoreUserCreate(userRepo)
+
+	userUpdate := interactor.NewCoreUserUpdate(userRepo)
+
 	ctl := controller.New()
 
 	articleCtr := controller.NewArticle(ctl, articleShare, articleList)
+
+	userCtr := controller.NewUser(ctl, userCreate, userUpdate)
 
 	healthCtr := controller.NewHealth()
 
@@ -46,7 +54,7 @@ func main() {
 
 	ic := interceptor.New()
 
-	h := http.NewConnect(ic, nr, articleCtr, healthCtr)
+	h := http.NewConnect(ic, nr, articleCtr, userCtr, healthCtr)
 
 	srv := server.NewServer(cfg.Port, h)
 

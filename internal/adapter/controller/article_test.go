@@ -9,7 +9,6 @@ import (
 	"github.com/bufbuild/connect-go"
 	"github.com/google/uuid"
 	"github.com/morning-night-guild/platform-app/internal/adapter/controller"
-	"github.com/morning-night-guild/platform-app/internal/adapter/mock"
 	"github.com/morning-night-guild/platform-app/internal/domain/model"
 	"github.com/morning-night-guild/platform-app/internal/domain/model/article"
 	dme "github.com/morning-night-guild/platform-app/internal/domain/model/errors"
@@ -41,11 +40,11 @@ func TestArticleShare(t *testing.T) {
 		{
 			name: "記事の共有ができる",
 			fields: fields{
-				share: mock.CoreArticleShare{
+				share: port.CoreArticleShareMock{
 					T:   t,
 					Err: nil,
 				},
-				list: mock.CoreArticleList{},
+				list: port.CoreArticleListMock{},
 			},
 			args: args{
 				ctx: context.Background(),
@@ -60,7 +59,7 @@ func TestArticleShare(t *testing.T) {
 			},
 			want: connect.NewResponse(&articlev1.ShareResponse{
 				Article: &articlev1.Article{
-					Id:          mock.ID,
+					Id:          port.MockID(t),
 					Url:         "https://example.com",
 					Title:       "title",
 					Description: "description",
@@ -72,11 +71,11 @@ func TestArticleShare(t *testing.T) {
 		{
 			name: "URLが不正の時、バッドリクエストエラーになる",
 			fields: fields{
-				share: mock.CoreArticleShare{
+				share: port.CoreArticleShareMock{
 					T:   t,
 					Err: nil,
 				},
-				list: mock.CoreArticleList{},
+				list: port.CoreArticleListMock{},
 			},
 			args: args{
 				ctx: context.Background(),
@@ -95,11 +94,11 @@ func TestArticleShare(t *testing.T) {
 		{
 			name: "Thumbnailが不正の時、バッドリクエストエラーになる",
 			fields: fields{
-				share: mock.CoreArticleShare{
+				share: port.CoreArticleShareMock{
 					T:   t,
 					Err: nil,
 				},
-				list: mock.CoreArticleList{},
+				list: port.CoreArticleListMock{},
 			},
 			args: args{
 				ctx: context.Background(),
@@ -118,11 +117,11 @@ func TestArticleShare(t *testing.T) {
 		{
 			name: "ユースケースでバリデーションエラーが発生した際、バッドリクエストエラーになる",
 			fields: fields{
-				share: mock.CoreArticleShare{
+				share: port.CoreArticleShareMock{
 					T:   t,
 					Err: dme.NewValidationError("validation error"),
 				},
-				list: mock.CoreArticleList{},
+				list: port.CoreArticleListMock{},
 			},
 			args: args{
 				ctx: context.Background(),
@@ -141,7 +140,7 @@ func TestArticleShare(t *testing.T) {
 		{
 			name: "ユースケースでバリデーションエラー以外のエラーが発生した際、サーバーエラーになる",
 			fields: fields{
-				share: mock.CoreArticleShare{
+				share: port.CoreArticleShareMock{
 					T:   t,
 					Err: errors.New("unknown error"),
 				},
@@ -220,8 +219,8 @@ func TestArticleList(t *testing.T) {
 		{
 			name: "記事の一覧が取得できる（ネクストトークンあり）",
 			fields: fields{
-				share: mock.CoreArticleShare{},
-				list: mock.CoreArticleList{
+				share: port.CoreArticleShareMock{},
+				list: port.CoreArticleListMock{
 					T: t,
 					Articles: []model.Article{
 						{
@@ -262,8 +261,8 @@ func TestArticleList(t *testing.T) {
 		{
 			name: "記事の一覧が取得できる（ネクストトークンなし）",
 			fields: fields{
-				share: mock.CoreArticleShare{},
-				list: mock.CoreArticleList{
+				share: port.CoreArticleShareMock{},
+				list: port.CoreArticleListMock{
 					T: t,
 					Articles: []model.Article{
 						{
@@ -304,8 +303,8 @@ func TestArticleList(t *testing.T) {
 		{
 			name: "不正なサイズを指定して記事の一覧が取得できない",
 			fields: fields{
-				share: mock.CoreArticleShare{},
-				list:  mock.CoreArticleList{},
+				share: port.CoreArticleShareMock{},
+				list:  port.CoreArticleListMock{},
 			},
 			args: args{
 				ctx: context.Background(),
