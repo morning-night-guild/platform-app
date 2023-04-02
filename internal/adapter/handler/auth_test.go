@@ -38,6 +38,60 @@ func Cookie(t *testing.T) *handler.MockCookie {
 	return cookie
 }
 
+func GenerateToken(t *testing.T) struct{ AuthTokenString, SessionTokenString string } {
+	t.Helper()
+
+	sid := auth.GenerateSessionID()
+
+	st := auth.GenerateSessionToken(sid, auth.NewSecret("secret"))
+
+	at := auth.GenerateAuthToken(user.GenerateID(), sid.ToSecret())
+
+	return struct {
+		AuthTokenString    string
+		SessionTokenString string
+	}{
+		AuthTokenString:    at.String(),
+		SessionTokenString: st.String(),
+	}
+}
+
+func GeneratePublicKey(t *testing.T) string {
+	t.Helper()
+
+	prv, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	b := new(bytes.Buffer)
+
+	bt, err := x509.MarshalPKIXPublicKey(&prv.PublicKey)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if err := pem.Encode(b, &pem.Block{
+		Bytes: bt,
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	remove := func(arr []string, i int) []string {
+		return append(arr[:i], arr[i+1:]...)
+	}
+
+	pems := strings.Split(b.String(), "\n")
+
+	pems = remove(pems, len(pems)-1)
+
+	pems = remove(pems, len(pems)-1)
+
+	pems = remove(pems, 0)
+
+	return strings.Join(pems, "")
+}
+
 func TestHandlerV1AuthRefresh(t *testing.T) {
 	t.Parallel()
 
@@ -85,7 +139,7 @@ func TestHandlerV1AuthRefresh(t *testing.T) {
 				},
 				cookie: &http.Cookie{
 					Name:  auth.SessionTokenKey,
-					Value: string(auth.GenerateSessionToken(auth.SessionID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")), "secret")),
+					Value: auth.GenerateSessionToken(auth.SessionID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")), "secret").String(),
 				},
 				params: openapi.V1AuthRefreshParams{
 					Signature: "signature",
@@ -115,7 +169,7 @@ func TestHandlerV1AuthRefresh(t *testing.T) {
 				},
 				cookie: &http.Cookie{
 					Name:  auth.SessionTokenKey,
-					Value: string(auth.GenerateSessionToken(auth.SessionID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")), "secret")),
+					Value: auth.GenerateSessionToken(auth.SessionID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")), "secret").String(),
 				},
 				params: openapi.V1AuthRefreshParams{
 					Signature: "signature",
@@ -148,7 +202,7 @@ func TestHandlerV1AuthRefresh(t *testing.T) {
 				},
 				cookie: &http.Cookie{
 					Name:  auth.SessionTokenKey,
-					Value: string(auth.GenerateSessionToken(auth.SessionID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")), "secret")),
+					Value: auth.GenerateSessionToken(auth.SessionID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")), "secret").String(),
 				},
 				params: openapi.V1AuthRefreshParams{
 					Signature: "signature",
@@ -171,10 +225,7 @@ func TestHandlerV1AuthRefresh(t *testing.T) {
 				tt.fields.health,
 			)
 			got := httptest.NewRecorder()
-			tt.args.r.AddCookie(&http.Cookie{
-				Name:  auth.SessionTokenKey,
-				Value: auth.GenerateSessionToken(auth.GenerateSessionID(), "secret").String(),
-			})
+			tt.args.r.AddCookie(tt.args.cookie)
 			hdl.V1AuthRefresh(got, tt.args.r, tt.args.params)
 			if got.Code != tt.status {
 				t.Errorf("got %v, want %v", got.Code, tt.status)
@@ -366,42 +417,6 @@ func TestHandlerV1AuthSignIn(t *testing.T) {
 	}
 }
 
-func GeneratePublicKey(t *testing.T) string {
-	t.Helper()
-
-	prv, err := rsa.GenerateKey(rand.Reader, 2048)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	b := new(bytes.Buffer)
-
-	bt, err := x509.MarshalPKIXPublicKey(&prv.PublicKey)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if err := pem.Encode(b, &pem.Block{
-		Bytes: bt,
-	}); err != nil {
-		t.Fatal(err)
-	}
-
-	remove := func(arr []string, i int) []string {
-		return append(arr[:i], arr[i+1:]...)
-	}
-
-	pems := strings.Split(b.String(), "\n")
-
-	pems = remove(pems, len(pems)-1)
-
-	pems = remove(pems, len(pems)-1)
-
-	pems = remove(pems, 0)
-
-	return strings.Join(pems, "")
-}
-
 func TestHandlerV1AuthSignOut(t *testing.T) {
 	t.Parallel()
 
@@ -417,6 +432,8 @@ func TestHandlerV1AuthSignOut(t *testing.T) {
 		r       *http.Request
 		cookies []*http.Cookie
 	}
+
+	token := GenerateToken(t)
 
 	tests := []struct {
 		name   string
@@ -448,11 +465,11 @@ func TestHandlerV1AuthSignOut(t *testing.T) {
 				cookies: []*http.Cookie{
 					{
 						Name:  auth.AuthTokenKey,
-						Value: auth.GenerateAuthToken(user.GenerateID(), auth.SessionID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")).ToSecret()).String(),
+						Value: token.AuthTokenString,
 					},
 					{
 						Name:  auth.SessionTokenKey,
-						Value: auth.GenerateSessionToken(auth.SessionID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")), auth.Secret("secret")).String(),
+						Value: token.SessionTokenString,
 					},
 				},
 			},
@@ -482,7 +499,41 @@ func TestHandlerV1AuthSignOut(t *testing.T) {
 				cookies: []*http.Cookie{
 					{
 						Name:  auth.SessionTokenKey,
-						Value: auth.GenerateSessionToken(auth.SessionID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")), auth.Secret("secret")).String(),
+						Value: token.SessionTokenString,
+					},
+				},
+			},
+			status: http.StatusOK,
+		},
+		{
+			name: "AuthCookieが不正な値でもサインアウトできる",
+			fields: fields{
+				secret: auth.Secret("secret"),
+				auth: handler.NewAuth(
+					&port.APIAuthSignUpMock{},
+					&port.APIAuthSignInMock{},
+					&port.APIAuthSignOutMock{
+						T: t,
+					},
+					&port.APIAuthVerifyMock{},
+					&port.APIAuthRefreshMock{},
+					&port.APIAuthGenerateCodeMock{},
+					Cookie(t),
+				),
+			},
+			args: args{
+				r: &http.Request{
+					Method: http.MethodGet,
+					Header: http.Header{},
+				},
+				cookies: []*http.Cookie{
+					{
+						Name:  auth.SessionTokenKey,
+						Value: token.SessionTokenString,
+					},
+					{
+						Name:  auth.AuthTokenKey,
+						Value: "token",
 					},
 				},
 			},
@@ -512,7 +563,41 @@ func TestHandlerV1AuthSignOut(t *testing.T) {
 				cookies: []*http.Cookie{
 					{
 						Name:  auth.AuthTokenKey,
-						Value: auth.GenerateAuthToken(user.GenerateID(), auth.SessionID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")).ToSecret()).String(),
+						Value: token.AuthTokenString,
+					},
+				},
+			},
+			status: http.StatusOK,
+		},
+		{
+			name: "SessionCookieが不正な値でもサインアウトできる",
+			fields: fields{
+				secret: auth.Secret("secret"),
+				auth: handler.NewAuth(
+					&port.APIAuthSignUpMock{},
+					&port.APIAuthSignInMock{},
+					&port.APIAuthSignOutMock{
+						T: t,
+					},
+					&port.APIAuthVerifyMock{},
+					&port.APIAuthRefreshMock{},
+					&port.APIAuthGenerateCodeMock{},
+					Cookie(t),
+				),
+			},
+			args: args{
+				r: &http.Request{
+					Method: http.MethodGet,
+					Header: http.Header{},
+				},
+				cookies: []*http.Cookie{
+					{
+						Name:  auth.SessionTokenKey,
+						Value: "token",
+					},
+					{
+						Name:  auth.AuthTokenKey,
+						Value: token.AuthTokenString,
 					},
 				},
 			},
@@ -543,11 +628,11 @@ func TestHandlerV1AuthSignOut(t *testing.T) {
 				cookies: []*http.Cookie{
 					{
 						Name:  auth.AuthTokenKey,
-						Value: auth.GenerateAuthToken(user.GenerateID(), auth.SessionID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")).ToSecret()).String(),
+						Value: token.AuthTokenString,
 					},
 					{
 						Name:  auth.SessionTokenKey,
-						Value: auth.GenerateSessionToken(auth.SessionID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")), auth.Secret("secret")).String(),
+						Value: token.SessionTokenString,
 					},
 				},
 			},
@@ -791,6 +876,8 @@ func TestHandlerV1AuthVerify(t *testing.T) {
 		cookies []*http.Cookie
 	}
 
+	token := GenerateToken(t)
+
 	tests := []struct {
 		name   string
 		fields fields
@@ -821,11 +908,11 @@ func TestHandlerV1AuthVerify(t *testing.T) {
 				cookies: []*http.Cookie{
 					{
 						Name:  auth.AuthTokenKey,
-						Value: auth.GenerateAuthToken(user.GenerateID(), auth.SessionID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")).ToSecret()).String(),
+						Value: token.AuthTokenString,
 					},
 					{
 						Name:  auth.SessionTokenKey,
-						Value: auth.GenerateSessionToken(auth.SessionID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")), auth.Secret("secret")).String(),
+						Value: token.SessionTokenString,
 					},
 				},
 			},
@@ -855,7 +942,37 @@ func TestHandlerV1AuthVerify(t *testing.T) {
 				cookies: []*http.Cookie{
 					{
 						Name:  auth.AuthTokenKey,
-						Value: auth.GenerateAuthToken(user.GenerateID(), auth.SessionID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")).ToSecret()).String(),
+						Value: token.AuthTokenString,
+					},
+				},
+			},
+			status: http.StatusUnauthorized,
+		},
+		{
+			name: "Sessionトークンは存在するが不正な値で検証できない",
+			fields: fields{
+				secret: auth.Secret("secret"),
+				auth: handler.NewAuth(
+					&port.APIAuthSignUpMock{},
+					&port.APIAuthSignInMock{},
+					&port.APIAuthSignOutMock{},
+					&port.APIAuthVerifyMock{
+						T: t,
+					},
+					&port.APIAuthRefreshMock{},
+					&port.APIAuthGenerateCodeMock{},
+					Cookie(t),
+				),
+			},
+			args: args{
+				r: &http.Request{
+					Method: http.MethodGet,
+					Header: http.Header{},
+				},
+				cookies: []*http.Cookie{
+					{
+						Name:  auth.AuthTokenKey,
+						Value: "token",
 					},
 				},
 			},
@@ -888,7 +1005,77 @@ func TestHandlerV1AuthVerify(t *testing.T) {
 				cookies: []*http.Cookie{
 					{
 						Name:  auth.SessionTokenKey,
-						Value: auth.GenerateSessionToken(auth.SessionID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")), auth.Secret("secret")).String(),
+						Value: token.SessionTokenString,
+					},
+				},
+			},
+			status: http.StatusUnauthorized,
+		},
+		{
+			name: "Authトークンは存在するが不正な値で検証できない",
+			fields: fields{
+				secret: auth.Secret("secret"),
+				auth: handler.NewAuth(
+					&port.APIAuthSignUpMock{},
+					&port.APIAuthSignInMock{},
+					&port.APIAuthSignOutMock{},
+					&port.APIAuthVerifyMock{
+						T: t,
+					},
+					&port.APIAuthRefreshMock{},
+					&port.APIAuthGenerateCodeMock{
+						T:    t,
+						Code: model.GenerateCode(auth.SessionID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab"))),
+					},
+					Cookie(t),
+				),
+			},
+			args: args{
+				r: &http.Request{
+					Method: http.MethodGet,
+					Header: http.Header{},
+				},
+				cookies: []*http.Cookie{
+					{
+						Name:  auth.SessionTokenKey,
+						Value: "token",
+					},
+				},
+			},
+			status: http.StatusUnauthorized,
+		},
+		{
+			name: "usecaseでエラーが発生して検証できない",
+			fields: fields{
+				secret: auth.Secret("secret"),
+				auth: handler.NewAuth(
+					&port.APIAuthSignUpMock{},
+					&port.APIAuthSignInMock{},
+					&port.APIAuthSignOutMock{},
+					&port.APIAuthVerifyMock{
+						T:   t,
+						Err: fmt.Errorf("test"),
+					},
+					&port.APIAuthRefreshMock{},
+					&port.APIAuthGenerateCodeMock{
+						T: t,
+					},
+					Cookie(t),
+				),
+			},
+			args: args{
+				r: &http.Request{
+					Method: http.MethodGet,
+					Header: http.Header{},
+				},
+				cookies: []*http.Cookie{
+					{
+						Name:  auth.AuthTokenKey,
+						Value: token.AuthTokenString,
+					},
+					{
+						Name:  auth.SessionTokenKey,
+						Value: token.SessionTokenString,
 					},
 				},
 			},
