@@ -1,3 +1,4 @@
 doc
 tmp
 .env
+coverage.out

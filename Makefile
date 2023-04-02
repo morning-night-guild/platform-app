@@ -106,6 +106,11 @@ else \
 fi
 endef
 
+.PHONY: coverage
+coverage: ## Run unit test with coverage.
+	@go test -cover ./internal/... -coverprofile=coverage.out
+	@go tool cover -html=coverage.out
+
 .PHONY: gen
 gen: ## Generate code.
 	@go generate ./...
