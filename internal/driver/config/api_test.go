@@ -123,12 +123,18 @@ func TestNewAPI(t *testing.T) { //nolint:tparallel
 			t.Setenv("PORT", tt.args.Port)
 			t.Setenv("API_KEY", tt.args.APIKey)
 			t.Setenv("APP_CORE_URL", tt.args.AppCoreURL)
+			t.Setenv("JWT_SECRET", tt.args.JWTSecret)
+			t.Setenv("COOKIE_DOMAIN", tt.args.CookieDomain)
 			t.Setenv("NEWRELIC_APP_NAME", tt.args.NewRelicAppName)
 			t.Setenv("NEWRELIC_LICENSE", tt.args.NewRelicLicense)
 			t.Setenv("CORS_ALLOW_ORIGINS", tt.args.CORSAllowOrigins)
 			t.Setenv("CORS_DEBUG_ENABLE", tt.args.CORSDebugEnable)
+			t.Setenv("REDIS_URL", tt.args.RedisURL)
+			t.Setenv("FIREBASE_SECRET", tt.args.FirebaseSecret)
+			t.Setenv("FIREBASE_API_ENDPOINT", tt.args.FirebaseAPIEndpoint)
+			t.Setenv("FIREBASE_API_KEY", tt.args.FirebaseAPIKey)
 			if got := config.NewAPI(); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("NewAPI() = %v, want %v", got, tt.want)
+				t.Errorf("NewAPI() = %+v, want %+v", got, tt.want)
 			}
 		})
 	}
