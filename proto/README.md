@@ -18,6 +18,15 @@
   
     - [HealthService](#health-v1-HealthService)
   
+- [proto/user/v1/user.proto](#proto_user_v1_user-proto)
+    - [CreateRequest](#user-v1-CreateRequest)
+    - [CreateResponse](#user-v1-CreateResponse)
+    - [UpdateRequest](#user-v1-UpdateRequest)
+    - [UpdateResponse](#user-v1-UpdateResponse)
+    - [User](#user-v1-User)
+  
+    - [UserService](#user-v1-UserService)
+  
 - [Scalar Value Types](#scalar-value-types)
 
 
@@ -175,6 +184,103 @@
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
 | Check | [CheckRequest](#health-v1-CheckRequest) | [CheckResponse](#health-v1-CheckResponse) | チェック Need X-Api-Key Header |
+
+ 
+
+
+
+<a name="proto_user_v1_user-proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## proto/user/v1/user.proto
+
+
+
+<a name="user-v1-CreateRequest"></a>
+
+### CreateRequest
+作成リクエスト
+
+
+
+
+
+
+<a name="user-v1-CreateResponse"></a>
+
+### CreateResponse
+作成レスポンス
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| user | [User](#user-v1-User) |  |  |
+
+
+
+
+
+
+<a name="user-v1-UpdateRequest"></a>
+
+### UpdateRequest
+更新リクエスト
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| user_id | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="user-v1-UpdateResponse"></a>
+
+### UpdateResponse
+更新レスポンス
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| user | [User](#user-v1-User) |  |  |
+
+
+
+
+
+
+<a name="user-v1-User"></a>
+
+### User
+ユーザーモデル
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| user_id | [string](#string) |  |  |
+
+
+
+
+
+ 
+
+ 
+
+ 
+
+
+<a name="user-v1-UserService"></a>
+
+### UserService
+ユーザーサービス
+
+| Method Name | Request Type | Response Type | Description |
+| ----------- | ------------ | ------------- | ------------|
+| Create | [CreateRequest](#user-v1-CreateRequest) | [CreateResponse](#user-v1-CreateResponse) | 作成 |
+| Update | [UpdateRequest](#user-v1-UpdateRequest) | [UpdateResponse](#user-v1-UpdateResponse) | 更新 |
 
  
 

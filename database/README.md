@@ -5,6 +5,7 @@
 | Name | Columns | Comment | Type |
 | ---- | ------- | ------- | ---- |
 | [public.articles](public.articles.md) | 7 |  | BASE TABLE |
+| [public.users](public.users.md) | 3 |  | BASE TABLE |
 | [public.article_tags](public.article_tags.md) | 3 |  | BASE TABLE |
 
 ## Relations
