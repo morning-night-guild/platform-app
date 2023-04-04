@@ -25,6 +25,20 @@ const (
 	UserServiceName = "user.v1.UserService"
 )
 
+// These constants are the fully-qualified names of the RPCs defined in this package. They're
+// exposed at runtime as Spec.Procedure and as the final two segments of the HTTP route.
+//
+// Note that these are different from the fully-qualified method names used by
+// google.golang.org/protobuf/reflect/protoreflect. To convert from these constants to
+// reflection-formatted method names, remove the leading slash and convert the remaining slash to a
+// period.
+const (
+	// UserServiceCreateProcedure is the fully-qualified name of the UserService's Create RPC.
+	UserServiceCreateProcedure = "/user.v1.UserService/Create"
+	// UserServiceUpdateProcedure is the fully-qualified name of the UserService's Update RPC.
+	UserServiceUpdateProcedure = "/user.v1.UserService/Update"
+)
+
 // UserServiceClient is a client for the user.v1.UserService service.
 type UserServiceClient interface {
 	// 作成
@@ -45,12 +59,12 @@ func NewUserServiceClient(httpClient connect_go.HTTPClient, baseURL string, opts
 	return &userServiceClient{
 		create: connect_go.NewClient[v1.CreateRequest, v1.CreateResponse](
 			httpClient,
-			baseURL+"/user.v1.UserService/Create",
+			baseURL+UserServiceCreateProcedure,
 			opts...,
 		),
 		update: connect_go.NewClient[v1.UpdateRequest, v1.UpdateResponse](
 			httpClient,
-			baseURL+"/user.v1.UserService/Update",
+			baseURL+UserServiceUpdateProcedure,
 			opts...,
 		),
 	}
@@ -87,13 +101,13 @@ type UserServiceHandler interface {
 // and JSON codecs. They also support gzip compression.
 func NewUserServiceHandler(svc UserServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
 	mux := http.NewServeMux()
-	mux.Handle("/user.v1.UserService/Create", connect_go.NewUnaryHandler(
-		"/user.v1.UserService/Create",
+	mux.Handle(UserServiceCreateProcedure, connect_go.NewUnaryHandler(
+		UserServiceCreateProcedure,
 		svc.Create,
 		opts...,
 	))
-	mux.Handle("/user.v1.UserService/Update", connect_go.NewUnaryHandler(
-		"/user.v1.UserService/Update",
+	mux.Handle(UserServiceUpdateProcedure, connect_go.NewUnaryHandler(
+		UserServiceUpdateProcedure,
 		svc.Update,
 		opts...,
 	))
