@@ -6,6 +6,7 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"encoding/base64"
+	"reflect"
 	"testing"
 	"time"
 
@@ -24,6 +25,7 @@ func TestAPIAuthRefreshExecute(t *testing.T) {
 	type fields struct {
 		secret       auth.Secret
 		codeCache    cache.Cache[model.Code]
+		authCache    cache.Cache[model.Auth]
 		sessionCache cache.Cache[model.Session]
 	}
 
@@ -60,6 +62,15 @@ func TestAPIAuthRefreshExecute(t *testing.T) {
 					},
 					DelAssert: func(t *testing.T, key string) {
 						t.Helper()
+					},
+				},
+				authCache: &cache.CacheMock[model.Auth]{
+					T: t,
+					SetAssert: func(t *testing.T, key string, value model.Auth, ttl time.Duration) {
+						t.Helper()
+						if !reflect.DeepEqual(ttl, model.DefaultAuthExpiresIn) {
+							t.Errorf("ttl = %v, want %v", ttl, model.DefaultAuthExpiresIn)
+						}
 					},
 				},
 				sessionCache: &cache.CacheMock[model.Session]{
@@ -99,6 +110,7 @@ func TestAPIAuthRefreshExecute(t *testing.T) {
 			aar := interactor.NewAPIAuthRefresh(
 				tt.fields.secret,
 				tt.fields.codeCache,
+				tt.fields.authCache,
 				tt.fields.sessionCache,
 			)
 			_, err := aar.Execute(tt.args.ctx, tt.args.input)

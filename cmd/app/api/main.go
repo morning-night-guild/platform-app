@@ -85,7 +85,7 @@ func main() {
 
 	authVerify := interactor.NewAPIAuthVerify(secret, authCache)
 
-	authRefresh := interactor.NewAPIAuthRefresh(secret, codeCache, sessionCache)
+	authRefresh := interactor.NewAPIAuthRefresh(secret, codeCache, authCache, sessionCache)
 
 	authGenerateCode := interactor.NewAPIAuthGenerateCode(secret, codeCache)
 

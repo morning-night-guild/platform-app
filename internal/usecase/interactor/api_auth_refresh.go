@@ -16,17 +16,20 @@ var _ port.APIAuthRefresh = (*APIAuthRefresh)(nil)
 type APIAuthRefresh struct {
 	secret       auth.Secret
 	codeCache    cache.Cache[model.Code]
+	authCache    cache.Cache[model.Auth]
 	sessionCache cache.Cache[model.Session]
 }
 
 func NewAPIAuthRefresh(
 	secret auth.Secret,
 	codeCache cache.Cache[model.Code],
+	authCache cache.Cache[model.Auth],
 	sessionCache cache.Cache[model.Session],
 ) *APIAuthRefresh {
 	return &APIAuthRefresh{
 		secret:       secret,
 		codeCache:    codeCache,
+		authCache:    authCache,
 		sessionCache: sessionCache,
 	}
 }
@@ -69,9 +72,17 @@ func (aar *APIAuthRefresh) Execute(
 		log.GetLogCtx(ctx).Warn(err.Error())
 	}
 
-	authToken := auth.GenerateAuthToken(session.UserID, session.SessionID.ToSecret())
+	at := model.IssueAuth(session.UserID)
+
+	if err := aar.authCache.Set(ctx, at.UserID.String(), at, model.DefaultAuthExpiresIn); err != nil {
+		if err := aar.sessionCache.Del(ctx, session.SessionID.String()); err != nil {
+			log.GetLogCtx(ctx).Warn("failed to delete session", log.ErrorField(err))
+		}
+
+		return port.APIAuthRefreshOutput{}, err
+	}
 
 	return port.APIAuthRefreshOutput{
-		AuthToken: authToken,
+		AuthToken: at.ToToken(session.SessionID.ToSecret()),
 	}, nil
 }
