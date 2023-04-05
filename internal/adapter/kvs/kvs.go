@@ -2,6 +2,7 @@ package kvs
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"time"
@@ -34,7 +35,12 @@ func (kvs *KVS[T]) Get(ctx context.Context, key string) (T, error) {
 		return value, errors.NewNotFoundError("failed to get cache", err)
 	}
 
-	if err := json.Unmarshal([]byte(str), &value); err != nil {
+	dec, err := base64.StdEncoding.DecodeString(str)
+	if err != nil {
+		return value, fmt.Errorf("failed to decode base64: %w", err)
+	}
+
+	if err := json.Unmarshal(dec, &value); err != nil {
 		return value, fmt.Errorf("failed to unmarshal json: %w", err)
 	}
 
@@ -49,7 +55,9 @@ func (kvs *KVS[T]) Set(ctx context.Context, key string, value T, ttl time.Durati
 
 	key = fmt.Sprintf(prefix, kvs.Prefix, key)
 
-	if err := kvs.Client.Set(ctx, key, val, ttl).Err(); err != nil {
+	enc := base64.StdEncoding.EncodeToString(val)
+
+	if err := kvs.Client.Set(ctx, key, enc, ttl).Err(); err != nil {
 		return fmt.Errorf("failed to set cache: %w", err)
 	}
 
