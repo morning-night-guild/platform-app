@@ -49,7 +49,7 @@ func (kvs *KVS[T]) Set(ctx context.Context, key string, value T, ttl time.Durati
 
 	key = fmt.Sprintf(prefix, kvs.Prefix, key)
 
-	if err := kvs.Client.Set(ctx, key, string(val), ttl).Err(); err != nil {
+	if err := kvs.Client.Set(ctx, key, val, ttl).Err(); err != nil {
 		return fmt.Errorf("failed to set cache: %w", err)
 	}
 
