@@ -4,9 +4,9 @@ import (
 	"context"
 
 	"github.com/bufbuild/connect-go"
+	"github.com/morning-night-guild/platform-app/internal/application/usecase"
 	"github.com/morning-night-guild/platform-app/internal/domain/model/article"
 	"github.com/morning-night-guild/platform-app/internal/domain/value"
-	"github.com/morning-night-guild/platform-app/internal/usecase/port"
 	articlev1 "github.com/morning-night-guild/platform-app/pkg/connect/article/v1"
 	"github.com/morning-night-guild/platform-app/pkg/connect/article/v1/articlev1connect"
 )
@@ -15,21 +15,18 @@ var _ articlev1connect.ArticleServiceHandler = (*Article)(nil)
 
 // Article.
 type Article struct {
-	ctl   *Controller
-	share port.CoreArticleShare
-	list  port.CoreArticleList
+	ctl     *Controller
+	usecase usecase.CoreArticle
 }
 
 // NewArticle 記事のコントローラを新規作成する関数.
 func NewArticle(
 	ctl *Controller,
-	share port.CoreArticleShare,
-	list port.CoreArticleList,
+	usecase usecase.CoreArticle,
 ) *Article {
 	return &Article{
-		ctl:   ctl,
-		share: share,
-		list:  list,
+		ctl:     ctl,
+		usecase: usecase,
 	}
 }
 
@@ -58,14 +55,14 @@ func (a *Article) Share(
 		return nil, a.ctl.HandleConnectError(ctx, err)
 	}
 
-	input := port.CoreArticleShareInput{
+	input := usecase.CoreArticleShareInput{
 		URL:         url,
 		Title:       title,
 		Description: description,
 		Thumbnail:   thumbnail,
 	}
 
-	output, err := a.share.Execute(ctx, input)
+	output, err := a.usecase.Share(ctx, input)
 	if err != nil {
 		return nil, a.ctl.HandleConnectError(ctx, err)
 	}
@@ -96,12 +93,12 @@ func (a *Article) List(
 		return nil, a.ctl.HandleConnectError(ctx, err)
 	}
 
-	input := port.CoreArticleListInput{
+	input := usecase.CoreArticleListInput{
 		Index: index,
 		Size:  size,
 	}
 
-	output, err := a.list.Execute(ctx, input)
+	output, err := a.usecase.List(ctx, input)
 	if err != nil {
 		return nil, a.ctl.HandleConnectError(ctx, err)
 	}

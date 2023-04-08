@@ -3,28 +3,34 @@ package handler_test
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
+	"github.com/golang/mock/gomock"
+	"github.com/google/uuid"
 	"github.com/morning-night-guild/platform-app/internal/adapter/handler"
+	"github.com/morning-night-guild/platform-app/internal/application/usecase"
 	"github.com/morning-night-guild/platform-app/internal/domain/model"
+	"github.com/morning-night-guild/platform-app/internal/domain/model/article"
 	"github.com/morning-night-guild/platform-app/internal/domain/model/auth"
-	"github.com/morning-night-guild/platform-app/internal/usecase/port"
+	"github.com/morning-night-guild/platform-app/internal/domain/value"
 	"github.com/morning-night-guild/platform-app/pkg/openapi"
 )
+
+const aid = "01234567-0123-0123-0123-0123456789ab"
 
 func TestHandlerV1ListArticles(t *testing.T) {
 	t.Parallel()
 
 	type fields struct {
-		key     string
 		secret  auth.Secret
-		auth    *handler.Auth
-		article *handler.Article
-		health  *handler.Health
+		cookie  handler.Cookie
+		auth    usecase.APIAuth
+		article func(*testing.T) usecase.APIArticle
+		health  usecase.APIHealth
 	}
 
 	type args struct {
@@ -43,16 +49,18 @@ func TestHandlerV1ListArticles(t *testing.T) {
 		{
 			name: "記事が一覧できる",
 			fields: fields{
-				key: "key",
-				article: handler.NewArticle(
-					port.APIArticleListMock{
-						T:        t,
+				article: func(t *testing.T) usecase.APIArticle {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := usecase.NewMockAPIArticle(ctrl)
+					mock.EXPECT().List(gomock.Any(), usecase.APIArticleListInput{
+						Index: value.Index(0),
+						Size:  value.Size(5),
+					}).Return(usecase.APIArticleListOutput{
 						Articles: []model.Article{},
-					},
-					port.APIArticleShareMock{
-						T: t,
-					},
-				),
+					}, nil)
+					return mock
+				},
 			},
 			args: args{
 				r: &http.Request{
@@ -68,16 +76,12 @@ func TestHandlerV1ListArticles(t *testing.T) {
 		{
 			name: "sizeが不正な値で記事が一覧できない",
 			fields: fields{
-				key: "key",
-				article: handler.NewArticle(
-					port.APIArticleListMock{
-						T:        t,
-						Articles: []model.Article{},
-					},
-					port.APIArticleShareMock{
-						T: t,
-					},
-				),
+				article: func(t *testing.T) usecase.APIArticle {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := usecase.NewMockAPIArticle(ctrl)
+					return mock
+				},
 			},
 			args: args{
 				r: &http.Request{
@@ -93,17 +97,16 @@ func TestHandlerV1ListArticles(t *testing.T) {
 		{
 			name: "coreにてerrorが発生して記事が一覧できない",
 			fields: fields{
-				key: "key",
-				article: handler.NewArticle(
-					port.APIArticleListMock{
-						T:        t,
-						Articles: []model.Article{},
-						Err:      errors.New("error"),
-					},
-					port.APIArticleShareMock{
-						T: t,
-					},
-				),
+				article: func(t *testing.T) usecase.APIArticle {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := usecase.NewMockAPIArticle(ctrl)
+					mock.EXPECT().List(gomock.Any(), usecase.APIArticleListInput{
+						Index: value.Index(0),
+						Size:  value.Size(5),
+					}).Return(usecase.APIArticleListOutput{}, fmt.Errorf("error"))
+					return mock
+				},
 			},
 			args: args{
 				r: &http.Request{
@@ -123,10 +126,11 @@ func TestHandlerV1ListArticles(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			hdl := handler.New(
-				tt.fields.key,
+				"key",
 				tt.fields.secret,
+				tt.fields.cookie,
 				tt.fields.auth,
-				tt.fields.article,
+				tt.fields.article(t),
 				tt.fields.health,
 			)
 			got := httptest.NewRecorder()
@@ -146,11 +150,11 @@ func TestHandlerV1ShareArticle(t *testing.T) {
 	}
 
 	type fields struct {
-		key     string
 		secret  auth.Secret
-		auth    *handler.Auth
-		article *handler.Article
-		health  *handler.Health
+		cookie  handler.Cookie
+		auth    usecase.APIAuth
+		article func(*testing.T) usecase.APIArticle
+		health  usecase.APIHealth
 	}
 
 	type args struct {
@@ -167,15 +171,27 @@ func TestHandlerV1ShareArticle(t *testing.T) {
 		{
 			name: "記事が共有できる",
 			fields: fields{
-				key: "key",
-				article: handler.NewArticle(
-					port.APIArticleListMock{
-						T: t,
-					},
-					port.APIArticleShareMock{
-						T: t,
-					},
-				),
+				article: func(t *testing.T) usecase.APIArticle {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := usecase.NewMockAPIArticle(ctrl)
+					mock.EXPECT().Share(gomock.Any(), usecase.APIArticleShareInput{
+						URL:         article.URL("https://example.com"),
+						Title:       article.Title("title"),
+						Description: article.Description("description"),
+						Thumbnail:   article.Thumbnail("https://example.com"),
+					}).Return(usecase.APIArticleShareOutput{
+						Article: model.Article{
+							ID:          article.ID(uuid.MustParse(aid)),
+							URL:         article.URL("https://example.com"),
+							Title:       article.Title("title"),
+							Description: article.Description("description"),
+							Thumbnail:   article.Thumbnail("https://example.com"),
+							TagList:     []article.Tag{},
+						},
+					}, nil)
+					return mock
+				},
 			},
 			args: args{
 				r: &http.Request{
@@ -188,7 +204,7 @@ func TestHandlerV1ShareArticle(t *testing.T) {
 					Url:         "https://example.com",
 					Title:       toPointer("title"),
 					Description: toPointer("description"),
-					Thumbnail:   toPointer("https://example.com/thumbnail"),
+					Thumbnail:   toPointer("https://example.com"),
 				},
 			},
 			status: http.StatusOK,
@@ -196,15 +212,26 @@ func TestHandlerV1ShareArticle(t *testing.T) {
 		{
 			name: "nil値が与えられても記事が共有できる",
 			fields: fields{
-				key: "key",
-				article: handler.NewArticle(
-					port.APIArticleListMock{
-						T: t,
-					},
-					port.APIArticleShareMock{
-						T: t,
-					},
-				),
+				article: func(t *testing.T) usecase.APIArticle {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := usecase.NewMockAPIArticle(ctrl)
+					mock.EXPECT().Share(gomock.Any(), usecase.APIArticleShareInput{
+						URL:         article.URL("https://example.com"),
+						Title:       article.Title(""),
+						Description: article.Description(""),
+						Thumbnail:   article.Thumbnail(""),
+					}).Return(usecase.APIArticleShareOutput{
+						Article: model.Article{
+							ID:          article.ID(uuid.MustParse(aid)),
+							URL:         article.URL("https://example.com"),
+							Title:       article.Title(""),
+							Description: article.Description(""),
+							Thumbnail:   article.Thumbnail(""),
+						},
+					}, nil)
+					return mock
+				},
 			},
 			args: args{
 				r: &http.Request{
@@ -225,15 +252,12 @@ func TestHandlerV1ShareArticle(t *testing.T) {
 		{
 			name: "Api-Keyがなくて記事が共有できない",
 			fields: fields{
-				key: "key",
-				article: handler.NewArticle(
-					port.APIArticleListMock{
-						T: t,
-					},
-					port.APIArticleShareMock{
-						T: t,
-					},
-				),
+				article: func(t *testing.T) usecase.APIArticle {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := usecase.NewMockAPIArticle(ctrl)
+					return mock
+				},
 			},
 			args: args{
 				r: &http.Request{
@@ -258,10 +282,11 @@ func TestHandlerV1ShareArticle(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			hdl := handler.New(
-				tt.fields.key,
+				"key",
 				tt.fields.secret,
+				tt.fields.cookie,
 				tt.fields.auth,
-				tt.fields.article,
+				tt.fields.article(t),
 				tt.fields.health,
 			)
 			got := httptest.NewRecorder()

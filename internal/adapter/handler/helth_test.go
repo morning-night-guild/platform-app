@@ -1,14 +1,15 @@
 package handler_test
 
 import (
-	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
+	"github.com/golang/mock/gomock"
 	"github.com/morning-night-guild/platform-app/internal/adapter/handler"
+	"github.com/morning-night-guild/platform-app/internal/application/usecase"
 	"github.com/morning-night-guild/platform-app/internal/domain/model/auth"
-	"github.com/morning-night-guild/platform-app/internal/usecase/port"
 )
 
 func TestHandlerV1HealthAPI(t *testing.T) {
@@ -17,9 +18,10 @@ func TestHandlerV1HealthAPI(t *testing.T) {
 	type fields struct {
 		key     string
 		secret  auth.Secret
-		auth    *handler.Auth
-		article *handler.Article
-		health  *handler.Health
+		cookie  handler.Cookie
+		auth    usecase.APIAuth
+		article usecase.APIArticle
+		health  usecase.APIHealth
 	}
 
 	type args struct {
@@ -33,13 +35,8 @@ func TestHandlerV1HealthAPI(t *testing.T) {
 		status int
 	}{
 		{
-			name: "ヘルスチェックが成功する",
-			fields: fields{
-				key: "key",
-				health: handler.NewHealth(&port.APIHealthCheckMock{
-					T: t,
-				}),
-			},
+			name:   "ヘルスチェックが成功する",
+			fields: fields{},
 			args: args{
 				r: &http.Request{
 					Method: http.MethodGet,
@@ -56,6 +53,7 @@ func TestHandlerV1HealthAPI(t *testing.T) {
 			hdl := handler.New(
 				tt.fields.key,
 				tt.fields.secret,
+				tt.fields.cookie,
 				tt.fields.auth,
 				tt.fields.article,
 				tt.fields.health,
@@ -75,9 +73,10 @@ func TestHandlerV1HealthCore(t *testing.T) {
 	type fields struct {
 		key     string
 		secret  auth.Secret
-		auth    *handler.Auth
-		article *handler.Article
-		health  *handler.Health
+		cookie  handler.Cookie
+		auth    usecase.APIAuth
+		article usecase.APIArticle
+		health  func(t *testing.T) usecase.APIHealth
 	}
 
 	type args struct {
@@ -93,9 +92,13 @@ func TestHandlerV1HealthCore(t *testing.T) {
 		{
 			name: "ヘルスチェックが成功する",
 			fields: fields{
-				health: handler.NewHealth(&port.APIHealthCheckMock{
-					T: t,
-				}),
+				health: func(t *testing.T) usecase.APIHealth {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := usecase.NewMockAPIHealth(ctrl)
+					mock.EXPECT().Check(gomock.Any(), usecase.APIHealthCheckInput{}).Return(usecase.APIHealthCheckOutput{}, nil)
+					return mock
+				},
 			},
 			args: args{
 				r: &http.Request{
@@ -107,10 +110,13 @@ func TestHandlerV1HealthCore(t *testing.T) {
 		{
 			name: "Coreでエラーが発生してヘルスチェックが失敗する",
 			fields: fields{
-				health: handler.NewHealth(&port.APIHealthCheckMock{
-					T:   t,
-					Err: errors.New("error"),
-				}),
+				health: func(t *testing.T) usecase.APIHealth {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := usecase.NewMockAPIHealth(ctrl)
+					mock.EXPECT().Check(gomock.Any(), usecase.APIHealthCheckInput{}).Return(usecase.APIHealthCheckOutput{}, fmt.Errorf("error"))
+					return mock
+				},
 			},
 			args: args{
 				r: &http.Request{
@@ -128,9 +134,10 @@ func TestHandlerV1HealthCore(t *testing.T) {
 			hdl := handler.New(
 				tt.fields.key,
 				tt.fields.secret,
+				tt.fields.cookie,
 				tt.fields.auth,
 				tt.fields.article,
-				tt.fields.health,
+				tt.fields.health(t),
 			)
 			got := httptest.NewRecorder()
 			hdl.V1HealthCore(got, tt.args.r)

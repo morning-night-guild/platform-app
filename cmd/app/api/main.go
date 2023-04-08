@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/morning-night-guild/platform-app/internal/adapter/handler"
+	"github.com/morning-night-guild/platform-app/internal/application/interactor"
 	"github.com/morning-night-guild/platform-app/internal/domain/model"
 	"github.com/morning-night-guild/platform-app/internal/domain/model/auth"
 	"github.com/morning-night-guild/platform-app/internal/driver/config"
@@ -14,7 +15,6 @@ import (
 	"github.com/morning-night-guild/platform-app/internal/driver/middleware"
 	"github.com/morning-night-guild/platform-app/internal/driver/redis"
 	"github.com/morning-night-guild/platform-app/internal/driver/server"
-	"github.com/morning-night-guild/platform-app/internal/usecase/interactor"
 )
 
 //nolint:funlen,cyclop
@@ -77,40 +77,30 @@ func main() {
 
 	secret := auth.Secret(cfg.JWTSecret)
 
-	authSignUp := interactor.NewAPIAuthSignUp(userRPC, authRPC)
-
-	authSignIn := interactor.NewAPIAuthSignIn(secret, authRPC, authCache, sessionCache)
-
-	authSignOut := interactor.NewAPIAuthSignOut(secret, authCache, sessionCache)
-
-	authVerify := interactor.NewAPIAuthVerify(secret, authCache)
-
-	authRefresh := interactor.NewAPIAuthRefresh(secret, codeCache, authCache, sessionCache)
-
-	authGenerateCode := interactor.NewAPIAuthGenerateCode(secret, codeCache)
-
-	articleList := interactor.NewAPIArticleList(articleRPC)
-
-	articleShare := interactor.NewAPIArticleShare(articleRPC)
-
-	healthUsecase := interactor.NewAPIHealthCheck(healthRPC)
-
-	auth := handler.NewAuth(
-		authSignUp,
-		authSignIn,
-		authSignOut,
-		authVerify,
-		authRefresh,
-		authGenerateCode,
-		cookie.New(cfg.CookieDomain),
+	authUsecase := interactor.NewAPIAuth(
+		secret,
+		authRPC,
+		userRPC,
+		authCache,
+		codeCache,
+		sessionCache,
 	)
 
-	article := handler.NewArticle(articleList, articleShare)
+	articleUsecase := interactor.NewAPIArticle(articleRPC)
 
-	health := handler.NewHealth(healthUsecase)
+	healthUsecase := interactor.NewAPIHealth(healthRPC)
+
+	si := handler.New(
+		cfg.APIKey,
+		secret,
+		cookie.New(cfg.CookieDomain),
+		authUsecase,
+		articleUsecase,
+		healthUsecase,
+	)
 
 	hd := http.NewOpenAPI(
-		handler.New(cfg.APIKey, secret, auth, article, health),
+		si,
 		cs,
 		middleware.New(),
 	)
