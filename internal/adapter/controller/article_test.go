@@ -2,21 +2,29 @@ package controller_test
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 	"testing"
 
 	"github.com/bufbuild/connect-go"
+	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
 	"github.com/morning-night-guild/platform-app/internal/adapter/controller"
 	"github.com/morning-night-guild/platform-app/internal/application/usecase"
+	"github.com/morning-night-guild/platform-app/internal/domain/model"
+	"github.com/morning-night-guild/platform-app/internal/domain/model/article"
+	"github.com/morning-night-guild/platform-app/internal/domain/model/errors"
+	"github.com/morning-night-guild/platform-app/internal/domain/value"
 	articlev1 "github.com/morning-night-guild/platform-app/pkg/connect/article/v1"
 )
+
+const aid = "01234567-0123-0123-0123-0123456789ab"
 
 func TestArticleShare(t *testing.T) {
 	t.Parallel()
 
 	type fields struct {
-		usecase func(t *testing.T) usecase.CoreArticle
+		usecase func(*testing.T) usecase.CoreArticle
 	}
 
 	type args struct {
@@ -36,7 +44,24 @@ func TestArticleShare(t *testing.T) {
 			fields: fields{
 				usecase: func(t *testing.T) usecase.CoreArticle {
 					t.Helper()
-					return nil
+					ctrl := gomock.NewController(t)
+					mock := usecase.NewMockCoreArticle(ctrl)
+					mock.EXPECT().Share(gomock.Any(), usecase.CoreArticleShareInput{
+						URL:         article.URL("https://example.com"),
+						Title:       article.Title("title"),
+						Description: article.Description("description"),
+						Thumbnail:   article.Thumbnail("https://example.com"),
+					}).Return(usecase.CoreArticleShareOutput{
+						Article: model.Article{
+							ID:          article.ID(uuid.MustParse(aid)),
+							URL:         article.URL("https://example.com"),
+							Title:       article.Title("title"),
+							Description: article.Description("description"),
+							Thumbnail:   article.Thumbnail("https://example.com"),
+							TagList:     []article.Tag{},
+						},
+					}, nil)
+					return mock
 				},
 			},
 			args: args{
@@ -52,7 +77,7 @@ func TestArticleShare(t *testing.T) {
 			},
 			want: connect.NewResponse(&articlev1.ShareResponse{
 				Article: &articlev1.Article{
-					Id:          "00000000-0000-0000-0000-000000000000",
+					Id:          aid,
 					Url:         "https://example.com",
 					Title:       "title",
 					Description: "description",
@@ -66,7 +91,9 @@ func TestArticleShare(t *testing.T) {
 			fields: fields{
 				usecase: func(t *testing.T) usecase.CoreArticle {
 					t.Helper()
-					return nil
+					ctrl := gomock.NewController(t)
+					mock := usecase.NewMockCoreArticle(ctrl)
+					return mock
 				},
 			},
 			args: args{
@@ -88,7 +115,9 @@ func TestArticleShare(t *testing.T) {
 			fields: fields{
 				usecase: func(t *testing.T) usecase.CoreArticle {
 					t.Helper()
-					return nil
+					ctrl := gomock.NewController(t)
+					mock := usecase.NewMockCoreArticle(ctrl)
+					return mock
 				},
 			},
 			args: args{
@@ -110,7 +139,17 @@ func TestArticleShare(t *testing.T) {
 			fields: fields{
 				usecase: func(t *testing.T) usecase.CoreArticle {
 					t.Helper()
-					return nil
+					ctrl := gomock.NewController(t)
+					mock := usecase.NewMockCoreArticle(ctrl)
+					mock.EXPECT().Share(gomock.Any(), usecase.CoreArticleShareInput{
+						URL:         article.URL("https://example.com"),
+						Title:       article.Title("title"),
+						Description: article.Description("description"),
+						Thumbnail:   article.Thumbnail("https://example.com"),
+					}).Return(usecase.CoreArticleShareOutput{
+						Article: model.Article{},
+					}, errors.NewValidationError("error"))
+					return mock
 				},
 			},
 			args: args{
@@ -132,7 +171,17 @@ func TestArticleShare(t *testing.T) {
 			fields: fields{
 				usecase: func(t *testing.T) usecase.CoreArticle {
 					t.Helper()
-					return nil
+					ctrl := gomock.NewController(t)
+					mock := usecase.NewMockCoreArticle(ctrl)
+					mock.EXPECT().Share(gomock.Any(), usecase.CoreArticleShareInput{
+						URL:         article.URL("https://example.com"),
+						Title:       article.Title("title"),
+						Description: article.Description("description"),
+						Thumbnail:   article.Thumbnail("https://example.com"),
+					}).Return(usecase.CoreArticleShareOutput{
+						Article: model.Article{},
+					}, fmt.Errorf("error"))
+					return mock
 				},
 			},
 			args: args{
@@ -188,7 +237,7 @@ func TestArticleList(t *testing.T) {
 	t.Parallel()
 
 	type fields struct {
-		usecase func(t *testing.T) usecase.CoreArticle
+		usecase func(*testing.T) usecase.CoreArticle
 	}
 
 	type args struct {
@@ -210,7 +259,24 @@ func TestArticleList(t *testing.T) {
 			fields: fields{
 				usecase: func(t *testing.T) usecase.CoreArticle {
 					t.Helper()
-					return nil
+					ctrl := gomock.NewController(t)
+					mock := usecase.NewMockCoreArticle(ctrl)
+					mock.EXPECT().List(gomock.Any(), usecase.CoreArticleListInput{
+						Index: value.Index(0),
+						Size:  value.Size(1),
+					}).Return(usecase.CoreArticleListOutput{
+						Articles: []model.Article{
+							{
+								ID:          article.ID(id),
+								URL:         article.URL("https://example.com"),
+								Title:       article.Title("title"),
+								Description: article.Description("description"),
+								Thumbnail:   article.Thumbnail("https://example.com"),
+								TagList:     []article.Tag{},
+							},
+						},
+					}, nil)
+					return mock
 				},
 			},
 			args: args{
@@ -242,7 +308,24 @@ func TestArticleList(t *testing.T) {
 			fields: fields{
 				usecase: func(t *testing.T) usecase.CoreArticle {
 					t.Helper()
-					return nil
+					ctrl := gomock.NewController(t)
+					mock := usecase.NewMockCoreArticle(ctrl)
+					mock.EXPECT().List(gomock.Any(), usecase.CoreArticleListInput{
+						Index: value.Index(0),
+						Size:  value.Size(3),
+					}).Return(usecase.CoreArticleListOutput{
+						Articles: []model.Article{
+							{
+								ID:          article.ID(id),
+								URL:         article.URL("https://example.com"),
+								Title:       article.Title("title"),
+								Description: article.Description("description"),
+								Thumbnail:   article.Thumbnail("https://example.com"),
+								TagList:     []article.Tag{},
+							},
+						},
+					}, nil)
+					return mock
 				},
 			},
 			args: args{
@@ -274,7 +357,9 @@ func TestArticleList(t *testing.T) {
 			fields: fields{
 				usecase: func(t *testing.T) usecase.CoreArticle {
 					t.Helper()
-					return nil
+					ctrl := gomock.NewController(t)
+					mock := usecase.NewMockCoreArticle(ctrl)
+					return mock
 				},
 			},
 			args: args{

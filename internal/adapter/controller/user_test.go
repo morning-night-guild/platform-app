@@ -11,19 +11,19 @@ import (
 	userv1 "github.com/morning-night-guild/platform-app/pkg/connect/user/v1"
 )
 
+const uid = "01234567-0123-0123-0123-0123456789ab"
+
 func TestUserCreate(t *testing.T) {
 	t.Parallel()
 
 	type fields struct {
-		usecase func(t *testing.T) usecase.CoreUser
+		usecase func(*testing.T) usecase.CoreUser
 	}
 
 	type args struct {
 		ctx context.Context
 		req *connect.Request[userv1.CreateRequest]
 	}
-
-	// uuid.MustParse("01234567-0123-0123-0123-0123456789ab")
 
 	tests := []struct {
 		name    string
@@ -46,7 +46,7 @@ func TestUserCreate(t *testing.T) {
 			},
 			want: connect.NewResponse(&userv1.CreateResponse{
 				User: &userv1.User{
-					UserId: "01234567-0123-0123-0123-0123456789ab",
+					UserId: uid,
 				},
 			}),
 			wantErr: false,
@@ -92,7 +92,7 @@ func TestUserUpdate(t *testing.T) {
 	t.Parallel()
 
 	type fields struct {
-		usecase func(t *testing.T) usecase.CoreUser
+		usecase func(*testing.T) usecase.CoreUser
 	}
 
 	type args struct {
@@ -118,12 +118,12 @@ func TestUserUpdate(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				req: connect.NewRequest(&userv1.UpdateRequest{
-					UserId: "01234567-0123-0123-0123-0123456789ab",
+					UserId: uid,
 				}),
 			},
 			want: connect.NewResponse(&userv1.UpdateResponse{
 				User: &userv1.User{
-					UserId: "01234567-0123-0123-0123-0123456789ab",
+					UserId: uid,
 				},
 			}),
 			wantErr: false,
@@ -139,7 +139,7 @@ func TestUserUpdate(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				req: connect.NewRequest(&userv1.UpdateRequest{
-					UserId: "01234567-0123-0123-0123-0123456789ab",
+					UserId: uid,
 				}),
 			},
 			want:    nil,
