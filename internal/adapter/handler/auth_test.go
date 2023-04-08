@@ -7,19 +7,27 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"encoding/pem"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	gomock "github.com/golang/mock/gomock"
 	"github.com/google/uuid"
 	"github.com/morning-night-guild/platform-app/internal/adapter/handler"
 	"github.com/morning-night-guild/platform-app/internal/application/usecase"
+	"github.com/morning-night-guild/platform-app/internal/domain/model"
 	"github.com/morning-night-guild/platform-app/internal/domain/model/auth"
 	"github.com/morning-night-guild/platform-app/internal/domain/model/user"
 	"github.com/morning-night-guild/platform-app/pkg/openapi"
+)
+
+const (
+	sid = "01234567-0123-0123-0123-0123456789ab"
+	cid = "01234567-0123-0123-0123-0123456789ac"
 )
 
 func Cookie(t *testing.T) *handler.MockCookie {
@@ -35,7 +43,12 @@ func Cookie(t *testing.T) *handler.MockCookie {
 	return cookie
 }
 
-func GenerateToken(t *testing.T) struct{ AuthTokenString, SessionTokenString string } {
+func GenerateToken(t *testing.T) struct {
+	AuthToken          auth.AuthToken
+	AuthTokenString    string
+	SessionToken       auth.SessionToken
+	SessionTokenString string
+} {
 	t.Helper()
 
 	sid := auth.GenerateSessionID()
@@ -45,15 +58,24 @@ func GenerateToken(t *testing.T) struct{ AuthTokenString, SessionTokenString str
 	at := auth.GenerateAuthToken(user.GenerateID(), sid.ToSecret())
 
 	return struct {
+		AuthToken          auth.AuthToken
 		AuthTokenString    string
+		SessionToken       auth.SessionToken
 		SessionTokenString string
 	}{
+		AuthToken:          at,
 		AuthTokenString:    at.String(),
+		SessionToken:       st,
 		SessionTokenString: st.String(),
 	}
 }
 
-func GeneratePublicKey(t *testing.T) string {
+type Public struct {
+	T   *testing.T
+	Key rsa.PublicKey
+}
+
+func NewPublicKey(t *testing.T) Public {
 	t.Helper()
 
 	prv, err := rsa.GenerateKey(rand.Reader, 2048)
@@ -61,17 +83,26 @@ func GeneratePublicKey(t *testing.T) string {
 		t.Fatal(err)
 	}
 
+	return Public{
+		T:   t,
+		Key: prv.PublicKey,
+	}
+}
+
+func (pub Public) String() string {
+	pub.T.Helper()
+
 	b := new(bytes.Buffer)
 
-	bt, err := x509.MarshalPKIXPublicKey(&prv.PublicKey)
+	bt, err := x509.MarshalPKIXPublicKey(&pub.Key)
 	if err != nil {
-		t.Fatal(err)
+		pub.T.Fatal(err)
 	}
 
 	if err := pem.Encode(b, &pem.Block{
 		Bytes: bt,
 	}); err != nil {
-		t.Fatal(err)
+		pub.T.Fatal(err)
 	}
 
 	remove := func(arr []string, i int) []string {
@@ -93,12 +124,9 @@ func TestHandlerV1AuthRefresh(t *testing.T) {
 	t.Parallel()
 
 	type fields struct {
-		key     string
-		secret  auth.Secret
-		cookie  handler.Cookie
 		auth    func(*testing.T) usecase.APIAuth
-		article func(*testing.T) usecase.APIArticle
-		health  func(*testing.T) usecase.APIHealth
+		article usecase.APIArticle
+		health  usecase.APIHealth
 	}
 
 	type args struct {
@@ -116,10 +144,16 @@ func TestHandlerV1AuthRefresh(t *testing.T) {
 		{
 			name: "トークンが更新できる",
 			fields: fields{
-				secret: auth.Secret("secret"),
 				auth: func(t *testing.T) usecase.APIAuth {
 					t.Helper()
-					return nil
+					ctrl := gomock.NewController(t)
+					mock := usecase.NewMockAPIAuth(ctrl)
+					mock.EXPECT().Refresh(gomock.Any(), usecase.APIAuthRefreshInput{
+						CodeID:       auth.CodeID(uuid.MustParse(cid)),
+						Signature:    auth.Signature("signature"),
+						SessionToken: auth.GenerateSessionToken(auth.SessionID(uuid.MustParse(sid)), "secret"),
+					}).Return(usecase.APIAuthRefreshOutput{}, nil)
+					return mock
 				},
 			},
 			args: args{
@@ -129,11 +163,11 @@ func TestHandlerV1AuthRefresh(t *testing.T) {
 				},
 				cookie: &http.Cookie{
 					Name:  auth.SessionTokenKey,
-					Value: auth.GenerateSessionToken(auth.SessionID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")), "secret").String(),
+					Value: auth.GenerateSessionToken(auth.SessionID(uuid.MustParse(sid)), "secret").String(),
 				},
 				params: openapi.V1AuthRefreshParams{
 					Signature: "signature",
-					Code:      uuid.New().String(),
+					Code:      uuid.MustParse(cid).String(),
 				},
 			},
 			status: http.StatusOK,
@@ -141,10 +175,11 @@ func TestHandlerV1AuthRefresh(t *testing.T) {
 		{
 			name: "Codeが不正な値で更新できない",
 			fields: fields{
-				secret: auth.Secret("secret"),
 				auth: func(t *testing.T) usecase.APIAuth {
 					t.Helper()
-					return nil
+					ctrl := gomock.NewController(t)
+					mock := usecase.NewMockAPIAuth(ctrl)
+					return mock
 				},
 			},
 			args: args{
@@ -154,7 +189,7 @@ func TestHandlerV1AuthRefresh(t *testing.T) {
 				},
 				cookie: &http.Cookie{
 					Name:  auth.SessionTokenKey,
-					Value: auth.GenerateSessionToken(auth.SessionID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")), "secret").String(),
+					Value: auth.GenerateSessionToken(auth.SessionID(uuid.MustParse(sid)), "secret").String(),
 				},
 				params: openapi.V1AuthRefreshParams{
 					Signature: "signature",
@@ -166,10 +201,16 @@ func TestHandlerV1AuthRefresh(t *testing.T) {
 		{
 			name: "usecaseでエラーが発生して更新できない",
 			fields: fields{
-				secret: auth.Secret("secret"),
 				auth: func(t *testing.T) usecase.APIAuth {
 					t.Helper()
-					return nil
+					ctrl := gomock.NewController(t)
+					mock := usecase.NewMockAPIAuth(ctrl)
+					mock.EXPECT().Refresh(gomock.Any(), usecase.APIAuthRefreshInput{
+						CodeID:       auth.CodeID(uuid.MustParse(cid)),
+						Signature:    auth.Signature("signature"),
+						SessionToken: auth.GenerateSessionToken(auth.SessionID(uuid.MustParse(sid)), "secret"),
+					}).Return(usecase.APIAuthRefreshOutput{}, fmt.Errorf("error"))
+					return mock
 				},
 			},
 			args: args{
@@ -179,11 +220,11 @@ func TestHandlerV1AuthRefresh(t *testing.T) {
 				},
 				cookie: &http.Cookie{
 					Name:  auth.SessionTokenKey,
-					Value: auth.GenerateSessionToken(auth.SessionID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")), "secret").String(),
+					Value: auth.GenerateSessionToken(auth.SessionID(uuid.MustParse(sid)), "secret").String(),
 				},
 				params: openapi.V1AuthRefreshParams{
 					Signature: "signature",
-					Code:      uuid.New().String(),
+					Code:      uuid.MustParse(cid).String(),
 				},
 			},
 			status: http.StatusInternalServerError,
@@ -195,12 +236,12 @@ func TestHandlerV1AuthRefresh(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			hdl := handler.New(
-				tt.fields.key,
-				tt.fields.secret,
-				tt.fields.cookie,
+				"key",
+				auth.Secret("secret"),
+				Cookie(t),
 				tt.fields.auth(t),
-				tt.fields.article(t),
-				tt.fields.health(t),
+				tt.fields.article,
+				tt.fields.health,
 			)
 			got := httptest.NewRecorder()
 			tt.args.r.AddCookie(tt.args.cookie)
@@ -216,18 +257,17 @@ func TestHandlerV1AuthSignIn(t *testing.T) {
 	t.Parallel()
 
 	type fields struct {
-		key     string
-		secret  auth.Secret
-		cookie  handler.Cookie
 		auth    func(*testing.T) usecase.APIAuth
-		article func(*testing.T) usecase.APIArticle
-		health  func(*testing.T) usecase.APIHealth
+		article usecase.APIArticle
+		health  usecase.APIHealth
 	}
 
 	type args struct {
 		r    *http.Request
 		body openapi.V1AuthSignInRequestSchema
 	}
+
+	pubkey := NewPublicKey(t)
 
 	tests := []struct {
 		name   string
@@ -238,10 +278,17 @@ func TestHandlerV1AuthSignIn(t *testing.T) {
 		{
 			name: "サインインできる",
 			fields: fields{
-				secret: auth.Secret("secret"),
 				auth: func(t *testing.T) usecase.APIAuth {
 					t.Helper()
-					return nil
+					ctrl := gomock.NewController(t)
+					mock := usecase.NewMockAPIAuth(ctrl)
+					mock.EXPECT().SignIn(gomock.Any(), usecase.APIAuthSignInInput{
+						EMail:     auth.EMail("test@example.com"),
+						Password:  auth.Password("password"),
+						PublicKey: pubkey.Key,
+						ExpiresIn: auth.DefaultExpiresIn,
+					}).Return(usecase.APIAuthSignInOutput{}, nil)
+					return mock
 				},
 			},
 			args: args{
@@ -251,7 +298,7 @@ func TestHandlerV1AuthSignIn(t *testing.T) {
 				body: openapi.V1AuthSignInRequestSchema{
 					Email:     "test@example.com",
 					Password:  "password",
-					PublicKey: GeneratePublicKey(t),
+					PublicKey: pubkey.String(),
 				},
 			},
 			status: http.StatusOK,
@@ -259,10 +306,11 @@ func TestHandlerV1AuthSignIn(t *testing.T) {
 		{
 			name: "メールアドレスが不正な値でサインインできない",
 			fields: fields{
-				secret: auth.Secret("secret"),
 				auth: func(t *testing.T) usecase.APIAuth {
 					t.Helper()
-					return nil
+					ctrl := gomock.NewController(t)
+					mock := usecase.NewMockAPIAuth(ctrl)
+					return mock
 				},
 			},
 			args: args{
@@ -272,7 +320,7 @@ func TestHandlerV1AuthSignIn(t *testing.T) {
 				body: openapi.V1AuthSignInRequestSchema{
 					Email:     "email",
 					Password:  "password",
-					PublicKey: GeneratePublicKey(t),
+					PublicKey: pubkey.String(),
 				},
 			},
 			status: http.StatusBadRequest,
@@ -280,10 +328,11 @@ func TestHandlerV1AuthSignIn(t *testing.T) {
 		{
 			name: "パスワードが不正な値でサインインできない",
 			fields: fields{
-				secret: auth.Secret("secret"),
 				auth: func(t *testing.T) usecase.APIAuth {
 					t.Helper()
-					return nil
+					ctrl := gomock.NewController(t)
+					mock := usecase.NewMockAPIAuth(ctrl)
+					return mock
 				},
 			},
 			args: args{
@@ -293,7 +342,7 @@ func TestHandlerV1AuthSignIn(t *testing.T) {
 				body: openapi.V1AuthSignInRequestSchema{
 					Email:     "test@example.com",
 					Password:  "",
-					PublicKey: GeneratePublicKey(t),
+					PublicKey: pubkey.String(),
 				},
 			},
 			status: http.StatusBadRequest,
@@ -301,10 +350,11 @@ func TestHandlerV1AuthSignIn(t *testing.T) {
 		{
 			name: "公開鍵が不正な値でサインインできない",
 			fields: fields{
-				secret: auth.Secret("secret"),
 				auth: func(t *testing.T) usecase.APIAuth {
 					t.Helper()
-					return nil
+					ctrl := gomock.NewController(t)
+					mock := usecase.NewMockAPIAuth(ctrl)
+					return mock
 				},
 			},
 			args: args{
@@ -322,10 +372,17 @@ func TestHandlerV1AuthSignIn(t *testing.T) {
 		{
 			name: "usecaseでエラーが発生してサインインできない",
 			fields: fields{
-				secret: auth.Secret("secret"),
 				auth: func(t *testing.T) usecase.APIAuth {
 					t.Helper()
-					return nil
+					ctrl := gomock.NewController(t)
+					mock := usecase.NewMockAPIAuth(ctrl)
+					mock.EXPECT().SignIn(gomock.Any(), usecase.APIAuthSignInInput{
+						EMail:     auth.EMail("test@example.com"),
+						Password:  auth.Password("password"),
+						PublicKey: pubkey.Key,
+						ExpiresIn: auth.DefaultExpiresIn,
+					}).Return(usecase.APIAuthSignInOutput{}, fmt.Errorf("error"))
+					return mock
 				},
 			},
 			args: args{
@@ -335,7 +392,7 @@ func TestHandlerV1AuthSignIn(t *testing.T) {
 				body: openapi.V1AuthSignInRequestSchema{
 					Email:     "test@example.com",
 					Password:  "password",
-					PublicKey: GeneratePublicKey(t),
+					PublicKey: pubkey.String(),
 				},
 			},
 			status: http.StatusBadRequest,
@@ -347,12 +404,12 @@ func TestHandlerV1AuthSignIn(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			hdl := handler.New(
-				tt.fields.key,
-				tt.fields.secret,
-				tt.fields.cookie,
+				"key",
+				auth.Secret("secret"),
+				Cookie(t),
 				tt.fields.auth(t),
-				tt.fields.article(t),
-				tt.fields.health(t),
+				tt.fields.article,
+				tt.fields.health,
 			)
 			got := httptest.NewRecorder()
 			buf, _ := json.Marshal(tt.args.body)
@@ -369,12 +426,9 @@ func TestHandlerV1AuthSignOut(t *testing.T) {
 	t.Parallel()
 
 	type fields struct {
-		key     string
-		secret  auth.Secret
-		cookie  handler.Cookie
 		auth    func(*testing.T) usecase.APIAuth
-		article func(*testing.T) usecase.APIArticle
-		health  func(*testing.T) usecase.APIHealth
+		article usecase.APIArticle
+		health  usecase.APIHealth
 	}
 
 	type args struct {
@@ -393,10 +447,15 @@ func TestHandlerV1AuthSignOut(t *testing.T) {
 		{
 			name: "サインアウトできる",
 			fields: fields{
-				secret: auth.Secret("secret"),
 				auth: func(t *testing.T) usecase.APIAuth {
 					t.Helper()
-					return nil
+					ctrl := gomock.NewController(t)
+					mock := usecase.NewMockAPIAuth(ctrl)
+					mock.EXPECT().SignOut(gomock.Any(), usecase.APIAuthSignOutInput{
+						AuthToken:    token.AuthToken,
+						SessionToken: token.SessionToken,
+					}).Return(usecase.APIAuthSignOutOutput{}, nil)
+					return mock
 				},
 			},
 			args: args{
@@ -420,10 +479,11 @@ func TestHandlerV1AuthSignOut(t *testing.T) {
 		{
 			name: "AuthCookieがなくてもサインアウトできる",
 			fields: fields{
-				secret: auth.Secret("secret"),
 				auth: func(t *testing.T) usecase.APIAuth {
 					t.Helper()
-					return nil
+					ctrl := gomock.NewController(t)
+					mock := usecase.NewMockAPIAuth(ctrl)
+					return mock
 				},
 			},
 			args: args{
@@ -443,10 +503,11 @@ func TestHandlerV1AuthSignOut(t *testing.T) {
 		{
 			name: "AuthCookieが不正な値でもサインアウトできる",
 			fields: fields{
-				secret: auth.Secret("secret"),
 				auth: func(t *testing.T) usecase.APIAuth {
 					t.Helper()
-					return nil
+					ctrl := gomock.NewController(t)
+					mock := usecase.NewMockAPIAuth(ctrl)
+					return mock
 				},
 			},
 			args: args{
@@ -470,10 +531,11 @@ func TestHandlerV1AuthSignOut(t *testing.T) {
 		{
 			name: "SessionCookieがなくてもサインアウトできる",
 			fields: fields{
-				secret: auth.Secret("secret"),
 				auth: func(t *testing.T) usecase.APIAuth {
 					t.Helper()
-					return nil
+					ctrl := gomock.NewController(t)
+					mock := usecase.NewMockAPIAuth(ctrl)
+					return mock
 				},
 			},
 			args: args{
@@ -493,10 +555,11 @@ func TestHandlerV1AuthSignOut(t *testing.T) {
 		{
 			name: "SessionCookieが不正な値でもサインアウトできる",
 			fields: fields{
-				secret: auth.Secret("secret"),
 				auth: func(t *testing.T) usecase.APIAuth {
 					t.Helper()
-					return nil
+					ctrl := gomock.NewController(t)
+					mock := usecase.NewMockAPIAuth(ctrl)
+					return mock
 				},
 			},
 			args: args{
@@ -520,10 +583,15 @@ func TestHandlerV1AuthSignOut(t *testing.T) {
 		{
 			name: "usecaseでエラーが発生してもサインアウトできる",
 			fields: fields{
-				secret: auth.Secret("secret"),
 				auth: func(t *testing.T) usecase.APIAuth {
 					t.Helper()
-					return nil
+					ctrl := gomock.NewController(t)
+					mock := usecase.NewMockAPIAuth(ctrl)
+					mock.EXPECT().SignOut(gomock.Any(), usecase.APIAuthSignOutInput{
+						AuthToken:    token.AuthToken,
+						SessionToken: token.SessionToken,
+					}).Return(usecase.APIAuthSignOutOutput{}, fmt.Errorf("error"))
+					return mock
 				},
 			},
 			args: args{
@@ -551,12 +619,12 @@ func TestHandlerV1AuthSignOut(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			hdl := handler.New(
-				tt.fields.key,
-				tt.fields.secret,
-				tt.fields.cookie,
+				"key",
+				auth.Secret("secret"),
+				Cookie(t),
 				tt.fields.auth(t),
-				tt.fields.article(t),
-				tt.fields.health(t),
+				tt.fields.article,
+				tt.fields.health,
 			)
 			got := httptest.NewRecorder()
 			for _, cookie := range tt.args.cookies {
@@ -574,12 +642,9 @@ func TestHandlerV1AuthSignUp(t *testing.T) {
 	t.Parallel()
 
 	type fields struct {
-		key     string
-		secret  auth.Secret
-		cookie  handler.Cookie
 		auth    func(*testing.T) usecase.APIAuth
-		article func(*testing.T) usecase.APIArticle
-		health  func(*testing.T) usecase.APIHealth
+		article usecase.APIArticle
+		health  usecase.APIHealth
 	}
 
 	type args struct {
@@ -596,11 +661,15 @@ func TestHandlerV1AuthSignUp(t *testing.T) {
 		{
 			name: "サインアップできる",
 			fields: fields{
-				key:    "key",
-				secret: auth.Secret("secret"),
 				auth: func(t *testing.T) usecase.APIAuth {
 					t.Helper()
-					return nil
+					ctrl := gomock.NewController(t)
+					mock := usecase.NewMockAPIAuth(ctrl)
+					mock.EXPECT().SignUp(gomock.Any(), usecase.APIAuthSignUpInput{
+						EMail:    auth.EMail("test@example.com"),
+						Password: auth.Password("password"),
+					}).Return(usecase.APIAuthSignUpOutput{}, nil)
+					return mock
 				},
 			},
 			args: args{
@@ -620,11 +689,11 @@ func TestHandlerV1AuthSignUp(t *testing.T) {
 		{
 			name: "Api-Keyがなくてサインアップできない",
 			fields: fields{
-				key:    "key",
-				secret: auth.Secret("secret"),
 				auth: func(t *testing.T) usecase.APIAuth {
 					t.Helper()
-					return nil
+					ctrl := gomock.NewController(t)
+					mock := usecase.NewMockAPIAuth(ctrl)
+					return mock
 				},
 			},
 			args: args{
@@ -639,11 +708,11 @@ func TestHandlerV1AuthSignUp(t *testing.T) {
 		{
 			name: "メールアドレスが不正な値でサインアップできない",
 			fields: fields{
-				key:    "key",
-				secret: auth.Secret("secret"),
 				auth: func(t *testing.T) usecase.APIAuth {
 					t.Helper()
-					return nil
+					ctrl := gomock.NewController(t)
+					mock := usecase.NewMockAPIAuth(ctrl)
+					return mock
 				},
 			},
 			args: args{
@@ -663,11 +732,11 @@ func TestHandlerV1AuthSignUp(t *testing.T) {
 		{
 			name: "パスワードが不正な値でサインアップできない",
 			fields: fields{
-				key:    "key",
-				secret: auth.Secret("secret"),
 				auth: func(t *testing.T) usecase.APIAuth {
 					t.Helper()
-					return nil
+					ctrl := gomock.NewController(t)
+					mock := usecase.NewMockAPIAuth(ctrl)
+					return mock
 				},
 			},
 			args: args{
@@ -687,11 +756,15 @@ func TestHandlerV1AuthSignUp(t *testing.T) {
 		{
 			name: "usecaseでエラーが発生してサインアップできない",
 			fields: fields{
-				key:    "key",
-				secret: auth.Secret("secret"),
 				auth: func(t *testing.T) usecase.APIAuth {
 					t.Helper()
-					return nil
+					ctrl := gomock.NewController(t)
+					mock := usecase.NewMockAPIAuth(ctrl)
+					mock.EXPECT().SignUp(gomock.Any(), usecase.APIAuthSignUpInput{
+						EMail:    auth.EMail("test@example.com"),
+						Password: auth.Password("password"),
+					}).Return(usecase.APIAuthSignUpOutput{}, fmt.Errorf("error"))
+					return mock
 				},
 			},
 			args: args{
@@ -715,12 +788,12 @@ func TestHandlerV1AuthSignUp(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			hdl := handler.New(
-				tt.fields.key,
-				tt.fields.secret,
-				tt.fields.cookie,
+				"key",
+				auth.Secret("secret"),
+				Cookie(t),
 				tt.fields.auth(t),
-				tt.fields.article(t),
-				tt.fields.health(t),
+				tt.fields.article,
+				tt.fields.health,
 			)
 			got := httptest.NewRecorder()
 			buf, _ := json.Marshal(tt.args.body)
@@ -737,12 +810,9 @@ func TestHandlerV1AuthVerify(t *testing.T) {
 	t.Parallel()
 
 	type fields struct {
-		key     string
-		secret  auth.Secret
-		cookie  handler.Cookie
 		auth    func(*testing.T) usecase.APIAuth
-		article func(*testing.T) usecase.APIArticle
-		health  func(*testing.T) usecase.APIHealth
+		article usecase.APIArticle
+		health  usecase.APIHealth
 	}
 
 	type args struct {
@@ -761,10 +831,15 @@ func TestHandlerV1AuthVerify(t *testing.T) {
 		{
 			name: "トークンを検証できる",
 			fields: fields{
-				secret: auth.Secret("secret"),
 				auth: func(t *testing.T) usecase.APIAuth {
 					t.Helper()
-					return nil
+					ctrl := gomock.NewController(t)
+					mock := usecase.NewMockAPIAuth(ctrl)
+					mock.EXPECT().Verify(gomock.Any(), usecase.APIAuthVerifyInput{
+						AuthToken:    token.AuthToken,
+						SessionToken: token.SessionToken,
+					}).Return(usecase.APIAuthVerifyOutput{}, nil)
+					return mock
 				},
 			},
 			args: args{
@@ -788,10 +863,11 @@ func TestHandlerV1AuthVerify(t *testing.T) {
 		{
 			name: "Sessionトークンが存在せず検証できない",
 			fields: fields{
-				secret: auth.Secret("secret"),
 				auth: func(t *testing.T) usecase.APIAuth {
 					t.Helper()
-					return nil
+					ctrl := gomock.NewController(t)
+					mock := usecase.NewMockAPIAuth(ctrl)
+					return mock
 				},
 			},
 			args: args{
@@ -811,10 +887,11 @@ func TestHandlerV1AuthVerify(t *testing.T) {
 		{
 			name: "Sessionトークンは存在するが不正な値で検証できない",
 			fields: fields{
-				secret: auth.Secret("secret"),
 				auth: func(t *testing.T) usecase.APIAuth {
 					t.Helper()
-					return nil
+					ctrl := gomock.NewController(t)
+					mock := usecase.NewMockAPIAuth(ctrl)
+					return mock
 				},
 			},
 			args: args{
@@ -834,10 +911,21 @@ func TestHandlerV1AuthVerify(t *testing.T) {
 		{
 			name: "Authトークンが存在せず検証できない",
 			fields: fields{
-				secret: auth.Secret("secret"),
 				auth: func(t *testing.T) usecase.APIAuth {
 					t.Helper()
-					return nil
+					ctrl := gomock.NewController(t)
+					mock := usecase.NewMockAPIAuth(ctrl)
+					mock.EXPECT().GenerateCode(gomock.Any(), usecase.APIAuthGenerateCodeInput{
+						SessionToken: token.SessionToken,
+					}).Return(usecase.APIAuthGenerateCodeOutput{
+						Code: model.Code{
+							CodeID:    auth.CodeID(uuid.MustParse(cid)),
+							SessionID: token.SessionToken.GetID(auth.Secret("secret")),
+							IssuedAt:  time.Now(),
+							ExpiresAt: time.Now().Add(time.Minute * 10),
+						},
+					}, nil)
+					return mock
 				},
 			},
 			args: args{
@@ -857,10 +945,21 @@ func TestHandlerV1AuthVerify(t *testing.T) {
 		{
 			name: "Authトークンは存在するが不正な値で検証できない",
 			fields: fields{
-				secret: auth.Secret("secret"),
 				auth: func(t *testing.T) usecase.APIAuth {
 					t.Helper()
-					return nil
+					ctrl := gomock.NewController(t)
+					mock := usecase.NewMockAPIAuth(ctrl)
+					mock.EXPECT().GenerateCode(gomock.Any(), usecase.APIAuthGenerateCodeInput{
+						SessionToken: token.SessionToken,
+					}).Return(usecase.APIAuthGenerateCodeOutput{
+						Code: model.Code{
+							CodeID:    auth.CodeID(uuid.MustParse(cid)),
+							SessionID: token.SessionToken.GetID(auth.Secret("secret")),
+							IssuedAt:  time.Now(),
+							ExpiresAt: time.Now().Add(time.Minute * 10),
+						},
+					}, nil)
+					return mock
 				},
 			},
 			args: args{
@@ -884,10 +983,25 @@ func TestHandlerV1AuthVerify(t *testing.T) {
 		{
 			name: "usecaseでエラーが発生して検証できない",
 			fields: fields{
-				secret: auth.Secret("secret"),
 				auth: func(t *testing.T) usecase.APIAuth {
 					t.Helper()
-					return nil
+					ctrl := gomock.NewController(t)
+					mock := usecase.NewMockAPIAuth(ctrl)
+					mock.EXPECT().Verify(gomock.Any(), usecase.APIAuthVerifyInput{
+						AuthToken:    token.AuthToken,
+						SessionToken: token.SessionToken,
+					}).Return(usecase.APIAuthVerifyOutput{}, fmt.Errorf("error"))
+					mock.EXPECT().GenerateCode(gomock.Any(), usecase.APIAuthGenerateCodeInput{
+						SessionToken: token.SessionToken,
+					}).Return(usecase.APIAuthGenerateCodeOutput{
+						Code: model.Code{
+							CodeID:    auth.CodeID(uuid.MustParse(cid)),
+							SessionID: token.SessionToken.GetID(auth.Secret("secret")),
+							IssuedAt:  time.Now(),
+							ExpiresAt: time.Now().Add(time.Minute * 10),
+						},
+					}, nil)
+					return mock
 				},
 			},
 			args: args{
@@ -911,10 +1025,18 @@ func TestHandlerV1AuthVerify(t *testing.T) {
 		{
 			name: "code生成でエラーが発生して検証できない",
 			fields: fields{
-				secret: auth.Secret("secret"),
 				auth: func(t *testing.T) usecase.APIAuth {
 					t.Helper()
-					return nil
+					ctrl := gomock.NewController(t)
+					mock := usecase.NewMockAPIAuth(ctrl)
+					mock.EXPECT().Verify(gomock.Any(), usecase.APIAuthVerifyInput{
+						AuthToken:    token.AuthToken,
+						SessionToken: token.SessionToken,
+					}).Return(usecase.APIAuthVerifyOutput{}, fmt.Errorf("error"))
+					mock.EXPECT().GenerateCode(gomock.Any(), usecase.APIAuthGenerateCodeInput{
+						SessionToken: token.SessionToken,
+					}).Return(usecase.APIAuthGenerateCodeOutput{}, fmt.Errorf("error"))
+					return mock
 				},
 			},
 			args: args{
@@ -941,12 +1063,12 @@ func TestHandlerV1AuthVerify(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			hdl := handler.New(
-				tt.fields.key,
-				tt.fields.secret,
-				tt.fields.cookie,
+				"key",
+				auth.Secret("secret"),
+				Cookie(t),
 				tt.fields.auth(t),
-				tt.fields.article(t),
-				tt.fields.health(t),
+				tt.fields.article,
+				tt.fields.health,
 			)
 			got := httptest.NewRecorder()
 			for _, cookie := range tt.args.cookies {

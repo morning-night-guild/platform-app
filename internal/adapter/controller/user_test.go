@@ -2,12 +2,17 @@ package controller_test
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 	"testing"
 
 	"github.com/bufbuild/connect-go"
+	"github.com/golang/mock/gomock"
+	"github.com/google/uuid"
 	"github.com/morning-night-guild/platform-app/internal/adapter/controller"
 	"github.com/morning-night-guild/platform-app/internal/application/usecase"
+	"github.com/morning-night-guild/platform-app/internal/domain/model"
+	"github.com/morning-night-guild/platform-app/internal/domain/model/user"
 	userv1 "github.com/morning-night-guild/platform-app/pkg/connect/user/v1"
 )
 
@@ -37,7 +42,14 @@ func TestUserCreate(t *testing.T) {
 			fields: fields{
 				usecase: func(t *testing.T) usecase.CoreUser {
 					t.Helper()
-					return nil
+					ctrl := gomock.NewController(t)
+					mock := usecase.NewMockCoreUser(ctrl)
+					mock.EXPECT().Create(gomock.Any(), usecase.CoreUserCreateInput{}).Return(usecase.CoreUserCreateOutput{
+						User: model.User{
+							UserID: user.ID(uuid.MustParse(uid)),
+						},
+					}, nil)
+					return mock
 				},
 			},
 			args: args{
@@ -56,7 +68,10 @@ func TestUserCreate(t *testing.T) {
 			fields: fields{
 				usecase: func(t *testing.T) usecase.CoreUser {
 					t.Helper()
-					return nil
+					ctrl := gomock.NewController(t)
+					mock := usecase.NewMockCoreUser(ctrl)
+					mock.EXPECT().Create(gomock.Any(), usecase.CoreUserCreateInput{}).Return(usecase.CoreUserCreateOutput{}, fmt.Errorf("error"))
+					return mock
 				},
 			},
 			args: args{
@@ -112,7 +127,16 @@ func TestUserUpdate(t *testing.T) {
 			fields: fields{
 				usecase: func(t *testing.T) usecase.CoreUser {
 					t.Helper()
-					return nil
+					ctrl := gomock.NewController(t)
+					mock := usecase.NewMockCoreUser(ctrl)
+					mock.EXPECT().Update(gomock.Any(), usecase.CoreUserUpdateInput{
+						UserID: user.ID(uuid.MustParse(uid)),
+					}).Return(usecase.CoreUserUpdateOutput{
+						User: model.User{
+							UserID: user.ID(uuid.MustParse(uid)),
+						},
+					}, nil)
+					return mock
 				},
 			},
 			args: args{
@@ -133,7 +157,12 @@ func TestUserUpdate(t *testing.T) {
 			fields: fields{
 				usecase: func(t *testing.T) usecase.CoreUser {
 					t.Helper()
-					return nil
+					ctrl := gomock.NewController(t)
+					mock := usecase.NewMockCoreUser(ctrl)
+					mock.EXPECT().Update(gomock.Any(), usecase.CoreUserUpdateInput{
+						UserID: user.ID(uuid.MustParse(uid)),
+					}).Return(usecase.CoreUserUpdateOutput{}, fmt.Errorf("error"))
+					return mock
 				},
 			},
 			args: args{
