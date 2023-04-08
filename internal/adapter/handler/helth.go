@@ -9,7 +9,7 @@ import (
 
 // apiヘルスチェック
 // (GET /v1/health/api).
-func (hdl *Handler) V1HealthAPI(w http.ResponseWriter, r *http.Request) {
+func (hdl *Handler) V1HealthAPI(w http.ResponseWriter, _ *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write([]byte("OK"))
 }

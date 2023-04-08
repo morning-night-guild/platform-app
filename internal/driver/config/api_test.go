@@ -7,9 +7,8 @@ import (
 	"github.com/morning-night-guild/platform-app/internal/driver/config"
 )
 
-func TestNewAPI(t *testing.T) { //nolint:tparallel
-	t.Parallel()
-
+//nolint:paralleltest
+func TestNewAPI(t *testing.T) {
 	tests := []struct {
 		name string
 		args config.APIConfig

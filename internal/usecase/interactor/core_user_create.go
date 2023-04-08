@@ -25,7 +25,7 @@ func NewCoreUserCreate(
 
 func (cuc *CoreUserCreate) Execute(
 	ctx context.Context,
-	input port.CoreUserCreateInput,
+	_ port.CoreUserCreateInput,
 ) (port.CoreUserCreateOutput, error) {
 	user := model.CreateUser()
 

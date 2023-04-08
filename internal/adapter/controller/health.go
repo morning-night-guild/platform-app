@@ -20,8 +20,8 @@ func NewHealth() *Health {
 
 // Check ヘルスチェックするコントローラメソッド.
 func (h *Health) Check(
-	ctx context.Context,
-	req *connect.Request[healthv1.CheckRequest],
+	_ context.Context,
+	_ *connect.Request[healthv1.CheckRequest],
 ) (*connect.Response[healthv1.CheckResponse], error) {
 	return connect.NewResponse(&healthv1.CheckResponse{}), nil
 }

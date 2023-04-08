@@ -21,6 +21,12 @@ jobs:
       - name: Golangci-lint
         uses: golangci/golangci-lint-action@v3
         with:
-          version: v1.50.1
+          version: v1.52.2
+          working-directory: internal # FIXME: https://github.com/golangci/golangci-lint/issues/3711
           args: --allow-parallel-runners
-          skip-cache: true
+      - name: Golangci-lint e2e
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: v1.52.2
+          working-directory: e2e # FIXME: https://github.com/golangci/golangci-lint/issues/3711
+          args: --allow-parallel-runners
