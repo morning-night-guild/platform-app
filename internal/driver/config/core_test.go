@@ -7,7 +7,8 @@ import (
 	"github.com/morning-night-guild/platform-app/internal/driver/config"
 )
 
-func TestNewCore(t *testing.T) { //nolint:tparallel
+//nolint:paralleltest
+func TestNewCore(t *testing.T) {
 	tests := []struct {
 		name string
 		args config.CoreConfig
