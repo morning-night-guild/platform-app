@@ -1,7 +1,7 @@
 run:
   timeout: 10m
   skip-dirs:
-    - pkg
+    - pkg/ent
 linters-settings:
   varnamelen:
     min-name-length: 1
@@ -34,6 +34,8 @@ linters:
     - rowserrcheck
     - sqlclosecheck
     - wastedassign
+    # https://github.com/golangci/golangci-lint/issues/3711
+    - contextcheck
 issues:
   exclude-rules:
     - path: handler

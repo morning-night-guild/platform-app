@@ -186,7 +186,7 @@ func (hdl *Handler) V1AuthSignIn(w http.ResponseWriter, r *http.Request) {
 
 // サインアウト
 // (GET /v1/auth/signout).
-func (hdl *Handler) V1AuthSignOut(w http.ResponseWriter, r *http.Request) {
+func (hdl *Handler) V1AuthSignOut(_ http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	sessionTokenCookie, err := r.Cookie(auth.SessionTokenKey)

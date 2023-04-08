@@ -23,7 +23,7 @@ func NewAPIHealthCheck(
 
 func (ahc *APIHealthCheck) Execute(
 	ctx context.Context,
-	input port.APIHealthCheckInput,
+	_ port.APIHealthCheckInput,
 ) (port.APIHealthCheckOutput, error) {
 	if err := ahc.healthRPC.Check(ctx); err != nil {
 		return port.APIHealthCheckOutput{}, err

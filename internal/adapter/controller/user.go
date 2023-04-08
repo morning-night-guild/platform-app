@@ -34,7 +34,7 @@ func NewUser(
 
 func (usr *User) Create(
 	ctx context.Context,
-	req *connect.Request[userv1.CreateRequest],
+	_ *connect.Request[userv1.CreateRequest],
 ) (*connect.Response[userv1.CreateResponse], error) {
 	input := port.CoreUserCreateInput{}
 
