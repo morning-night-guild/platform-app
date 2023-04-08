@@ -62,6 +62,7 @@ fmt: ## Format code.
 .PHONY: lint
 lint: ## Lint code. FIXME: https://github.com/golangci/golangci-lint/issues/3711
 	@golangci-lint run ./internal/... --fix
+	@golangci-lint run ./e2e/... --fix
 
 .PHONY: mod
 mod: ## Go mod
