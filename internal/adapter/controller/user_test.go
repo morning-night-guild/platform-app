@@ -2,16 +2,12 @@ package controller_test
 
 import (
 	"context"
-	"fmt"
 	"reflect"
 	"testing"
 
 	"github.com/bufbuild/connect-go"
-	"github.com/google/uuid"
 	"github.com/morning-night-guild/platform-app/internal/adapter/controller"
-	"github.com/morning-night-guild/platform-app/internal/domain/model"
-	"github.com/morning-night-guild/platform-app/internal/domain/model/user"
-	"github.com/morning-night-guild/platform-app/internal/usecase/port"
+	"github.com/morning-night-guild/platform-app/internal/application/usecase"
 	userv1 "github.com/morning-night-guild/platform-app/pkg/connect/user/v1"
 )
 
@@ -19,14 +15,15 @@ func TestUserCreate(t *testing.T) {
 	t.Parallel()
 
 	type fields struct {
-		create port.CoreUserCreate
-		update port.CoreUserUpdate
+		usecase func(t *testing.T) usecase.CoreUser
 	}
 
 	type args struct {
 		ctx context.Context
 		req *connect.Request[userv1.CreateRequest]
 	}
+
+	// uuid.MustParse("01234567-0123-0123-0123-0123456789ab")
 
 	tests := []struct {
 		name    string
@@ -38,13 +35,10 @@ func TestUserCreate(t *testing.T) {
 		{
 			name: "ユーザーが作成できる",
 			fields: fields{
-				create: &port.CoreUserCreateMock{
-					T: t,
-					User: model.User{
-						UserID: user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
-					},
+				usecase: func(t *testing.T) usecase.CoreUser {
+					t.Helper()
+					return nil
 				},
-				update: &port.CoreUserUpdateMock{},
 			},
 			args: args{
 				ctx: context.Background(),
@@ -60,12 +54,10 @@ func TestUserCreate(t *testing.T) {
 		{
 			name: "ユーザーが作成できない",
 			fields: fields{
-				create: &port.CoreUserCreateMock{
-					T:    t,
-					User: model.User{},
-					Err:  fmt.Errorf("test"),
+				usecase: func(t *testing.T) usecase.CoreUser {
+					t.Helper()
+					return nil
 				},
-				update: &port.CoreUserUpdateMock{},
 			},
 			args: args{
 				ctx: context.Background(),
@@ -82,8 +74,7 @@ func TestUserCreate(t *testing.T) {
 			t.Parallel()
 			usr := controller.NewUser(
 				controller.New(),
-				tt.fields.create,
-				tt.fields.update,
+				tt.fields.usecase(t),
 			)
 			got, err := usr.Create(tt.args.ctx, tt.args.req)
 			if (err != nil) != tt.wantErr {
@@ -101,8 +92,7 @@ func TestUserUpdate(t *testing.T) {
 	t.Parallel()
 
 	type fields struct {
-		create port.CoreUserCreate
-		update port.CoreUserUpdate
+		usecase func(t *testing.T) usecase.CoreUser
 	}
 
 	type args struct {
@@ -120,12 +110,9 @@ func TestUserUpdate(t *testing.T) {
 		{
 			name: "ユーザーが更新できる",
 			fields: fields{
-				create: &port.CoreUserCreateMock{},
-				update: &port.CoreUserUpdateMock{
-					T: t,
-					User: model.User{
-						UserID: user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
-					},
+				usecase: func(t *testing.T) usecase.CoreUser {
+					t.Helper()
+					return nil
 				},
 			},
 			args: args{
@@ -144,10 +131,9 @@ func TestUserUpdate(t *testing.T) {
 		{
 			name: "ユーザーが更新できない",
 			fields: fields{
-				create: &port.CoreUserCreateMock{},
-				update: &port.CoreUserUpdateMock{
-					T:   t,
-					Err: fmt.Errorf("test"),
+				usecase: func(t *testing.T) usecase.CoreUser {
+					t.Helper()
+					return nil
 				},
 			},
 			args: args{
@@ -167,8 +153,7 @@ func TestUserUpdate(t *testing.T) {
 			t.Parallel()
 			usr := controller.NewUser(
 				controller.New(),
-				tt.fields.create,
-				tt.fields.update,
+				tt.fields.usecase(t),
 			)
 			got, err := usr.Update(tt.args.ctx, tt.args.req)
 			if (err != nil) != tt.wantErr {

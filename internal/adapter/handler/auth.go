@@ -7,9 +7,9 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/morning-night-guild/platform-app/internal/application/usecase"
 	"github.com/morning-night-guild/platform-app/internal/domain/model"
 	"github.com/morning-night-guild/platform-app/internal/domain/model/auth"
-	"github.com/morning-night-guild/platform-app/internal/usecase/port"
 	"github.com/morning-night-guild/platform-app/pkg/log"
 	"github.com/morning-night-guild/platform-app/pkg/openapi"
 )
@@ -57,13 +57,13 @@ func (hdl *Handler) V1AuthRefresh(w http.ResponseWriter, r *http.Request, params
 		return
 	}
 
-	input := port.APIAuthRefreshInput{
+	input := usecase.APIAuthRefreshInput{
 		CodeID:       codeID,
 		Signature:    signature,
 		SessionToken: sessionToken,
 	}
 
-	output, err := hdl.auth.refresh.Execute(ctx, input)
+	output, err := hdl.auth.Refresh(ctx, input)
 	if err != nil {
 		log.GetLogCtx(ctx).Warn("failed to refresh", log.ErrorField(err))
 
@@ -81,11 +81,11 @@ func (hdl *Handler) V1AuthRefresh(w http.ResponseWriter, r *http.Request, params
 		Name:     auth.AuthTokenKey,
 		Value:    output.AuthToken.String(),
 		Path:     path,
-		Domain:   hdl.auth.cookie.Domain(),
+		Domain:   hdl.cookie.Domain(),
 		Expires:  time.Now().Add(expires),
-		Secure:   hdl.auth.cookie.Secure(),
+		Secure:   hdl.cookie.Secure(),
 		HttpOnly: true,
-		SameSite: hdl.auth.cookie.SameSite(),
+		SameSite: hdl.cookie.SameSite(),
 	})
 }
 
@@ -143,14 +143,14 @@ func (hdl *Handler) V1AuthSignIn(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	input := port.APIAuthSignInInput{
+	input := usecase.APIAuthSignInInput{
 		PublicKey: key,
 		EMail:     email,
 		Password:  password,
 		ExpiresIn: expiresIn,
 	}
 
-	output, err := hdl.auth.signIn.Execute(ctx, input)
+	output, err := hdl.auth.SignIn(ctx, input)
 	if err != nil {
 		log.GetLogCtx(ctx).Warn("failed to sign in", log.ErrorField(err))
 
@@ -165,22 +165,22 @@ func (hdl *Handler) V1AuthSignIn(w http.ResponseWriter, r *http.Request) {
 		Name:     auth.AuthTokenKey,
 		Value:    output.AuthToken.String(),
 		Path:     path,
-		Domain:   hdl.auth.cookie.Domain(),
+		Domain:   hdl.cookie.Domain(),
 		Expires:  now.Add(model.DefaultAuthExpiresIn),
-		Secure:   hdl.auth.cookie.Secure(),
+		Secure:   hdl.cookie.Secure(),
 		HttpOnly: true,
-		SameSite: hdl.auth.cookie.SameSite(),
+		SameSite: hdl.cookie.SameSite(),
 	})
 
 	http.SetCookie(w, &http.Cookie{
 		Name:     auth.SessionTokenKey,
 		Value:    output.SessionToken.String(),
 		Path:     path,
-		Domain:   hdl.auth.cookie.Domain(),
+		Domain:   hdl.cookie.Domain(),
 		Expires:  now.Add(model.DefaultSessionExpiresIn),
-		Secure:   hdl.auth.cookie.Secure(),
+		Secure:   hdl.cookie.Secure(),
 		HttpOnly: true,
-		SameSite: hdl.auth.cookie.SameSite(),
+		SameSite: hdl.cookie.SameSite(),
 	})
 }
 
@@ -217,12 +217,12 @@ func (hdl *Handler) V1AuthSignOut(_ http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	input := port.APIAuthSignOutInput{
+	input := usecase.APIAuthSignOutInput{
 		AuthToken:    authToken,
 		SessionToken: sessionToken,
 	}
 
-	if _, err := hdl.auth.signOut.Execute(ctx, input); err != nil {
+	if _, err := hdl.auth.SignOut(ctx, input); err != nil {
 		log.GetLogCtx(ctx).Warn("failed to sign out", log.ErrorField(err))
 
 		return
@@ -271,12 +271,12 @@ func (hdl *Handler) V1AuthSignUp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	input := port.APIAuthSignUpInput{
+	input := usecase.APIAuthSignUpInput{
 		EMail:    email,
 		Password: password,
 	}
 
-	if _, err := hdl.auth.signUp.Execute(ctx, input); err != nil {
+	if _, err := hdl.auth.SignUp(ctx, input); err != nil {
 		log.GetLogCtx(ctx).Warn("failed to sign up", log.ErrorField(err))
 
 		hdl.HandleErrorStatus(w, err)
@@ -326,12 +326,12 @@ func (hdl *Handler) V1AuthVerify(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	input := port.APIAuthVerifyInput{
+	input := usecase.APIAuthVerifyInput{
 		AuthToken:    authToken,
 		SessionToken: sessionToken,
 	}
 
-	if _, err := hdl.auth.verify.Execute(ctx, input); err != nil {
+	if _, err := hdl.auth.Verify(ctx, input); err != nil {
 		log.GetLogCtx(ctx).Warn("failed to verify", log.ErrorField(err))
 
 		hdl.unauthorize(ctx, w, sessionToken)
@@ -347,11 +347,11 @@ func (hdl *Handler) unauthorize(
 	w http.ResponseWriter,
 	sessionToken auth.SessionToken,
 ) {
-	input := port.APIAuthGenerateCodeInput{
+	input := usecase.APIAuthGenerateCodeInput{
 		SessionToken: sessionToken,
 	}
 
-	output, err := hdl.auth.generateCode.Execute(ctx, input)
+	output, err := hdl.auth.GenerateCode(ctx, input)
 	if err != nil {
 		log.GetLogCtx(ctx).Warn("failed to generate code", log.ErrorField(err))
 

@@ -3,16 +3,14 @@ package handler_test
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/morning-night-guild/platform-app/internal/adapter/handler"
-	"github.com/morning-night-guild/platform-app/internal/domain/model"
+	"github.com/morning-night-guild/platform-app/internal/application/usecase"
 	"github.com/morning-night-guild/platform-app/internal/domain/model/auth"
-	"github.com/morning-night-guild/platform-app/internal/usecase/port"
 	"github.com/morning-night-guild/platform-app/pkg/openapi"
 )
 
@@ -22,9 +20,10 @@ func TestHandlerV1ListArticles(t *testing.T) {
 	type fields struct {
 		key     string
 		secret  auth.Secret
-		auth    *handler.Auth
-		article *handler.Article
-		health  *handler.Health
+		cookie  handler.Cookie
+		auth    func(*testing.T) usecase.APIAuth
+		article func(*testing.T) usecase.APIArticle
+		health  func(*testing.T) usecase.APIHealth
 	}
 
 	type args struct {
@@ -44,15 +43,10 @@ func TestHandlerV1ListArticles(t *testing.T) {
 			name: "記事が一覧できる",
 			fields: fields{
 				key: "key",
-				article: handler.NewArticle(
-					port.APIArticleListMock{
-						T:        t,
-						Articles: []model.Article{},
-					},
-					port.APIArticleShareMock{
-						T: t,
-					},
-				),
+				article: func(t *testing.T) usecase.APIArticle {
+					t.Helper()
+					return nil
+				},
 			},
 			args: args{
 				r: &http.Request{
@@ -69,15 +63,10 @@ func TestHandlerV1ListArticles(t *testing.T) {
 			name: "sizeが不正な値で記事が一覧できない",
 			fields: fields{
 				key: "key",
-				article: handler.NewArticle(
-					port.APIArticleListMock{
-						T:        t,
-						Articles: []model.Article{},
-					},
-					port.APIArticleShareMock{
-						T: t,
-					},
-				),
+				article: func(t *testing.T) usecase.APIArticle {
+					t.Helper()
+					return nil
+				},
 			},
 			args: args{
 				r: &http.Request{
@@ -94,16 +83,10 @@ func TestHandlerV1ListArticles(t *testing.T) {
 			name: "coreにてerrorが発生して記事が一覧できない",
 			fields: fields{
 				key: "key",
-				article: handler.NewArticle(
-					port.APIArticleListMock{
-						T:        t,
-						Articles: []model.Article{},
-						Err:      errors.New("error"),
-					},
-					port.APIArticleShareMock{
-						T: t,
-					},
-				),
+				article: func(t *testing.T) usecase.APIArticle {
+					t.Helper()
+					return nil
+				},
 			},
 			args: args{
 				r: &http.Request{
@@ -125,9 +108,10 @@ func TestHandlerV1ListArticles(t *testing.T) {
 			hdl := handler.New(
 				tt.fields.key,
 				tt.fields.secret,
-				tt.fields.auth,
-				tt.fields.article,
-				tt.fields.health,
+				tt.fields.cookie,
+				tt.fields.auth(t),
+				tt.fields.article(t),
+				tt.fields.health(t),
 			)
 			got := httptest.NewRecorder()
 			hdl.V1ArticleList(got, tt.args.r, tt.args.params)
@@ -148,9 +132,10 @@ func TestHandlerV1ShareArticle(t *testing.T) {
 	type fields struct {
 		key     string
 		secret  auth.Secret
-		auth    *handler.Auth
-		article *handler.Article
-		health  *handler.Health
+		cookie  handler.Cookie
+		auth    func(*testing.T) usecase.APIAuth
+		article func(*testing.T) usecase.APIArticle
+		health  func(*testing.T) usecase.APIHealth
 	}
 
 	type args struct {
@@ -168,14 +153,10 @@ func TestHandlerV1ShareArticle(t *testing.T) {
 			name: "記事が共有できる",
 			fields: fields{
 				key: "key",
-				article: handler.NewArticle(
-					port.APIArticleListMock{
-						T: t,
-					},
-					port.APIArticleShareMock{
-						T: t,
-					},
-				),
+				article: func(t *testing.T) usecase.APIArticle {
+					t.Helper()
+					return nil
+				},
 			},
 			args: args{
 				r: &http.Request{
@@ -197,14 +178,10 @@ func TestHandlerV1ShareArticle(t *testing.T) {
 			name: "nil値が与えられても記事が共有できる",
 			fields: fields{
 				key: "key",
-				article: handler.NewArticle(
-					port.APIArticleListMock{
-						T: t,
-					},
-					port.APIArticleShareMock{
-						T: t,
-					},
-				),
+				article: func(t *testing.T) usecase.APIArticle {
+					t.Helper()
+					return nil
+				},
 			},
 			args: args{
 				r: &http.Request{
@@ -226,14 +203,10 @@ func TestHandlerV1ShareArticle(t *testing.T) {
 			name: "Api-Keyがなくて記事が共有できない",
 			fields: fields{
 				key: "key",
-				article: handler.NewArticle(
-					port.APIArticleListMock{
-						T: t,
-					},
-					port.APIArticleShareMock{
-						T: t,
-					},
-				),
+				article: func(t *testing.T) usecase.APIArticle {
+					t.Helper()
+					return nil
+				},
 			},
 			args: args{
 				r: &http.Request{
@@ -260,9 +233,10 @@ func TestHandlerV1ShareArticle(t *testing.T) {
 			hdl := handler.New(
 				tt.fields.key,
 				tt.fields.secret,
-				tt.fields.auth,
-				tt.fields.article,
-				tt.fields.health,
+				tt.fields.cookie,
+				tt.fields.auth(t),
+				tt.fields.article(t),
+				tt.fields.health(t),
 			)
 			got := httptest.NewRecorder()
 			buf, _ := json.Marshal(tt.args.body)

@@ -1,15 +1,23 @@
-package port
+package usecase
 
 import (
+	"context"
+
 	"github.com/morning-night-guild/platform-app/internal/domain/model"
 	"github.com/morning-night-guild/platform-app/internal/domain/model/article"
 	"github.com/morning-night-guild/platform-app/internal/domain/value"
-	"github.com/morning-night-guild/platform-app/internal/usecase"
 )
+
+//go:generate mockgen -source api_article.go -destination api_article_mock.go -package usecase
+
+// APIArticle.
+type APIArticle interface {
+	Share(context.Context, APIArticleShareInput) (APIArticleShareOutput, error)
+	List(context.Context, APIArticleListInput) (APIArticleListOutput, error)
+}
 
 // APIArticleShareInput.
 type APIArticleShareInput struct {
-	usecase.Input
 	URL         article.URL
 	Title       article.Title
 	Description article.Description
@@ -18,29 +26,16 @@ type APIArticleShareInput struct {
 
 // APIArticleShareOutput.
 type APIArticleShareOutput struct {
-	usecase.Output
 	Article model.Article
-}
-
-// APIArticleShare.
-type APIArticleShare interface {
-	usecase.Usecase[APIArticleShareInput, APIArticleShareOutput]
 }
 
 // APIArticleListInput.
 type APIArticleListInput struct {
-	usecase.Input
 	Index value.Index
 	Size  value.Size
 }
 
 // APIArticleListOutput.
 type APIArticleListOutput struct {
-	usecase.Output
 	Articles []model.Article
-}
-
-// APIArticleList.
-type APIArticleList interface {
-	usecase.Usecase[APIArticleListInput, APIArticleListOutput]
 }

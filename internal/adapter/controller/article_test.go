@@ -2,18 +2,13 @@ package controller_test
 
 import (
 	"context"
-	"errors"
 	"reflect"
 	"testing"
 
 	"github.com/bufbuild/connect-go"
 	"github.com/google/uuid"
 	"github.com/morning-night-guild/platform-app/internal/adapter/controller"
-	"github.com/morning-night-guild/platform-app/internal/domain/model"
-	"github.com/morning-night-guild/platform-app/internal/domain/model/article"
-	dme "github.com/morning-night-guild/platform-app/internal/domain/model/errors"
-	"github.com/morning-night-guild/platform-app/internal/usecase"
-	"github.com/morning-night-guild/platform-app/internal/usecase/port"
+	"github.com/morning-night-guild/platform-app/internal/application/usecase"
 	articlev1 "github.com/morning-night-guild/platform-app/pkg/connect/article/v1"
 )
 
@@ -21,8 +16,7 @@ func TestArticleShare(t *testing.T) {
 	t.Parallel()
 
 	type fields struct {
-		share usecase.Usecase[port.CoreArticleShareInput, port.CoreArticleShareOutput]
-		list  usecase.Usecase[port.CoreArticleListInput, port.CoreArticleListOutput]
+		usecase func(t *testing.T) usecase.CoreArticle
 	}
 
 	type args struct {
@@ -40,11 +34,10 @@ func TestArticleShare(t *testing.T) {
 		{
 			name: "記事の共有ができる",
 			fields: fields{
-				share: port.CoreArticleShareMock{
-					T:   t,
-					Err: nil,
+				usecase: func(t *testing.T) usecase.CoreArticle {
+					t.Helper()
+					return nil
 				},
-				list: port.CoreArticleListMock{},
 			},
 			args: args{
 				ctx: context.Background(),
@@ -59,7 +52,7 @@ func TestArticleShare(t *testing.T) {
 			},
 			want: connect.NewResponse(&articlev1.ShareResponse{
 				Article: &articlev1.Article{
-					Id:          port.MockID(t),
+					Id:          "00000000-0000-0000-0000-000000000000",
 					Url:         "https://example.com",
 					Title:       "title",
 					Description: "description",
@@ -71,11 +64,10 @@ func TestArticleShare(t *testing.T) {
 		{
 			name: "URLが不正の時、バッドリクエストエラーになる",
 			fields: fields{
-				share: port.CoreArticleShareMock{
-					T:   t,
-					Err: nil,
+				usecase: func(t *testing.T) usecase.CoreArticle {
+					t.Helper()
+					return nil
 				},
-				list: port.CoreArticleListMock{},
 			},
 			args: args{
 				ctx: context.Background(),
@@ -94,11 +86,10 @@ func TestArticleShare(t *testing.T) {
 		{
 			name: "Thumbnailが不正の時、バッドリクエストエラーになる",
 			fields: fields{
-				share: port.CoreArticleShareMock{
-					T:   t,
-					Err: nil,
+				usecase: func(t *testing.T) usecase.CoreArticle {
+					t.Helper()
+					return nil
 				},
-				list: port.CoreArticleListMock{},
 			},
 			args: args{
 				ctx: context.Background(),
@@ -117,11 +108,10 @@ func TestArticleShare(t *testing.T) {
 		{
 			name: "ユースケースでバリデーションエラーが発生した際、バッドリクエストエラーになる",
 			fields: fields{
-				share: port.CoreArticleShareMock{
-					T:   t,
-					Err: dme.NewValidationError("validation error"),
+				usecase: func(t *testing.T) usecase.CoreArticle {
+					t.Helper()
+					return nil
 				},
-				list: port.CoreArticleListMock{},
 			},
 			args: args{
 				ctx: context.Background(),
@@ -140,9 +130,9 @@ func TestArticleShare(t *testing.T) {
 		{
 			name: "ユースケースでバリデーションエラー以外のエラーが発生した際、サーバーエラーになる",
 			fields: fields{
-				share: port.CoreArticleShareMock{
-					T:   t,
-					Err: errors.New("unknown error"),
+				usecase: func(t *testing.T) usecase.CoreArticle {
+					t.Helper()
+					return nil
 				},
 			},
 			args: args{
@@ -165,7 +155,7 @@ func TestArticleShare(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			a := controller.NewArticle(controller.New(), tt.fields.share, tt.fields.list)
+			a := controller.NewArticle(controller.New(), tt.fields.usecase(t))
 			got, err := a.Share(tt.args.ctx, tt.args.req)
 			if err != nil && err != tt.wantErr {
 				t.Errorf("Article.Share() error = %v, wantErr %v", err, tt.wantErr)
@@ -198,8 +188,7 @@ func TestArticleList(t *testing.T) {
 	t.Parallel()
 
 	type fields struct {
-		share usecase.Usecase[port.CoreArticleShareInput, port.CoreArticleShareOutput]
-		list  usecase.Usecase[port.CoreArticleListInput, port.CoreArticleListOutput]
+		usecase func(t *testing.T) usecase.CoreArticle
 	}
 
 	type args struct {
@@ -219,19 +208,9 @@ func TestArticleList(t *testing.T) {
 		{
 			name: "記事の一覧が取得できる（ネクストトークンあり）",
 			fields: fields{
-				share: port.CoreArticleShareMock{},
-				list: port.CoreArticleListMock{
-					T: t,
-					Articles: []model.Article{
-						{
-							ID:          article.ID(id),
-							Title:       article.Title("title"),
-							URL:         article.URL("https://example.com"),
-							Description: article.Description("description"),
-							Thumbnail:   article.Thumbnail("https://example.com"),
-							TagList:     article.TagList{},
-						},
-					},
+				usecase: func(t *testing.T) usecase.CoreArticle {
+					t.Helper()
+					return nil
 				},
 			},
 			args: args{
@@ -261,19 +240,9 @@ func TestArticleList(t *testing.T) {
 		{
 			name: "記事の一覧が取得できる（ネクストトークンなし）",
 			fields: fields{
-				share: port.CoreArticleShareMock{},
-				list: port.CoreArticleListMock{
-					T: t,
-					Articles: []model.Article{
-						{
-							ID:          article.ID(id),
-							Title:       article.Title("title"),
-							URL:         article.URL("https://example.com"),
-							Description: article.Description("description"),
-							Thumbnail:   article.Thumbnail("https://example.com"),
-							TagList:     article.TagList{},
-						},
-					},
+				usecase: func(t *testing.T) usecase.CoreArticle {
+					t.Helper()
+					return nil
 				},
 			},
 			args: args{
@@ -303,8 +272,10 @@ func TestArticleList(t *testing.T) {
 		{
 			name: "不正なサイズを指定して記事の一覧が取得できない",
 			fields: fields{
-				share: port.CoreArticleShareMock{},
-				list:  port.CoreArticleListMock{},
+				usecase: func(t *testing.T) usecase.CoreArticle {
+					t.Helper()
+					return nil
+				},
 			},
 			args: args{
 				ctx: context.Background(),
@@ -324,7 +295,7 @@ func TestArticleList(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			a := controller.NewArticle(controller.New(), tt.fields.share, tt.fields.list)
+			a := controller.NewArticle(controller.New(), tt.fields.usecase(t))
 			got, err := a.List(tt.args.ctx, tt.args.req)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Article.List() error = %v, wantErr %v", err, tt.wantErr)

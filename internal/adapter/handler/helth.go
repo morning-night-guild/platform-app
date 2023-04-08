@@ -3,7 +3,7 @@ package handler
 import (
 	"net/http"
 
-	"github.com/morning-night-guild/platform-app/internal/usecase/port"
+	"github.com/morning-night-guild/platform-app/internal/application/usecase"
 	"github.com/morning-night-guild/platform-app/pkg/log"
 )
 
@@ -19,9 +19,9 @@ func (hdl *Handler) V1HealthAPI(w http.ResponseWriter, _ *http.Request) {
 func (hdl *Handler) V1HealthCore(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	input := port.APIHealthCheckInput{}
+	input := usecase.APIHealthCheckInput{}
 
-	if _, err := hdl.health.check.Execute(ctx, input); err != nil {
+	if _, err := hdl.health.Check(ctx, input); err != nil {
 		log.GetLogCtx(ctx).Error("failed to check health core", log.ErrorField(err))
 
 		w.WriteHeader(http.StatusInternalServerError)

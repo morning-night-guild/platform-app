@@ -1,14 +1,13 @@
 package handler_test
 
 import (
-	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/morning-night-guild/platform-app/internal/adapter/handler"
+	"github.com/morning-night-guild/platform-app/internal/application/usecase"
 	"github.com/morning-night-guild/platform-app/internal/domain/model/auth"
-	"github.com/morning-night-guild/platform-app/internal/usecase/port"
 )
 
 func TestHandlerV1HealthAPI(t *testing.T) {
@@ -17,9 +16,10 @@ func TestHandlerV1HealthAPI(t *testing.T) {
 	type fields struct {
 		key     string
 		secret  auth.Secret
-		auth    *handler.Auth
-		article *handler.Article
-		health  *handler.Health
+		cookie  handler.Cookie
+		auth    func(*testing.T) usecase.APIAuth
+		article func(*testing.T) usecase.APIArticle
+		health  func(*testing.T) usecase.APIHealth
 	}
 
 	type args struct {
@@ -36,9 +36,10 @@ func TestHandlerV1HealthAPI(t *testing.T) {
 			name: "ヘルスチェックが成功する",
 			fields: fields{
 				key: "key",
-				health: handler.NewHealth(&port.APIHealthCheckMock{
-					T: t,
-				}),
+				health: func(t *testing.T) usecase.APIHealth {
+					t.Helper()
+					return nil
+				},
 			},
 			args: args{
 				r: &http.Request{
@@ -56,9 +57,10 @@ func TestHandlerV1HealthAPI(t *testing.T) {
 			hdl := handler.New(
 				tt.fields.key,
 				tt.fields.secret,
-				tt.fields.auth,
-				tt.fields.article,
-				tt.fields.health,
+				tt.fields.cookie,
+				tt.fields.auth(t),
+				tt.fields.article(t),
+				tt.fields.health(t),
 			)
 			got := httptest.NewRecorder()
 			hdl.V1HealthAPI(got, tt.args.r)
@@ -75,9 +77,10 @@ func TestHandlerV1HealthCore(t *testing.T) {
 	type fields struct {
 		key     string
 		secret  auth.Secret
-		auth    *handler.Auth
-		article *handler.Article
-		health  *handler.Health
+		cookie  handler.Cookie
+		auth    func(*testing.T) usecase.APIAuth
+		article func(*testing.T) usecase.APIArticle
+		health  func(t *testing.T) usecase.APIHealth
 	}
 
 	type args struct {
@@ -93,9 +96,10 @@ func TestHandlerV1HealthCore(t *testing.T) {
 		{
 			name: "ヘルスチェックが成功する",
 			fields: fields{
-				health: handler.NewHealth(&port.APIHealthCheckMock{
-					T: t,
-				}),
+				health: func(t *testing.T) usecase.APIHealth {
+					t.Helper()
+					return nil
+				},
 			},
 			args: args{
 				r: &http.Request{
@@ -107,10 +111,10 @@ func TestHandlerV1HealthCore(t *testing.T) {
 		{
 			name: "Coreでエラーが発生してヘルスチェックが失敗する",
 			fields: fields{
-				health: handler.NewHealth(&port.APIHealthCheckMock{
-					T:   t,
-					Err: errors.New("error"),
-				}),
+				health: func(t *testing.T) usecase.APIHealth {
+					t.Helper()
+					return nil
+				},
 			},
 			args: args{
 				r: &http.Request{
@@ -128,9 +132,10 @@ func TestHandlerV1HealthCore(t *testing.T) {
 			hdl := handler.New(
 				tt.fields.key,
 				tt.fields.secret,
-				tt.fields.auth,
-				tt.fields.article,
-				tt.fields.health,
+				tt.fields.cookie,
+				tt.fields.auth(t),
+				tt.fields.article(t),
+				tt.fields.health(t),
 			)
 			got := httptest.NewRecorder()
 			hdl.V1HealthCore(got, tt.args.r)

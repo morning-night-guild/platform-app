@@ -45,7 +45,7 @@ func TestHandleConnectError(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			rest := handler.New("", auth.Secret(""), nil, nil, nil)
+			rest := handler.New("", auth.Secret(""), nil, nil, nil, nil)
 			if got := rest.HandleConnectError(tt.args.ctx, tt.args.err); got != tt.want {
 				t.Errorf("API.HandleConnectError() = %v, want %v", got, tt.want)
 			}
@@ -90,6 +90,7 @@ func TestHandlerPointerToString(t *testing.T) {
 			hdl := handler.New(
 				"",
 				auth.Secret(""),
+				nil,
 				nil,
 				nil,
 				nil,

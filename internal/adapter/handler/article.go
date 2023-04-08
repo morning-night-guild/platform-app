@@ -6,9 +6,9 @@ import (
 	"net/http"
 
 	"github.com/google/uuid"
+	"github.com/morning-night-guild/platform-app/internal/application/usecase"
 	"github.com/morning-night-guild/platform-app/internal/domain/model/article"
 	"github.com/morning-night-guild/platform-app/internal/domain/value"
-	"github.com/morning-night-guild/platform-app/internal/usecase/port"
 	"github.com/morning-night-guild/platform-app/pkg/log"
 	"github.com/morning-night-guild/platform-app/pkg/openapi"
 )
@@ -34,12 +34,12 @@ func (hdl *Handler) V1ArticleList(w http.ResponseWriter, r *http.Request, params
 		return
 	}
 
-	input := port.APIArticleListInput{
+	input := usecase.APIArticleListInput{
 		Index: token.ToIndex(),
 		Size:  size,
 	}
 
-	output, err := hdl.article.list.Execute(ctx, input)
+	output, err := hdl.article.List(ctx, input)
 	if err != nil {
 		log.GetLogCtx(ctx).Warn("failed to list articles", log.ErrorField(err))
 
@@ -101,14 +101,14 @@ func (hdl *Handler) V1ArticleShare(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	input := port.APIArticleShareInput{
+	input := usecase.APIArticleShareInput{
 		URL:         article.URL(body.Url),
 		Title:       article.Title(hdl.PointerToString(body.Title)),
 		Description: article.Description(hdl.PointerToString(body.Description)),
 		Thumbnail:   article.Thumbnail(hdl.PointerToString(body.Thumbnail)),
 	}
 
-	if _, err := hdl.article.share.Execute(ctx, input); err != nil {
+	if _, err := hdl.article.Share(ctx, input); err != nil {
 		w.WriteHeader(hdl.HandleConnectError(ctx, err))
 
 		return

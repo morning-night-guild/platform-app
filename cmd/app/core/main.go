@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/morning-night-guild/platform-app/internal/adapter/controller"
 	"github.com/morning-night-guild/platform-app/internal/adapter/gateway"
+	"github.com/morning-night-guild/platform-app/internal/application/interactor"
 	"github.com/morning-night-guild/platform-app/internal/driver/config"
 	"github.com/morning-night-guild/platform-app/internal/driver/env"
 	"github.com/morning-night-guild/platform-app/internal/driver/http"
@@ -10,7 +11,6 @@ import (
 	"github.com/morning-night-guild/platform-app/internal/driver/newrelic"
 	"github.com/morning-night-guild/platform-app/internal/driver/postgres"
 	"github.com/morning-night-guild/platform-app/internal/driver/server"
-	"github.com/morning-night-guild/platform-app/internal/usecase/interactor"
 )
 
 func main() {
@@ -27,19 +27,15 @@ func main() {
 
 	userRepo := gateway.NewUser(rdb)
 
-	articleShare := interactor.NewCoreArticleShare(articleRepo)
+	articleUsecase := interactor.NewCoreArticle(articleRepo)
 
-	articleList := interactor.NewCoreArticleList(articleRepo)
-
-	userCreate := interactor.NewCoreUserCreate(userRepo)
-
-	userUpdate := interactor.NewCoreUserUpdate(userRepo)
+	userUsecase := interactor.NewCoreUser(userRepo)
 
 	ctl := controller.New()
 
-	articleCtr := controller.NewArticle(ctl, articleShare, articleList)
+	articleCtr := controller.NewArticle(ctl, articleUsecase)
 
-	userCtr := controller.NewUser(ctl, userCreate, userUpdate)
+	userCtr := controller.NewUser(ctl, userUsecase)
 
 	healthCtr := controller.NewHealth()
 

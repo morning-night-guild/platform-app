@@ -7,12 +7,12 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	"github.com/morning-night-guild/platform-app/internal/application/interactor"
+	"github.com/morning-night-guild/platform-app/internal/application/usecase"
 	"github.com/morning-night-guild/platform-app/internal/domain/rpc"
-	"github.com/morning-night-guild/platform-app/internal/usecase/interactor"
-	"github.com/morning-night-guild/platform-app/internal/usecase/port"
 )
 
-func TestAPIHealthCheckExecute(t *testing.T) {
+func TestAPIHealthCheck(t *testing.T) {
 	t.Parallel()
 
 	type fields struct {
@@ -21,14 +21,14 @@ func TestAPIHealthCheckExecute(t *testing.T) {
 
 	type args struct {
 		ctx   context.Context
-		input port.APIHealthCheckInput
+		input usecase.APIHealthCheckInput
 	}
 
 	tests := []struct {
 		name    string
 		fields  fields
 		args    args
-		want    port.APIHealthCheckOutput
+		want    usecase.APIHealthCheckOutput
 		wantErr bool
 	}{
 		{
@@ -44,9 +44,9 @@ func TestAPIHealthCheckExecute(t *testing.T) {
 			},
 			args: args{
 				ctx:   context.Background(),
-				input: port.APIHealthCheckInput{},
+				input: usecase.APIHealthCheckInput{},
 			},
-			want:    port.APIHealthCheckOutput{},
+			want:    usecase.APIHealthCheckOutput{},
 			wantErr: false,
 		},
 		{
@@ -62,9 +62,9 @@ func TestAPIHealthCheckExecute(t *testing.T) {
 			},
 			args: args{
 				ctx:   context.Background(),
-				input: port.APIHealthCheckInput{},
+				input: usecase.APIHealthCheckInput{},
 			},
-			want:    port.APIHealthCheckOutput{},
+			want:    usecase.APIHealthCheckOutput{},
 			wantErr: true,
 		},
 	}
@@ -73,14 +73,14 @@ func TestAPIHealthCheckExecute(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			ahc := interactor.NewAPIHealthCheck(tt.fields.healthRPC(t))
-			got, err := ahc.Execute(tt.args.ctx, tt.args.input)
+			ah := interactor.NewAPIHealth(tt.fields.healthRPC(t))
+			got, err := ah.Check(tt.args.ctx, tt.args.input)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("APIHealthCheck.Execute() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("APIHealth.Check() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("APIHealthCheck.Execute() = %v, want %v", got, tt.want)
+				t.Errorf("APIHealth.Check() = %v, want %v", got, tt.want)
 			}
 		})
 	}

@@ -6,9 +6,9 @@ import (
 	"net/http"
 
 	"github.com/bufbuild/connect-go"
+	"github.com/morning-night-guild/platform-app/internal/application/usecase"
 	"github.com/morning-night-guild/platform-app/internal/domain/model/auth"
 	derr "github.com/morning-night-guild/platform-app/internal/domain/model/errors"
-	"github.com/morning-night-guild/platform-app/internal/usecase/port"
 	"github.com/morning-night-guild/platform-app/pkg/log"
 	"github.com/morning-night-guild/platform-app/pkg/openapi"
 	"github.com/morning-night-guild/platform-app/pkg/trace"
@@ -19,81 +19,27 @@ var _ openapi.ServerInterface = (*Handler)(nil)
 type Handler struct {
 	key     string
 	secret  auth.Secret
-	auth    *Auth
-	article *Article
-	health  *Health
+	cookie  Cookie
+	auth    usecase.APIAuth
+	article usecase.APIArticle
+	health  usecase.APIHealth
 }
 
 func New(
 	key string,
 	secret auth.Secret,
-	auth *Auth,
-	article *Article,
-	health *Health,
+	cookie Cookie,
+	auth usecase.APIAuth,
+	article usecase.APIArticle,
+	health usecase.APIHealth,
 ) *Handler {
 	return &Handler{
 		key:     key,
 		secret:  secret,
+		cookie:  cookie,
 		auth:    auth,
 		article: article,
 		health:  health,
-	}
-}
-
-type Auth struct {
-	signUp       port.APIAuthSignUp
-	signIn       port.APIAuthSignIn
-	signOut      port.APIAuthSignOut
-	verify       port.APIAuthVerify
-	refresh      port.APIAuthRefresh
-	generateCode port.APIAuthGenerateCode
-	cookie       Cookie
-}
-
-func NewAuth(
-	signUp port.APIAuthSignUp,
-	signIn port.APIAuthSignIn,
-	signOut port.APIAuthSignOut,
-	verify port.APIAuthVerify,
-	refresh port.APIAuthRefresh,
-	generateCode port.APIAuthGenerateCode,
-	cookie Cookie,
-) *Auth {
-	return &Auth{
-		signUp:       signUp,
-		signIn:       signIn,
-		signOut:      signOut,
-		verify:       verify,
-		refresh:      refresh,
-		generateCode: generateCode,
-		cookie:       cookie,
-	}
-}
-
-type Article struct {
-	list  port.APIArticleList
-	share port.APIArticleShare
-}
-
-func NewArticle(
-	list port.APIArticleList,
-	share port.APIArticleShare,
-) *Article {
-	return &Article{
-		list:  list,
-		share: share,
-	}
-}
-
-type Health struct {
-	check port.APIHealthCheck
-}
-
-func NewHealth(
-	check port.APIHealthCheck,
-) *Health {
-	return &Health{
-		check: check,
 	}
 }
 
