@@ -8,6 +8,9 @@ import (
 	"github.com/morning-night-guild/platform-app/internal/adapter/gateway"
 	"github.com/morning-night-guild/platform-app/internal/driver/postgres"
 	"github.com/morning-night-guild/platform-app/pkg/ent"
+	"github.com/morning-night-guild/platform-app/pkg/ent/article"
+	"github.com/morning-night-guild/platform-app/pkg/ent/articletag"
+	"github.com/morning-night-guild/platform-app/pkg/ent/user"
 	"github.com/morning-night-guild/platform-app/pkg/log"
 )
 
@@ -79,6 +82,8 @@ func Export(ctx context.Context, client *gateway.RDB) (Entity, error) {
 	}, nil
 }
 
+const dropTableQuery = "DROP TABLE IF EXISTS %s CASCADE"
+
 //nolint:funlen
 func Import(ctx context.Context, client *gateway.RDB, entity Entity) error { //nolint:cyclop
 	log.GetLogCtx(ctx).Info("start import")
@@ -88,28 +93,28 @@ func Import(ctx context.Context, client *gateway.RDB, entity Entity) error { //n
 		return fmt.Errorf("failed to begin transaction: %w", err)
 	}
 
-	if _, err := tx.User.Delete().Exec(ctx); err != nil {
+	if _, err := tx.ExecContext(ctx, fmt.Sprintf(dropTableQuery, user.Table)); err != nil {
 		if err := tx.Rollback(); err != nil {
 			return fmt.Errorf("failed to rollback transaction: %w", err)
 		}
 
-		return fmt.Errorf("failed to delete users: %w", err)
+		return fmt.Errorf("failed to drop user table: %w", err)
 	}
 
-	if _, err := tx.ArticleTag.Delete().Exec(ctx); err != nil {
+	if _, err := tx.ExecContext(ctx, fmt.Sprintf(dropTableQuery, article.Table)); err != nil {
 		if err := tx.Rollback(); err != nil {
 			return fmt.Errorf("failed to rollback transaction: %w", err)
 		}
 
-		return fmt.Errorf("failed to delete article tags: %w", err)
+		return fmt.Errorf("failed to drop article table: %w", err)
 	}
 
-	if _, err := tx.Article.Delete().Exec(ctx); err != nil {
+	if _, err := tx.ExecContext(ctx, fmt.Sprintf(dropTableQuery, articletag.Table)); err != nil {
 		if err := tx.Rollback(); err != nil {
 			return fmt.Errorf("failed to rollback transaction: %w", err)
 		}
 
-		return fmt.Errorf("failed to delete articles: %w", err)
+		return fmt.Errorf("failed to drop article tag table: %w", err)
 	}
 
 	userBulk := make([]*ent.UserCreate, len(entity.Users))
