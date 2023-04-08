@@ -8,8 +8,6 @@ import (
 )
 
 func TestNewAPI(t *testing.T) { //nolint:tparallel
-	t.Parallel()
-
 	tests := []struct {
 		name string
 		args config.APIConfig
