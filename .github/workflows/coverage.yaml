@@ -27,7 +27,7 @@ jobs:
       - name: Coverage
         run: |
           go test ./internal/...  -coverpkg=./... -coverprofile ./coverage_temp.txt
-          cat coverage_temp.txt | grep -v "/ent/" | grep -v "/driver/" | grep -v "/cmd/" > coverage.txt
+          cat coverage_temp.txt | grep -v "/pkg/" | grep -v "/driver/" | grep -v "/cmd/" > coverage.txt
           rm coverage_temp.txt
       - name: Upload coverage
         uses: codecov/codecov-action@v3
