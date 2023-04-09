@@ -62,8 +62,7 @@ func (ca *CoreArticle) Delete(
 	ctx context.Context,
 	input usecase.CoreArticleDeleteInput,
 ) (usecase.CoreArticleDeleteOutput, error) {
-	_, err := ca.articleRepository.Find(ctx, input.ArticleID)
-	if err != nil {
+	if _, err := ca.articleRepository.Find(ctx, input.ArticleID); err != nil {
 		return usecase.CoreArticleDeleteOutput{}, err
 	}
 
