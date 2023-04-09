@@ -141,8 +141,7 @@ func (a *Article) Delete(
 		ArticleID: articleID,
 	}
 
-	_, err = a.usecase.Delete(ctx, input)
-	if err != nil {
+	if _, err = a.usecase.Delete(ctx, input); err != nil {
 		return nil, a.ctl.HandleConnectError(ctx, err)
 	}
 
