@@ -37,4 +37,20 @@ func TestAppCoreE2EArticleDelete(t *testing.T) {
 			t.Errorf("failed to delete articles: %s", err)
 		}
 	})
+
+	t.Run("存在しない記事を指定した場合も成功する", func(t *testing.T) {
+		t.Parallel()
+
+		id := uuid.New()
+
+		client := helper.NewConnectClient(t, &http.Client{}, url)
+
+		req := &articlev1.DeleteRequest{
+			ArticleId: id.String(),
+		}
+
+		if _, err := client.Article.Delete(context.Background(), connect.NewRequest(req)); err != nil {
+			t.Errorf("failed to delete articles: %s", err)
+		}
+	})
 }
