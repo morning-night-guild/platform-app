@@ -260,7 +260,7 @@ func TestCoreArticleDelete(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "存在しない記事の削除がエラーにならない",
+			name: "存在しない記事を削除してもエラーにならない",
 			fields: fields{
 				articleRepository: func(t *testing.T) repository.Article {
 					t.Helper()
