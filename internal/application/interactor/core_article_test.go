@@ -215,7 +215,7 @@ func TestCoreArticleDelete(t *testing.T) {
 	t.Parallel()
 
 	type fields struct {
-		articleRepository func(t *testing.T) repository.Article
+		articleRepository func(*testing.T) repository.Article
 	}
 
 	type args struct {
