@@ -53,7 +53,6 @@ func TestAppAPIE2EArticleDelete(t *testing.T) {
 		client := helper.NewOpenAPIClientWithAPIKey(t, url, helper.GetAPIKey(t))
 
 		res, err := client.Client.V1ArticleDelete(context.Background(), id)
-
 		if err != nil {
 			t.Fatalf("failed to delete article: %s", err)
 		}
