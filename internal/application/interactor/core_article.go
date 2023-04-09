@@ -54,3 +54,15 @@ func (ca *CoreArticle) List(
 		Articles: articles,
 	}, nil
 }
+
+// Delete.
+func (ca *CoreArticle) Delete(
+	ctx context.Context,
+	input usecase.CoreArticleDeleteInput,
+) (usecase.CoreArticleDeleteOutput, error) {
+	if err := ca.articleRepository.Delete(ctx, input.ID); err != nil {
+		return usecase.CoreArticleDeleteOutput{}, err
+	}
+
+	return usecase.CoreArticleDeleteOutput{}, nil
+}

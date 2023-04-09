@@ -14,6 +14,7 @@ import (
 type CoreArticle interface {
 	Share(context.Context, CoreArticleShareInput) (CoreArticleShareOutput, error)
 	List(context.Context, CoreArticleListInput) (CoreArticleListOutput, error)
+	Delete(context.Context, CoreArticleDeleteInput) (CoreArticleDeleteOutput, error)
 }
 
 // CoreArticleShareInput.
@@ -39,3 +40,11 @@ type CoreArticleListInput struct {
 type CoreArticleListOutput struct {
 	Articles []model.Article
 }
+
+// CoreArticleDeleteInput.
+type CoreArticleDeleteInput struct {
+	ID article.ID
+}
+
+// CoreArticleDeleteOutput.
+type CoreArticleDeleteOutput struct{}
