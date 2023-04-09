@@ -126,3 +126,15 @@ func (a *Article) List(
 		NextPageToken: next,
 	}), nil
 }
+
+// Delete 記事を削除するコントローラメソッド.
+func (a *Article) Delete(
+	//nolint:revive
+	ctx context.Context,
+	//nolint:revive
+	req *connect.Request[articlev1.DeleteRequest],
+) (*connect.Response[articlev1.DeleteResponse], error) {
+	//nolint:godox
+	// TODO: implement
+	return connect.NewResponse(&articlev1.DeleteResponse{}), nil
+}
