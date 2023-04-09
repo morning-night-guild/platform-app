@@ -253,7 +253,7 @@ func TestCoreArticleDelete(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				input: usecase.CoreArticleDeleteInput{
-					ID: id,
+					ArticleID: id,
 				},
 			},
 			want:    usecase.CoreArticleDeleteOutput{},
@@ -276,7 +276,7 @@ func TestCoreArticleDelete(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				input: usecase.CoreArticleDeleteInput{
-					ID: id,
+					ArticleID: id,
 				},
 			},
 			want:    usecase.CoreArticleDeleteOutput{},
@@ -303,7 +303,7 @@ func TestCoreArticleDelete(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				input: usecase.CoreArticleDeleteInput{
-					ID: id,
+					ArticleID: id,
 				},
 			},
 			want:    usecase.CoreArticleDeleteOutput{},
