@@ -33,6 +33,7 @@ type User struct {
 	Key      *rsa.PrivateKey
 }
 
+//nolint:funlen
 func NewUser(
 	t *testing.T,
 	url string,
@@ -97,12 +98,14 @@ func NewUser(
 	}
 }
 
-func (us *User) Delete(t *testing.T) {
+func (user User) Delete(t *testing.T) {
+	t.Helper()
+
 	db := NewDatabase(t, GetDSN(t))
 
 	defer db.Close()
 
-	db.DeleteUser(uuid.MustParse(us.UserID))
+	db.DeleteUser(uuid.MustParse(user.UserID))
 }
 
 func Public(t *testing.T, private *rsa.PrivateKey) string {
@@ -136,7 +139,7 @@ func Public(t *testing.T, private *rsa.PrivateKey) string {
 	return strings.Join(pems, "")
 }
 
-func (user *User) Sign(code string) string {
+func (user User) Sign(code string) string {
 	user.T.Helper()
 
 	h := crypto.Hash.New(crypto.SHA256)
