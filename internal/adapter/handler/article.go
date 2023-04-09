@@ -119,10 +119,30 @@ func (hdl *Handler) V1ArticleShare(w http.ResponseWriter, r *http.Request) {
 // 記事削除
 // (DELETE /v1/articles/{articleId}).
 func (hdl *Handler) V1ArticleDelete(
-	_ http.ResponseWriter,
-	_ *http.Request,
-	_ types.UUID,
+	w http.ResponseWriter,
+	r *http.Request,
+	articleID types.UUID,
 ) {
-	//nolint:godox
-	// TODO: implement
+	ctx := r.Context()
+
+	key := r.Header.Get("Api-Key")
+	if key != hdl.key {
+		log.GetLogCtx(ctx).Warn(fmt.Sprintf("invalid api key. api key = %s", key))
+
+		w.WriteHeader(http.StatusUnauthorized)
+
+		return
+	}
+
+	input := usecase.APIArticleDeleteInput{
+		ArticleID: article.ID(articleID),
+	}
+
+	if _, err := hdl.article.Delete(ctx, input); err != nil {
+		w.WriteHeader(hdl.HandleConnectError(ctx, err))
+
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }

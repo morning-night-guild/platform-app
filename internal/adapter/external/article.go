@@ -96,3 +96,20 @@ func (aa *Article) List(
 
 	return articles, nil
 }
+
+func (aa *Article) Delete(
+	ctx context.Context,
+	articleID article.ID,
+) error {
+	req := NewRequestWithTID(ctx, &articlev1.DeleteRequest{
+		ArticleId: articleID.String(),
+	})
+
+	_, err := aa.connect.Delete(ctx, req)
+
+	if err != nil {
+		log.GetLogCtx(ctx).Sugar().Warnf("failed to delete articles. articleID=%s", articleID.String(), log.ErrorField(err))
+	}
+
+	return err
+}

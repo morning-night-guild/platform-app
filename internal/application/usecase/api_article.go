@@ -14,6 +14,7 @@ import (
 type APIArticle interface {
 	Share(context.Context, APIArticleShareInput) (APIArticleShareOutput, error)
 	List(context.Context, APIArticleListInput) (APIArticleListOutput, error)
+	Delete(context.Context, APIArticleDeleteInput) (APIArticleDeleteOutput, error)
 }
 
 // APIArticleShareInput.
@@ -38,4 +39,13 @@ type APIArticleListInput struct {
 // APIArticleListOutput.
 type APIArticleListOutput struct {
 	Articles []model.Article
+}
+
+// APIArticleDeleteInput.
+type APIArticleDeleteInput struct {
+	ArticleID article.ID
+}
+
+// APIArticleDeleteOutput.
+type APIArticleDeleteOutput struct {
 }

@@ -49,3 +49,15 @@ func (aa *APIArticle) List(
 		Articles: articles,
 	}, nil
 }
+
+func (aa *APIArticle) Delete(
+	ctx context.Context,
+	input usecase.APIArticleDeleteInput,
+) (usecase.APIArticleDeleteOutput, error) {
+	err := aa.articleRPC.Delete(ctx, input.ArticleID)
+	if err != nil {
+		return usecase.APIArticleDeleteOutput{}, err
+	}
+
+	return usecase.APIArticleDeleteOutput{}, nil
+}
