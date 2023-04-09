@@ -25,8 +25,6 @@ func TestAppCoreE2EArticleDelete(t *testing.T) {
 
 		defer db.Close()
 
-		defer db.BulkDeleteArticles([]uuid.UUID{id})
-
 		db.BulkInsertArticles([]uuid.UUID{id})
 
 		client := helper.NewConnectClient(t, &http.Client{}, url)
