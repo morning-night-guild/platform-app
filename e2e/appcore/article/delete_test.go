@@ -35,8 +35,7 @@ func TestAppCoreE2EArticleDelete(t *testing.T) {
 			ArticleId: id.String(),
 		}
 
-		_, err := client.Article.Delete(context.Background(), connect.NewRequest(req))
-		if err != nil {
+		if _, err := client.Article.Delete(context.Background(), connect.NewRequest(req)); err != nil {
 			t.Fatalf("failed to delete articles: %s", err)
 		}
 	})
