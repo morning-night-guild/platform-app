@@ -10,6 +10,7 @@ import (
 	"github.com/morning-night-guild/platform-app/internal/adapter/gateway"
 	"github.com/morning-night-guild/platform-app/internal/domain/model"
 	"github.com/morning-night-guild/platform-app/internal/domain/model/article"
+	"github.com/morning-night-guild/platform-app/internal/domain/model/errors"
 	"github.com/morning-night-guild/platform-app/internal/domain/value"
 	"github.com/morning-night-guild/platform-app/pkg/ent"
 	entarticle "github.com/morning-night-guild/platform-app/pkg/ent/article"
@@ -402,6 +403,69 @@ func TestArticleList(t *testing.T) {
 
 		if !reflect.DeepEqual(got, articles) {
 			t.Errorf("FindAll() = %v, want %v", got, articles)
+		}
+	})
+}
+
+func TestArticleFind(t *testing.T) {
+	t.Parallel()
+
+	t.Run("記事を取得できる", func(t *testing.T) {
+		t.Parallel()
+
+		rdb, err := gateway.NewRDBClientMock(t).Of(uuid.NewString())
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		articleGateway := gateway.NewArticle(rdb)
+
+		ctx := context.Background()
+
+		item := model.CreateArticle(
+			article.URL("https://example.com"),
+			article.Title("title"),
+			article.Description("description"),
+			article.Thumbnail("https://example.com"),
+			article.TagList([]article.Tag{
+				article.Tag("tag1"),
+				article.Tag("tag2"),
+			}),
+		)
+
+		if err := articleGateway.Save(ctx, item); err != nil {
+			t.Fatal(err)
+		}
+
+		got, err := articleGateway.Find(ctx, item.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if !reflect.DeepEqual(got, item) {
+			t.Errorf("Find() = %v, want %v", got, item)
+		}
+	})
+
+	t.Run("存在しない記事を取得しようとするとNotFoundエラーになる", func(t *testing.T) {
+		t.Parallel()
+
+		rdb, err := gateway.NewRDBClientMock(t).Of(uuid.NewString())
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		articleGateway := gateway.NewArticle(rdb)
+
+		ctx := context.Background()
+
+		_, err = articleGateway.Find(ctx, article.GenerateID())
+		if err == nil {
+			t.Fatal("error is nil")
+		}
+
+		if !errors.AsNotFoundError(err) {
+			t.Fatal(err)
 		}
 	})
 }
