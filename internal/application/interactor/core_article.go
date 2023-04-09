@@ -63,12 +63,12 @@ func (ca *CoreArticle) Delete(
 	input usecase.CoreArticleDeleteInput,
 ) (usecase.CoreArticleDeleteOutput, error) {
 	if _, err := ca.articleRepository.Find(ctx, input.ArticleID); err != nil {
-		return usecase.CoreArticleDeleteOutput{}, err
-	}
+		if errors.AsNotFoundError(err) {
+			log.GetLogCtx(ctx).Sugar().Warnf("article not found. id=%s", input.ArticleID)
+			return usecase.CoreArticleDeleteOutput{}, nil
+		}
 
-	if errors.AsNotFoundError(err) {
-		log.GetLogCtx(ctx).Sugar().Warnf("article not found. id=%s", input.ArticleID)
-		return usecase.CoreArticleDeleteOutput{}, nil
+		return usecase.CoreArticleDeleteOutput{}, err
 	}
 
 	if err := ca.articleRepository.Delete(ctx, input.ArticleID); err != nil {
