@@ -4,13 +4,12 @@ import (
 	"context"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/morning-night-guild/platform-app/e2e/helper"
 )
 
 func TestAppAPIE2EArticleDelete(t *testing.T) {
 	t.Parallel()
-
-	size := uint32(5)
 
 	url := helper.GetAppAPIEndpoint(t)
 
@@ -19,24 +18,24 @@ func TestAppAPIE2EArticleDelete(t *testing.T) {
 
 		db := helper.NewDatabase(t, helper.GetDSN(t))
 
-		ids := helper.NewIDs(t, int(size))
+		id := uuid.New()
 
-		db.BulkInsertArticles(ids)
+		db.BulkInsertArticles([]uuid.UUID{id})
 
 		defer db.Close()
 
-		defer db.BulkDeleteArticles(ids)
+		defer db.BulkDeleteArticles([]uuid.UUID{id})
 
 		client := helper.NewOpenAPIClient(t, url)
 
-		res, err := client.Client.V1ArticleDelete(context.Background(), ids[0])
+		res, err := client.Client.V1ArticleDelete(context.Background(), id)
 		if err != nil {
 			t.Fatalf("failed to delete article: %s", err)
 		}
 
 		defer res.Body.Close()
 
-		article := db.SelectArticleByID(ids[0])
+		article := db.SelectArticleByID(id)
 
 		if article != nil {
 			t.Fatalf("article is not deleted")
