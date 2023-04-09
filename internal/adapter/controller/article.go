@@ -129,12 +129,22 @@ func (a *Article) List(
 
 // Delete 記事を削除するコントローラメソッド.
 func (a *Article) Delete(
-	//nolint:revive
 	ctx context.Context,
-	//nolint:revive
 	req *connect.Request[articlev1.DeleteRequest],
 ) (*connect.Response[articlev1.DeleteResponse], error) {
-	//nolint:godox
-	// TODO: implement
+	articleID, err := article.NewID(req.Msg.ArticleId)
+	if err != nil {
+		return nil, a.ctl.HandleConnectError(ctx, err)
+	}
+
+	input := usecase.CoreArticleDeleteInput{
+		ArticleID: articleID,
+	}
+
+	_, err = a.usecase.Delete(ctx, input)
+	if err != nil {
+		return nil, a.ctl.HandleConnectError(ctx, err)
+	}
+
 	return connect.NewResponse(&articlev1.DeleteResponse{}), nil
 }
