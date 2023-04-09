@@ -920,7 +920,7 @@ func TestHandlerV1AuthVerify(t *testing.T) {
 					}).Return(usecase.APIAuthGenerateCodeOutput{
 						Code: model.Code{
 							CodeID:    auth.CodeID(uuid.MustParse(cid)),
-							SessionID: token.SessionToken.GetID(auth.Secret("secret")),
+							SessionID: token.SessionToken.ID(auth.Secret("secret")),
 							IssuedAt:  time.Now(),
 							ExpiresAt: time.Now().Add(time.Minute * 10),
 						},
@@ -954,7 +954,7 @@ func TestHandlerV1AuthVerify(t *testing.T) {
 					}).Return(usecase.APIAuthGenerateCodeOutput{
 						Code: model.Code{
 							CodeID:    auth.CodeID(uuid.MustParse(cid)),
-							SessionID: token.SessionToken.GetID(auth.Secret("secret")),
+							SessionID: token.SessionToken.ID(auth.Secret("secret")),
 							IssuedAt:  time.Now(),
 							ExpiresAt: time.Now().Add(time.Minute * 10),
 						},
@@ -996,7 +996,7 @@ func TestHandlerV1AuthVerify(t *testing.T) {
 					}).Return(usecase.APIAuthGenerateCodeOutput{
 						Code: model.Code{
 							CodeID:    auth.CodeID(uuid.MustParse(cid)),
-							SessionID: token.SessionToken.GetID(auth.Secret("secret")),
+							SessionID: token.SessionToken.ID(auth.Secret("secret")),
 							IssuedAt:  time.Now(),
 							ExpiresAt: time.Now().Add(time.Minute * 10),
 						},

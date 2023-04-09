@@ -34,9 +34,19 @@ func (hdl *Handler) V1ArticleList(w http.ResponseWriter, r *http.Request, params
 		return
 	}
 
+	uid, err := hdl.ExtractUserID(ctx, r)
+	if err != nil {
+		log.GetLogCtx(ctx).Warn("failed to extract user id", log.ErrorField(err))
+
+		w.WriteHeader(http.StatusUnauthorized)
+
+		return
+	}
+
 	input := usecase.APIArticleListInput{
-		Index: token.ToIndex(),
-		Size:  size,
+		UserID: uid,
+		Index:  token.ToIndex(),
+		Size:   size,
 	}
 
 	output, err := hdl.article.List(ctx, input)

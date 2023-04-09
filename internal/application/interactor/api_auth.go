@@ -96,9 +96,9 @@ func (aa *APIAuth) SignOut(
 	ctx context.Context,
 	input usecase.APIAuthSignOutInput,
 ) (usecase.APIAuthSignOutOutput, error) {
-	sid := input.SessionToken.GetID(aa.secret)
+	sid := input.SessionToken.ID(aa.secret)
 
-	uid := input.AuthToken.GetUserID(sid.ToSecret())
+	uid := input.AuthToken.UserID(sid.ToSecret())
 
 	if err := aa.sessionCache.Del(ctx, sid.String()); err != nil {
 		log.GetLogCtx(ctx).Warn("failed to delete session cache", log.ErrorField(err))
@@ -115,9 +115,9 @@ func (aa *APIAuth) Verify(
 	ctx context.Context,
 	input usecase.APIAuthVerifyInput,
 ) (usecase.APIAuthVerifyOutput, error) {
-	sid := input.SessionToken.GetID(aa.secret)
+	sid := input.SessionToken.ID(aa.secret)
 
-	uid := input.AuthToken.GetUserID(sid.ToSecret())
+	uid := input.AuthToken.UserID(sid.ToSecret())
 
 	auth, err := aa.authCache.Get(ctx, uid.String())
 	if err != nil {
@@ -127,7 +127,7 @@ func (aa *APIAuth) Verify(
 	}
 
 	if auth.IsExpired() {
-		return usecase.APIAuthVerifyOutput{}, errors.NewValidationError("auth token is expired")
+		return usecase.APIAuthVerifyOutput{}, errors.NewUnauthorizedError("auth token is expired")
 	}
 
 	return usecase.APIAuthVerifyOutput{}, nil
@@ -137,7 +137,7 @@ func (aa *APIAuth) Refresh(
 	ctx context.Context,
 	input usecase.APIAuthRefreshInput,
 ) (usecase.APIAuthRefreshOutput, error) {
-	sid := input.SessionToken.GetID(aa.secret)
+	sid := input.SessionToken.ID(aa.secret)
 
 	code, err := aa.codeCache.Get(ctx, sid.String())
 	if err != nil {
@@ -190,7 +190,7 @@ func (aa *APIAuth) GenerateCode(
 	ctx context.Context,
 	input usecase.APIAuthGenerateCodeInput,
 ) (usecase.APIAuthGenerateCodeOutput, error) {
-	sid := input.SessionToken.GetID(aa.secret)
+	sid := input.SessionToken.ID(aa.secret)
 
 	code := model.GenerateCode(sid)
 

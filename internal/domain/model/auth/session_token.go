@@ -68,7 +68,7 @@ func (st SessionToken) String() string {
 	return string(st)
 }
 
-func (st SessionToken) GetID(secret Secret) SessionID {
+func (st SessionToken) ID(secret Secret) SessionID {
 	parsedToken, _ := jwt.Parse(st.String(), func(token *jwt.Token) (interface{}, error) {
 		return []byte(secret.String()), nil
 	})
@@ -83,5 +83,5 @@ func (st SessionToken) GetID(secret Secret) SessionID {
 }
 
 func (st SessionToken) ToSecret(secret Secret) Secret {
-	return st.GetID(secret).ToSecret()
+	return st.ID(secret).ToSecret()
 }

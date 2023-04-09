@@ -86,7 +86,10 @@ func main() {
 		sessionCache,
 	)
 
-	articleUsecase := interactor.NewAPIArticle(articleRPC)
+	articleUsecase := interactor.NewAPIArticle(
+		authCache,
+		articleRPC,
+	)
 
 	healthUsecase := interactor.NewAPIHealth(healthRPC)
 

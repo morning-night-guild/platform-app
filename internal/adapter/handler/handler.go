@@ -9,6 +9,7 @@ import (
 	"github.com/morning-night-guild/platform-app/internal/application/usecase"
 	"github.com/morning-night-guild/platform-app/internal/domain/model/auth"
 	derr "github.com/morning-night-guild/platform-app/internal/domain/model/errors"
+	"github.com/morning-night-guild/platform-app/internal/domain/model/user"
 	"github.com/morning-night-guild/platform-app/pkg/log"
 	"github.com/morning-night-guild/platform-app/pkg/openapi"
 	"github.com/morning-night-guild/platform-app/pkg/trace"
@@ -96,4 +97,43 @@ func NewRequestWithTID[T any](ctx context.Context, msg *T) *connect.Request[T] {
 	req.Header().Set("tid", trace.GetTIDCtx(ctx))
 
 	return req
+}
+
+func (hdl *Handler) ExtractUserID(
+	ctx context.Context,
+	r *http.Request,
+) (user.ID, error) {
+	sessionTokenCookie, err := r.Cookie(auth.SessionTokenKey)
+	if err != nil {
+		log.GetLogCtx(ctx).Warn("failed to get session token cookie", log.ErrorField(err))
+
+		return user.GenerateZeroID(), derr.NewUnauthorizedError("failed to get session token cookie", err)
+	}
+
+	sessionToken, err := auth.ParseSessionToken(sessionTokenCookie.Value, hdl.secret)
+	if err != nil {
+		log.GetLogCtx(ctx).Warn("failed to new session token", log.ErrorField(err))
+
+		return user.GenerateZeroID(), derr.NewUnauthorizedError("failed to new session token", err)
+	}
+
+	authTokenCookie, err := r.Cookie(auth.AuthTokenKey)
+	if err != nil {
+		log.GetLogCtx(ctx).Warn("failed to get auth token cookie", log.ErrorField(err))
+
+		return user.GenerateZeroID(), derr.NewUnauthorizedError("failed to get auth token cookie", err)
+	}
+
+	authToken, err := auth.ParseAuthToken(authTokenCookie.Value, sessionToken.ToSecret(hdl.secret))
+	if err != nil {
+		log.GetLogCtx(ctx).Warn("failed to new auth token", log.ErrorField(err))
+
+		return user.GenerateZeroID(), derr.NewUnauthorizedError("failed to new auth token", err)
+	}
+
+	sid := sessionToken.ID(hdl.secret)
+
+	uid := authToken.UserID(sid.ToSecret())
+
+	return uid, nil
 }

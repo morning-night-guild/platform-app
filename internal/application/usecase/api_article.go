@@ -5,6 +5,7 @@ import (
 
 	"github.com/morning-night-guild/platform-app/internal/domain/model"
 	"github.com/morning-night-guild/platform-app/internal/domain/model/article"
+	"github.com/morning-night-guild/platform-app/internal/domain/model/user"
 	"github.com/morning-night-guild/platform-app/internal/domain/value"
 )
 
@@ -31,8 +32,9 @@ type APIArticleShareOutput struct {
 
 // APIArticleListInput.
 type APIArticleListInput struct {
-	Index value.Index
-	Size  value.Size
+	UserID user.ID
+	Index  value.Index
+	Size   value.Size
 }
 
 // APIArticleListOutput.
