@@ -44,6 +44,7 @@ func Cookie(t *testing.T) *handler.MockCookie {
 }
 
 func GenerateToken(t *testing.T) struct {
+	UserID             user.ID
 	AuthToken          auth.AuthToken
 	AuthTokenString    string
 	SessionToken       auth.SessionToken
@@ -55,14 +56,18 @@ func GenerateToken(t *testing.T) struct {
 
 	st := auth.GenerateSessionToken(sid, auth.Secret("secret"))
 
-	at := auth.GenerateAuthToken(user.GenerateID(), sid.ToSecret())
+	uid := user.GenerateID()
+
+	at := auth.GenerateAuthToken(uid, sid.ToSecret())
 
 	return struct {
+		UserID             user.ID
 		AuthToken          auth.AuthToken
 		AuthTokenString    string
 		SessionToken       auth.SessionToken
 		SessionTokenString string
 	}{
+		UserID:             uid,
 		AuthToken:          at,
 		AuthTokenString:    at.String(),
 		SessionToken:       st,

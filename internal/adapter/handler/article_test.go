@@ -26,7 +26,6 @@ func TestHandlerV1ListArticles(t *testing.T) {
 	t.Parallel()
 
 	type fields struct {
-		secret  auth.Secret
 		cookie  handler.Cookie
 		auth    usecase.APIAuth
 		article func(*testing.T) usecase.APIArticle
@@ -34,11 +33,14 @@ func TestHandlerV1ListArticles(t *testing.T) {
 	}
 
 	type args struct {
-		r      *http.Request
-		params openapi.V1ArticleListParams
+		r       *http.Request
+		cookies []*http.Cookie
+		params  openapi.V1ArticleListParams
 	}
 
 	next := "next"
+
+	token := GenerateToken(t)
 
 	tests := []struct {
 		name   string
@@ -54,8 +56,9 @@ func TestHandlerV1ListArticles(t *testing.T) {
 					ctrl := gomock.NewController(t)
 					mock := usecase.NewMockAPIArticle(ctrl)
 					mock.EXPECT().List(gomock.Any(), usecase.APIArticleListInput{
-						Index: value.Index(0),
-						Size:  value.Size(5),
+						UserID: token.UserID,
+						Index:  value.Index(0),
+						Size:   value.Size(5),
 					}).Return(usecase.APIArticleListOutput{
 						Articles: []model.Article{},
 					}, nil)
@@ -65,6 +68,17 @@ func TestHandlerV1ListArticles(t *testing.T) {
 			args: args{
 				r: &http.Request{
 					Method: http.MethodGet,
+					Header: http.Header{},
+				},
+				cookies: []*http.Cookie{
+					{
+						Name:  auth.AuthTokenKey,
+						Value: token.AuthTokenString,
+					},
+					{
+						Name:  auth.SessionTokenKey,
+						Value: token.SessionTokenString,
+					},
 				},
 				params: openapi.V1ArticleListParams{
 					PageToken:   &next,
@@ -86,6 +100,17 @@ func TestHandlerV1ListArticles(t *testing.T) {
 			args: args{
 				r: &http.Request{
 					Method: http.MethodGet,
+					Header: http.Header{},
+				},
+				cookies: []*http.Cookie{
+					{
+						Name:  auth.AuthTokenKey,
+						Value: token.AuthTokenString,
+					},
+					{
+						Name:  auth.SessionTokenKey,
+						Value: token.SessionTokenString,
+					},
 				},
 				params: openapi.V1ArticleListParams{
 					PageToken:   &next,
@@ -102,8 +127,9 @@ func TestHandlerV1ListArticles(t *testing.T) {
 					ctrl := gomock.NewController(t)
 					mock := usecase.NewMockAPIArticle(ctrl)
 					mock.EXPECT().List(gomock.Any(), usecase.APIArticleListInput{
-						Index: value.Index(0),
-						Size:  value.Size(5),
+						UserID: token.UserID,
+						Index:  value.Index(0),
+						Size:   value.Size(5),
 					}).Return(usecase.APIArticleListOutput{}, fmt.Errorf("error"))
 					return mock
 				},
@@ -111,6 +137,17 @@ func TestHandlerV1ListArticles(t *testing.T) {
 			args: args{
 				r: &http.Request{
 					Method: http.MethodGet,
+					Header: http.Header{},
+				},
+				cookies: []*http.Cookie{
+					{
+						Name:  auth.AuthTokenKey,
+						Value: token.AuthTokenString,
+					},
+					{
+						Name:  auth.SessionTokenKey,
+						Value: token.SessionTokenString,
+					},
 				},
 				params: openapi.V1ArticleListParams{
 					PageToken:   &next,
@@ -127,13 +164,16 @@ func TestHandlerV1ListArticles(t *testing.T) {
 			t.Parallel()
 			hdl := handler.New(
 				"key",
-				tt.fields.secret,
+				auth.Secret("secret"),
 				tt.fields.cookie,
 				tt.fields.auth,
 				tt.fields.article(t),
 				tt.fields.health,
 			)
 			got := httptest.NewRecorder()
+			for _, cookie := range tt.args.cookies {
+				tt.args.r.AddCookie(cookie)
+			}
 			hdl.V1ArticleList(got, tt.args.r, tt.args.params)
 			if got.Code != tt.status {
 				t.Errorf("V1ListArticles() = %v, want %v", got.Code, tt.status)
