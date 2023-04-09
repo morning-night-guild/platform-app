@@ -459,8 +459,7 @@ func TestArticleFind(t *testing.T) {
 
 		ctx := context.Background()
 
-		_, err = articleGateway.Find(ctx, article.GenerateID())
-		if err == nil {
+		if _, err = articleGateway.Find(ctx, article.GenerateID()); err == nil {
 			t.Fatal("error is nil")
 		}
 
@@ -534,7 +533,7 @@ func TestArticleDelete(t *testing.T) {
 		ctx := context.Background()
 
 		if err := articleGateway.Delete(ctx, article.GenerateID()); err != nil {
-			t.Fatal(err)
+			t.Error(err)
 		}
 	})
 }
