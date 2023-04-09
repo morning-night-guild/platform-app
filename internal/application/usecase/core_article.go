@@ -43,7 +43,7 @@ type CoreArticleListOutput struct {
 
 // CoreArticleDeleteInput.
 type CoreArticleDeleteInput struct {
-	ID article.ID
+	ArticleID article.ID
 }
 
 // CoreArticleDeleteOutput.
