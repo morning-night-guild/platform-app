@@ -37,7 +37,7 @@ func TestAppAPIE2EArticleDelete(t *testing.T) {
 		defer res.Body.Close()
 
 		if res.StatusCode != http.StatusOK {
-			t.Fatalf("unexpected status code: %d", res.StatusCode)
+			t.Errorf("unexpected status code: %d", res.StatusCode)
 		}
 	})
 }
