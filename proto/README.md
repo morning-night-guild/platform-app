@@ -3,15 +3,6 @@
 
 ## Table of Contents
 
-- [proto/article/v1/article.proto](#proto_article_v1_article-proto)
-    - [Article](#article-v1-Article)
-    - [ListRequest](#article-v1-ListRequest)
-    - [ListResponse](#article-v1-ListResponse)
-    - [ShareRequest](#article-v1-ShareRequest)
-    - [ShareResponse](#article-v1-ShareResponse)
-  
-    - [ArticleService](#article-v1-ArticleService)
-  
 - [proto/health/v1/health.proto](#proto_health_v1_health-proto)
     - [CheckRequest](#health-v1-CheckRequest)
     - [CheckResponse](#health-v1-CheckResponse)
@@ -27,119 +18,16 @@
   
     - [UserService](#user-v1-UserService)
   
+- [proto/article/v1/article.proto](#proto_article_v1_article-proto)
+    - [Article](#article-v1-Article)
+    - [ListRequest](#article-v1-ListRequest)
+    - [ListResponse](#article-v1-ListResponse)
+    - [ShareRequest](#article-v1-ShareRequest)
+    - [ShareResponse](#article-v1-ShareResponse)
+  
+    - [ArticleService](#article-v1-ArticleService)
+  
 - [Scalar Value Types](#scalar-value-types)
-
-
-
-<a name="proto_article_v1_article-proto"></a>
-<p align="right"><a href="#top">Top</a></p>
-
-## proto/article/v1/article.proto
-
-
-
-<a name="article-v1-Article"></a>
-
-### Article
-記事モデル
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| id | [string](#string) |  |  |
-| url | [string](#string) |  |  |
-| title | [string](#string) |  |  |
-| description | [string](#string) |  |  |
-| thumbnail | [string](#string) |  |  |
-| tags | [string](#string) | repeated |  |
-
-
-
-
-
-
-<a name="article-v1-ListRequest"></a>
-
-### ListRequest
-一覧リクエスト
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| page_token | [string](#string) |  |  |
-| max_page_size | [uint32](#uint32) |  |  |
-
-
-
-
-
-
-<a name="article-v1-ListResponse"></a>
-
-### ListResponse
-一覧レスポンス
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| articles | [Article](#article-v1-Article) | repeated |  |
-| next_page_token | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="article-v1-ShareRequest"></a>
-
-### ShareRequest
-共有リクエスト
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| url | [string](#string) |  |  |
-| title | [string](#string) |  |  |
-| description | [string](#string) |  |  |
-| thumbnail | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="article-v1-ShareResponse"></a>
-
-### ShareResponse
-共有レスポンス
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| article | [Article](#article-v1-Article) |  |  |
-
-
-
-
-
- 
-
- 
-
- 
-
-
-<a name="article-v1-ArticleService"></a>
-
-### ArticleService
-記事サービス
-
-| Method Name | Request Type | Response Type | Description |
-| ----------- | ------------ | ------------- | ------------|
-| Share | [ShareRequest](#article-v1-ShareRequest) | [ShareResponse](#article-v1-ShareResponse) | 共有 Need X-Api-Key Header |
-| List | [ListRequest](#article-v1-ListRequest) | [ListResponse](#article-v1-ListResponse) | 一覧 |
-
- 
 
 
 
@@ -281,6 +169,118 @@
 | ----------- | ------------ | ------------- | ------------|
 | Create | [CreateRequest](#user-v1-CreateRequest) | [CreateResponse](#user-v1-CreateResponse) | 作成 |
 | Update | [UpdateRequest](#user-v1-UpdateRequest) | [UpdateResponse](#user-v1-UpdateResponse) | 更新 |
+
+ 
+
+
+
+<a name="proto_article_v1_article-proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## proto/article/v1/article.proto
+
+
+
+<a name="article-v1-Article"></a>
+
+### Article
+記事モデル
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [string](#string) |  |  |
+| url | [string](#string) |  |  |
+| title | [string](#string) |  |  |
+| description | [string](#string) |  |  |
+| thumbnail | [string](#string) |  |  |
+| tags | [string](#string) | repeated |  |
+
+
+
+
+
+
+<a name="article-v1-ListRequest"></a>
+
+### ListRequest
+一覧リクエスト
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| page_token | [string](#string) |  |  |
+| max_page_size | [uint32](#uint32) |  |  |
+
+
+
+
+
+
+<a name="article-v1-ListResponse"></a>
+
+### ListResponse
+一覧レスポンス
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| articles | [Article](#article-v1-Article) | repeated |  |
+| next_page_token | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="article-v1-ShareRequest"></a>
+
+### ShareRequest
+共有リクエスト
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| url | [string](#string) |  |  |
+| title | [string](#string) |  |  |
+| description | [string](#string) |  |  |
+| thumbnail | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="article-v1-ShareResponse"></a>
+
+### ShareResponse
+共有レスポンス
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| article | [Article](#article-v1-Article) |  |  |
+
+
+
+
+
+ 
+
+ 
+
+ 
+
+
+<a name="article-v1-ArticleService"></a>
+
+### ArticleService
+記事サービス
+
+| Method Name | Request Type | Response Type | Description |
+| ----------- | ------------ | ------------- | ------------|
+| Share | [ShareRequest](#article-v1-ShareRequest) | [ShareResponse](#article-v1-ShareResponse) | 共有 Need X-Api-Key Header |
+| List | [ListRequest](#article-v1-ListRequest) | [ListResponse](#article-v1-ListResponse) | 一覧 |
 
  
 

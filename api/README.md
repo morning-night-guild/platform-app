@@ -244,8 +244,9 @@ authTokenCookie, sessionTokenCookie
 |200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|成功|[V1ArticleListResponseSchema](#schemav1articlelistresponseschema)|
 |500|[Internal Server Error](https://tools.ietf.org/html/rfc7231#section-6.6.1)|Internal Server Error|None|
 
-<aside class="success">
-This operation does not require authentication
+<aside class="warning">
+To perform this operation, you must be authenticated by means of one of the following methods:
+authTokenCookie, sessionTokenCookie
 </aside>
 
 ## v1ArticleShare
