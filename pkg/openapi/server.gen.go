@@ -20,6 +20,9 @@ type ServerInterface interface {
 	// 記事共有
 	// (POST /v1/articles)
 	V1ArticleShare(w http.ResponseWriter, r *http.Request)
+	// 記事削除
+	// (DELETE /v1/articles/{articleId})
+	V1ArticleDelete(w http.ResponseWriter, r *http.Request, articleId string)
 	// リフレッシュ
 	// (GET /v1/auth/refresh)
 	V1AuthRefresh(w http.ResponseWriter, r *http.Request, params V1AuthRefreshParams)
@@ -103,6 +106,34 @@ func (siw *ServerInterfaceWrapper) V1ArticleShare(w http.ResponseWriter, r *http
 
 	var handler http.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.V1ArticleShare(w, r)
+	})
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r.WithContext(ctx))
+}
+
+// V1ArticleDelete operation middleware
+func (siw *ServerInterfaceWrapper) V1ArticleDelete(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	var err error
+
+	// ------------- Path parameter "articleId" -------------
+	var articleId string
+
+	err = runtime.BindStyledParameterWithLocation("simple", true, "articleId", runtime.ParamLocationPath, chi.URLParam(r, "articleId"), &articleId)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "articleId", Err: err})
+		return
+	}
+
+	ctx = context.WithValue(ctx, ApiKeyScopes, []string{""})
+
+	var handler http.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.V1ArticleDelete(w, r, articleId)
 	})
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -390,6 +421,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/v1/articles", wrapper.V1ArticleShare)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/v1/articles/{articleId}", wrapper.V1ArticleDelete)
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/v1/auth/refresh", wrapper.V1AuthRefresh)

@@ -204,6 +204,32 @@ paths:
           description: Forbidden
         '500':
           description: Internal Server Error
+  /v1/articles/{articleId}:
+    delete:
+      tags:
+        - article
+      summary: 記事削除
+      description: 記事を削除する
+      operationId: v1ArticleDelete
+      security:
+        - apiKey: []
+      parameters:
+        - name: articleId
+          in: path
+          description: 記事ID
+          required: true
+          explode: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 成功
+        '400':
+          description: Bad Request
+        '403':
+          description: Forbidden
+        '500':
+          description: Internal Server Error
   /v1/health/api:
     get:
       tags:
