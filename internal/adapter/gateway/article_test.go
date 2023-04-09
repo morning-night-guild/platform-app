@@ -465,7 +465,7 @@ func TestArticleFind(t *testing.T) {
 		}
 
 		if !errors.AsNotFoundError(err) {
-			t.Fatal(err)
+			t.Errorf("error is not NotFoundError. got: %v", err)
 		}
 	})
 }
