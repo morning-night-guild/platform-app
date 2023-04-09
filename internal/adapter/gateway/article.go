@@ -149,8 +149,13 @@ func (art *Article) Find(ctx context.Context, id da.ID) (model.Article, error) {
 
 func (art *Article) Delete(ctx context.Context, id da.ID) error {
 	err := art.rdb.Article.DeleteOneID(id.Value()).Exec(ctx)
+
 	if err != nil {
-		return errors.Wrap(err, "failed to delete")
+		if ent.IsNotFound(err) {
+			return nil
+		}
+
+		return errors.Wrap(err, "failed to delete article")
 	}
 
 	return nil
