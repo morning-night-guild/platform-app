@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"io"
+	"net/http"
 	"reflect"
 	"testing"
 
@@ -21,6 +22,10 @@ func TestAppAPIE2EArticleList(t *testing.T) {
 	t.Run("記事が一覧できる", func(t *testing.T) {
 		t.Parallel()
 
+		user := helper.NewUser(t, url)
+
+		defer user.Delete(t)
+
 		db := helper.NewDatabase(t, helper.GetDSN(t))
 
 		ids := helper.NewIDs(t, int(size))
@@ -31,7 +36,7 @@ func TestAppAPIE2EArticleList(t *testing.T) {
 
 		defer db.BulkDeleteArticles(ids)
 
-		client := helper.NewOpenAPIClient(t, url)
+		client := user.Client
 
 		res, err := client.Client.V1ArticleList(context.Background(), &openapi.V1ArticleListParams{
 			PageToken:   nil,
@@ -42,6 +47,10 @@ func TestAppAPIE2EArticleList(t *testing.T) {
 		}
 
 		defer res.Body.Close()
+
+		if res.StatusCode != http.StatusOK {
+			t.Fatalf("failed to list article: %s", res.Status)
+		}
 
 		body, _ := io.ReadAll(res.Body)
 

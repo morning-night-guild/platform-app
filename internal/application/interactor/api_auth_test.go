@@ -54,7 +54,6 @@ func TestAPIAuthSignUp(t *testing.T) {
 	t.Parallel()
 
 	type fields struct {
-		secret       auth.Secret
 		authRPC      func(t *testing.T) rpc.Auth
 		userRPC      func(t *testing.T) rpc.User
 		authCache    cache.Cache[model.Auth]
@@ -178,7 +177,6 @@ func TestAPIAuthSignUp(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			aa := interactor.NewAPIAuth(
-				tt.fields.secret,
 				tt.fields.authRPC(t),
 				tt.fields.userRPC(t),
 				tt.fields.authCache,
@@ -201,7 +199,6 @@ func TestAPIAuthSignIn(t *testing.T) {
 	t.Parallel()
 
 	type fields struct {
-		secret       auth.Secret
 		authRPC      func(t *testing.T) rpc.Auth
 		userRPC      rpc.User
 		authCache    cache.Cache[model.Auth]
@@ -224,7 +221,6 @@ func TestAPIAuthSignIn(t *testing.T) {
 		{
 			name: "サインインできる",
 			fields: fields{
-				secret: auth.Secret("secret"),
 				authRPC: func(t *testing.T) rpc.Auth {
 					t.Helper()
 					ctrl := gomock.NewController(t)
@@ -284,7 +280,6 @@ func TestAPIAuthSignIn(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			aa := interactor.NewAPIAuth(
-				tt.fields.secret,
 				tt.fields.authRPC(t),
 				tt.fields.userRPC,
 				tt.fields.authCache,
@@ -307,7 +302,6 @@ func TestAPIAuthSignOut(t *testing.T) {
 	t.Parallel()
 
 	type fields struct {
-		secret       auth.Secret
 		authRPC      rpc.Auth
 		userRPC      rpc.User
 		authCache    cache.Cache[model.Auth]
@@ -330,7 +324,6 @@ func TestAPIAuthSignOut(t *testing.T) {
 		{
 			name: "サインアウトできる",
 			fields: fields{
-				secret: auth.Secret("secret"),
 				authCache: &cache.CacheMock[model.Auth]{
 					T: t,
 					DelAssert: func(t *testing.T, key string) {
@@ -347,14 +340,8 @@ func TestAPIAuthSignOut(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				input: usecase.APIAuthSignOutInput{
-					AuthToken: auth.GenerateAuthToken(
-						user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
-						auth.SessionID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")).ToSecret(),
-					),
-					SessionToken: auth.GenerateSessionToken(
-						auth.SessionID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
-						auth.Secret("secret"),
-					),
+					UserID:    user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+					SessionID: auth.SessionID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
 				},
 			},
 			want:    usecase.APIAuthSignOutOutput{},
@@ -363,7 +350,6 @@ func TestAPIAuthSignOut(t *testing.T) {
 		{
 			name: "AuthCache.Del()でエラーが発生してもサインアウトできる",
 			fields: fields{
-				secret: auth.Secret("secret"),
 				authCache: &cache.CacheMock[model.Auth]{
 					T:      t,
 					DelErr: fmt.Errorf("test"),
@@ -381,14 +367,8 @@ func TestAPIAuthSignOut(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				input: usecase.APIAuthSignOutInput{
-					AuthToken: auth.GenerateAuthToken(
-						user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
-						auth.SessionID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")).ToSecret(),
-					),
-					SessionToken: auth.GenerateSessionToken(
-						auth.SessionID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
-						auth.Secret("secret"),
-					),
+					UserID:    user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+					SessionID: auth.SessionID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
 				},
 			},
 			want:    usecase.APIAuthSignOutOutput{},
@@ -397,7 +377,6 @@ func TestAPIAuthSignOut(t *testing.T) {
 		{
 			name: "SessionCache.Del()でエラーが発生してもサインアウトできる",
 			fields: fields{
-				secret: auth.Secret("secret"),
 				authCache: &cache.CacheMock[model.Auth]{
 					T: t,
 					DelAssert: func(t *testing.T, key string) {
@@ -415,14 +394,8 @@ func TestAPIAuthSignOut(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				input: usecase.APIAuthSignOutInput{
-					AuthToken: auth.GenerateAuthToken(
-						user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
-						auth.SessionID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")).ToSecret(),
-					),
-					SessionToken: auth.GenerateSessionToken(
-						auth.SessionID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
-						auth.Secret("secret"),
-					),
+					UserID:    user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+					SessionID: auth.SessionID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
 				},
 			},
 			want:    usecase.APIAuthSignOutOutput{},
@@ -435,7 +408,6 @@ func TestAPIAuthSignOut(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			aa := interactor.NewAPIAuth(
-				tt.fields.secret,
 				tt.fields.authRPC,
 				tt.fields.userRPC,
 				tt.fields.authCache,
@@ -458,7 +430,6 @@ func TestAPIAuthVerify(t *testing.T) {
 	t.Parallel()
 
 	type fields struct {
-		secret       auth.Secret
 		authRPC      rpc.Auth
 		userRPC      rpc.User
 		authCache    cache.Cache[model.Auth]
@@ -483,7 +454,6 @@ func TestAPIAuthVerify(t *testing.T) {
 		{
 			name: "検証できる",
 			fields: fields{
-				secret: auth.Secret("secret"),
 				authCache: &cache.CacheMock[model.Auth]{
 					T: t,
 					Value: model.Auth{
@@ -500,14 +470,7 @@ func TestAPIAuthVerify(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				input: usecase.APIAuthVerifyInput{
-					AuthToken: auth.GenerateAuthToken(
-						user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
-						auth.SessionID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")).ToSecret(),
-					),
-					SessionToken: auth.GenerateSessionToken(
-						auth.SessionID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
-						auth.Secret("secret"),
-					),
+					UserID: user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
 				},
 			},
 			want:    usecase.APIAuthVerifyOutput{},
@@ -516,7 +479,6 @@ func TestAPIAuthVerify(t *testing.T) {
 		{
 			name: "AuthがCacheに存在せず検証に失敗する",
 			fields: fields{
-				secret: auth.Secret("secret"),
 				authCache: &cache.CacheMock[model.Auth]{
 					T:      t,
 					Value:  model.Auth{},
@@ -529,14 +491,7 @@ func TestAPIAuthVerify(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				input: usecase.APIAuthVerifyInput{
-					AuthToken: auth.GenerateAuthToken(
-						user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
-						auth.SessionID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")).ToSecret(),
-					),
-					SessionToken: auth.GenerateSessionToken(
-						auth.SessionID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
-						auth.Secret("secret"),
-					),
+					UserID: user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
 				},
 			},
 			want:    usecase.APIAuthVerifyOutput{},
@@ -545,7 +500,6 @@ func TestAPIAuthVerify(t *testing.T) {
 		{
 			name: "Authの有効期限が切れて検証に失敗する",
 			fields: fields{
-				secret: auth.Secret("secret"),
 				authCache: &cache.CacheMock[model.Auth]{
 					T: t,
 					Value: model.Auth{
@@ -562,14 +516,7 @@ func TestAPIAuthVerify(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				input: usecase.APIAuthVerifyInput{
-					AuthToken: auth.GenerateAuthToken(
-						user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
-						auth.SessionID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")).ToSecret(),
-					),
-					SessionToken: auth.GenerateSessionToken(
-						auth.SessionID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
-						auth.Secret("secret"),
-					),
+					UserID: user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
 				},
 			},
 			want:    usecase.APIAuthVerifyOutput{},
@@ -582,7 +529,6 @@ func TestAPIAuthVerify(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			aa := interactor.NewAPIAuth(
-				tt.fields.secret,
 				tt.fields.authRPC,
 				tt.fields.userRPC,
 				tt.fields.authCache,
@@ -605,7 +551,6 @@ func TestAPIAuthRefresh(t *testing.T) {
 	t.Parallel()
 
 	type fields struct {
-		secret       auth.Secret
 		authRPC      rpc.Auth
 		userRPC      rpc.User
 		authCache    cache.Cache[model.Auth]
@@ -632,7 +577,6 @@ func TestAPIAuthRefresh(t *testing.T) {
 		{
 			name: "リフレッシュできる",
 			fields: fields{
-				secret: auth.Secret("secret"),
 				codeCache: &cache.CacheMock[model.Code]{
 					T: t,
 					Value: model.Code{
@@ -676,10 +620,7 @@ func TestAPIAuthRefresh(t *testing.T) {
 				input: usecase.APIAuthRefreshInput{
 					CodeID:    auth.CodeID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
 					Signature: sign(t, key, "01234567-0123-0123-0123-0123456789ab"),
-					SessionToken: auth.GenerateSessionToken(
-						auth.SessionID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
-						auth.Secret("secret"),
-					),
+					SessionID: auth.SessionID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
 				},
 			},
 			want:    usecase.APIAuthRefreshOutput{},
@@ -692,7 +633,6 @@ func TestAPIAuthRefresh(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			aa := interactor.NewAPIAuth(
-				tt.fields.secret,
 				tt.fields.authRPC,
 				tt.fields.userRPC,
 				tt.fields.authCache,
@@ -715,7 +655,6 @@ func TestAPIAuthGenerateCode(t *testing.T) {
 	t.Parallel()
 
 	type fields struct {
-		secret       auth.Secret
 		authRPC      rpc.Auth
 		userRPC      rpc.User
 		authCache    cache.Cache[model.Auth]
@@ -740,7 +679,6 @@ func TestAPIAuthGenerateCode(t *testing.T) {
 		{
 			name: "コードが生成できる",
 			fields: fields{
-				secret: auth.Secret("secret"),
 				codeCache: &cache.CacheMock[model.Code]{
 					T: t,
 					SetAssert: func(t *testing.T, key string, value model.Code, ttl time.Duration) {
@@ -751,10 +689,7 @@ func TestAPIAuthGenerateCode(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				input: usecase.APIAuthGenerateCodeInput{
-					SessionToken: auth.GenerateSessionToken(
-						auth.SessionID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
-						auth.Secret("secret"),
-					),
+					SessionID: auth.SessionID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
 				},
 			},
 			want: usecase.APIAuthGenerateCodeOutput{
@@ -774,7 +709,6 @@ func TestAPIAuthGenerateCode(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			aa := interactor.NewAPIAuth(
-				tt.fields.secret,
 				tt.fields.authRPC,
 				tt.fields.userRPC,
 				tt.fields.authCache,

@@ -6,6 +6,7 @@ import (
 
 	"github.com/morning-night-guild/platform-app/internal/domain/model"
 	"github.com/morning-night-guild/platform-app/internal/domain/model/auth"
+	"github.com/morning-night-guild/platform-app/internal/domain/model/user"
 )
 
 //go:generate mockgen -source api_auth.go -destination api_auth_mock.go -package usecase
@@ -28,6 +29,7 @@ type APIAuthSignUpInput struct {
 type APIAuthSignUpOutput struct{}
 
 type APIAuthSignInInput struct {
+	Secret    auth.Secret
 	EMail     auth.EMail
 	Password  auth.Password
 	PublicKey rsa.PublicKey
@@ -40,21 +42,20 @@ type APIAuthSignInOutput struct {
 }
 
 type APIAuthSignOutInput struct {
-	AuthToken    auth.AuthToken
-	SessionToken auth.SessionToken
+	UserID    user.ID
+	SessionID auth.SessionID
 }
 
 type APIAuthSignOutOutput struct{}
 
 type APIAuthVerifyInput struct {
-	AuthToken    auth.AuthToken
-	SessionToken auth.SessionToken
+	UserID user.ID
 }
 
 type APIAuthVerifyOutput struct{}
 
 type APIAuthGenerateCodeInput struct {
-	SessionToken auth.SessionToken
+	SessionID auth.SessionID
 }
 
 type APIAuthGenerateCodeOutput struct {
@@ -62,9 +63,9 @@ type APIAuthGenerateCodeOutput struct {
 }
 
 type APIAuthRefreshInput struct {
-	CodeID       auth.CodeID
-	Signature    auth.Signature
-	SessionToken auth.SessionToken
+	CodeID    auth.CodeID
+	Signature auth.Signature
+	SessionID auth.SessionID
 }
 
 type APIAuthRefreshOutput struct {

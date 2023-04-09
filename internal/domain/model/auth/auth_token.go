@@ -69,7 +69,7 @@ func (at AuthToken) String() string {
 	return string(at)
 }
 
-func (at AuthToken) GetUserID(secret Secret) user.ID {
+func (at AuthToken) UserID(secret Secret) user.ID {
 	parsedToken, _ := jwt.Parse(at.String(), func(token *jwt.Token) (interface{}, error) {
 		return []byte(secret.String()), nil
 	})

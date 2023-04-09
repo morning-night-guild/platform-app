@@ -9,6 +9,7 @@ import (
 
 	"github.com/morning-night-guild/platform-app/internal/domain/cache"
 	"github.com/morning-night-guild/platform-app/internal/domain/model/errors"
+	"github.com/morning-night-guild/platform-app/pkg/log"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -32,6 +33,8 @@ func (kvs *KVS[T]) Get(ctx context.Context, key string) (T, error) {
 
 	str, err := kvs.Client.Get(ctx, key).Result()
 	if err != nil {
+		log.GetLogCtx(ctx).Warn("failed to get cache", log.ErrorField(err))
+
 		return value, errors.NewNotFoundError("failed to get cache", err)
 	}
 

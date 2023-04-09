@@ -58,9 +58,9 @@ func (hdl *Handler) V1AuthRefresh(w http.ResponseWriter, r *http.Request, params
 	}
 
 	input := usecase.APIAuthRefreshInput{
-		CodeID:       codeID,
-		Signature:    signature,
-		SessionToken: sessionToken,
+		CodeID:    codeID,
+		Signature: signature,
+		SessionID: sessionToken.ID(hdl.secret),
 	}
 
 	output, err := hdl.auth.Refresh(ctx, input)
@@ -144,6 +144,7 @@ func (hdl *Handler) V1AuthSignIn(w http.ResponseWriter, r *http.Request) {
 	}
 
 	input := usecase.APIAuthSignInInput{
+		Secret:    hdl.secret,
 		PublicKey: key,
 		EMail:     email,
 		Password:  password,
@@ -218,8 +219,8 @@ func (hdl *Handler) V1AuthSignOut(_ http.ResponseWriter, r *http.Request) {
 	}
 
 	input := usecase.APIAuthSignOutInput{
-		AuthToken:    authToken,
-		SessionToken: sessionToken,
+		UserID:    authToken.UserID(sessionToken.ToSecret(hdl.secret)),
+		SessionID: sessionToken.ID(hdl.secret),
 	}
 
 	if _, err := hdl.auth.SignOut(ctx, input); err != nil {
@@ -326,9 +327,12 @@ func (hdl *Handler) V1AuthVerify(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	sid := sessionToken.ID(hdl.secret)
+
+	uid := authToken.UserID(sid.ToSecret())
+
 	input := usecase.APIAuthVerifyInput{
-		AuthToken:    authToken,
-		SessionToken: sessionToken,
+		UserID: uid,
 	}
 
 	if _, err := hdl.auth.Verify(ctx, input); err != nil {
@@ -348,7 +352,7 @@ func (hdl *Handler) unauthorize(
 	sessionToken auth.SessionToken,
 ) {
 	input := usecase.APIAuthGenerateCodeInput{
-		SessionToken: sessionToken,
+		SessionID: sessionToken.ID(hdl.secret),
 	}
 
 	output, err := hdl.auth.GenerateCode(ctx, input)

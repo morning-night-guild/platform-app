@@ -19,6 +19,10 @@ func GenerateID() ID {
 	return ID(uuid.New())
 }
 
+func GenerateZeroID() ID {
+	return ID(uuid.Nil)
+}
+
 // Value IDをuuid.UUID型として提供するメソッド.
 func (uid ID) Value() uuid.UUID {
 	return uuid.UUID(uid)

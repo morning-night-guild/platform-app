@@ -25,6 +25,7 @@ const bits = 2048
 
 type User struct {
 	T        *testing.T
+	UserID   string
 	EMail    string
 	Password string
 	Cookies  []*http.Cookie
@@ -32,6 +33,7 @@ type User struct {
 	Key      *rsa.PrivateKey
 }
 
+//nolint:funlen
 func NewUser(
 	t *testing.T,
 	url string,
@@ -39,6 +41,10 @@ func NewUser(
 	t.Helper()
 
 	client := NewOpenAPIClient(t, url)
+
+	client.Client.Client = &http.Client{
+		Transport: NewAPIKeyTransport(t, GetAPIKey(t)),
+	}
 
 	id := uuid.New().String()
 
@@ -50,9 +56,13 @@ func NewUser(
 		Email:    types.Email(email),
 		Password: password,
 	}); err != nil {
-		t.Fatalf("failed to auth sign up: %s", err)
+		defer res.Body.Close()
+		t.Fatalf("failed to auth sign up: %v", err)
 	} else {
 		defer res.Body.Close()
+		if res.StatusCode != http.StatusOK {
+			t.Fatalf("failed to auth sign up status code: %d", res.StatusCode)
+		}
 	}
 
 	priv, err := rsa.GenerateKey(rand.Reader, bits)
@@ -66,10 +76,12 @@ func NewUser(
 		PublicKey: Public(t, priv),
 	})
 	if err != nil {
-		t.Fatalf("failed to auth sign in: %s", err)
+		t.Fatalf("failed to auth sign in: %v", err)
 	}
 
 	defer res.Body.Close()
+
+	uid := ExtractUserID(t, res.Cookies())
 
 	client.Client.Client = &http.Client{
 		Transport: NewCookiesTransport(t, res.Cookies()),
@@ -77,12 +89,23 @@ func NewUser(
 
 	return User{
 		T:        t,
+		UserID:   uid,
 		EMail:    email,
 		Password: password,
 		Cookies:  res.Cookies(),
 		Client:   client,
 		Key:      priv,
 	}
+}
+
+func (user User) Delete(t *testing.T) {
+	t.Helper()
+
+	db := NewDatabase(t, GetDSN(t))
+
+	defer db.Close()
+
+	db.DeleteUser(uuid.MustParse(user.UserID))
 }
 
 func Public(t *testing.T, private *rsa.PrivateKey) string {
@@ -116,7 +139,7 @@ func Public(t *testing.T, private *rsa.PrivateKey) string {
 	return strings.Join(pems, "")
 }
 
-func (user *User) Sign(code string) string {
+func (user User) Sign(code string) string {
 	user.T.Helper()
 
 	h := crypto.Hash.New(crypto.SHA256)
