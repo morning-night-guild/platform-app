@@ -283,7 +283,7 @@ func TestCoreArticleDelete(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "記事Repositoryのerrorを握りつぶさない",
+			name: "記事削除のerrorを握りつぶさない",
 			fields: fields{
 				articleRepository: func(t *testing.T) repository.Article {
 					t.Helper()
