@@ -11,6 +11,7 @@ import (
 	"github.com/morning-night-guild/platform-app/internal/domain/model"
 	"github.com/morning-night-guild/platform-app/internal/domain/model/article"
 	"github.com/morning-night-guild/platform-app/internal/domain/value"
+	"github.com/morning-night-guild/platform-app/pkg/ent"
 	entarticle "github.com/morning-night-guild/platform-app/pkg/ent/article"
 	"github.com/morning-night-guild/platform-app/pkg/ent/articletag"
 )
@@ -444,6 +445,10 @@ func TestArticleDelete(t *testing.T) {
 			WithTags().
 			First(ctx)
 		if err != nil {
+			if ent.IsNotFound(err) {
+				return
+			}
+
 			t.Fatal(err)
 		}
 
