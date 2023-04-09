@@ -415,7 +415,7 @@ func TestArticleFind(t *testing.T) {
 
 		rdb, err := gateway.NewRDBClientMock(t).Of(uuid.NewString())
 		if err != nil {
-			t.Fatal(err)
+			t.Fatalf("failed to NewRDBClientMock(): %v", err)
 		}
 
 		articleGateway := gateway.NewArticle(rdb)
@@ -434,12 +434,12 @@ func TestArticleFind(t *testing.T) {
 		)
 
 		if err := articleGateway.Save(ctx, item); err != nil {
-			t.Fatal(err)
+			t.Fatalf("failed to Save(): %v", err)
 		}
 
 		got, err := articleGateway.Find(ctx, item.ID)
 		if err != nil {
-			t.Fatal(err)
+			t.Fatalf("failed to Find(): %v", err)
 		}
 
 		if !reflect.DeepEqual(got, item) {
@@ -477,7 +477,7 @@ func TestArticleDelete(t *testing.T) {
 
 		rdb, err := gateway.NewRDBClientMock(t).Of(uuid.NewString())
 		if err != nil {
-			t.Fatal(err)
+			t.Fatalf("failed to create rdb client. got %v", err)
 		}
 
 		articleGateway := gateway.NewArticle(rdb)
@@ -496,7 +496,7 @@ func TestArticleDelete(t *testing.T) {
 		)
 
 		if err := articleGateway.Save(ctx, item); err != nil {
-			t.Fatal(err)
+			t.Fatalf("failed to save. got %v", err)
 		}
 
 		if err := articleGateway.Delete(ctx, item.ID); err != nil {
@@ -512,7 +512,7 @@ func TestArticleDelete(t *testing.T) {
 				return
 			}
 
-			t.Fatal(err)
+			t.Errorf("unexpected error while find. got %v", err)
 		}
 
 		if article != nil {
@@ -525,7 +525,7 @@ func TestArticleDelete(t *testing.T) {
 
 		rdb, err := gateway.NewRDBClientMock(t).Of(uuid.NewString())
 		if err != nil {
-			t.Fatal(err)
+			t.Fatalf("failed to create rdb client. got %v", err)
 		}
 
 		articleGateway := gateway.NewArticle(rdb)
