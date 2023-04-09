@@ -53,7 +53,7 @@ func (aa *Article) Share(
 	}
 
 	article := model.ReconstructArticle(
-		uuid.MustParse(res.Msg.Article.Id),
+		uuid.MustParse(res.Msg.Article.ArticleId),
 		res.Msg.Article.Url,
 		res.Msg.Article.Title,
 		res.Msg.Article.Description,
@@ -85,7 +85,7 @@ func (aa *Article) List(
 
 	for i, article := range res.Msg.Articles {
 		articles[i] = model.ReconstructArticle(
-			uuid.MustParse(article.Id),
+			uuid.MustParse(article.ArticleId),
 			article.Url,
 			article.Title,
 			article.Description,
@@ -95,4 +95,21 @@ func (aa *Article) List(
 	}
 
 	return articles, nil
+}
+
+func (aa *Article) Delete(
+	ctx context.Context,
+	articleID article.ID,
+) error {
+	req := NewRequestWithTID(ctx, &articlev1.DeleteRequest{
+		ArticleId: articleID.String(),
+	})
+
+	if _, err := aa.connect.Delete(ctx, req); err != nil {
+		log.GetLogCtx(ctx).Sugar().Warnf("failed to delete articles. articleID=%s", articleID.String(), log.ErrorField(err))
+
+		return err
+	}
+
+	return nil
 }

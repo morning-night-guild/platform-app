@@ -34,6 +34,21 @@ func (m *MockCoreArticle) EXPECT() *MockCoreArticleMockRecorder {
 	return m.recorder
 }
 
+// Delete mocks base method.
+func (m *MockCoreArticle) Delete(arg0 context.Context, arg1 CoreArticleDeleteInput) (CoreArticleDeleteOutput, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Delete", arg0, arg1)
+	ret0, _ := ret[0].(CoreArticleDeleteOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Delete indicates an expected call of Delete.
+func (mr *MockCoreArticleMockRecorder) Delete(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockCoreArticle)(nil).Delete), arg0, arg1)
+}
+
 // List mocks base method.
 func (m *MockCoreArticle) List(arg0 context.Context, arg1 CoreArticleListInput) (CoreArticleListOutput, error) {
 	m.ctrl.T.Helper()

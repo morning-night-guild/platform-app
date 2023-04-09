@@ -12,6 +12,7 @@ import (
 	"github.com/morning-night-guild/platform-app/internal/application/usecase"
 	"github.com/morning-night-guild/platform-app/internal/domain/model"
 	"github.com/morning-night-guild/platform-app/internal/domain/model/article"
+	"github.com/morning-night-guild/platform-app/internal/domain/model/errors"
 	"github.com/morning-night-guild/platform-app/internal/domain/repository"
 	"github.com/morning-night-guild/platform-app/internal/domain/value"
 )
@@ -206,6 +207,132 @@ func TestCoreArticleList(t *testing.T) {
 			}
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("CoreArticle.List() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestCoreArticleDelete(t *testing.T) {
+	t.Parallel()
+
+	type fields struct {
+		articleRepository func(*testing.T) repository.Article
+	}
+
+	type args struct {
+		ctx   context.Context
+		input usecase.CoreArticleDeleteInput
+	}
+
+	id := article.ID(uuid.New())
+
+	article := model.Article{
+		ID:          id,
+		Title:       article.Title("title"),
+		URL:         article.URL("https://example.com"),
+		Description: article.Description("description"),
+		Thumbnail:   article.Thumbnail("https://example.com"),
+		TagList:     article.TagList{},
+	}
+
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		want    usecase.CoreArticleDeleteOutput
+		wantErr bool
+	}{
+		{
+			name: "記事を削除できる",
+			fields: fields{
+				articleRepository: func(t *testing.T) repository.Article {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := repository.NewMockArticle(ctrl)
+					mock.EXPECT().Find(
+						gomock.Any(),
+						id,
+					).Return(article, nil)
+					mock.EXPECT().Delete(
+						gomock.Any(),
+						id,
+					).Return(nil)
+					return mock
+				},
+			},
+			args: args{
+				ctx: context.Background(),
+				input: usecase.CoreArticleDeleteInput{
+					ArticleID: id,
+				},
+			},
+			want:    usecase.CoreArticleDeleteOutput{},
+			wantErr: false,
+		},
+		{
+			name: "存在しない記事を削除してもエラーにならない",
+			fields: fields{
+				articleRepository: func(t *testing.T) repository.Article {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := repository.NewMockArticle(ctrl)
+					mock.EXPECT().Find(
+						gomock.Any(),
+						id,
+					).Return(model.Article{}, errors.NewNotFoundError("article not found"))
+					return mock
+				},
+			},
+			args: args{
+				ctx: context.Background(),
+				input: usecase.CoreArticleDeleteInput{
+					ArticleID: id,
+				},
+			},
+			want:    usecase.CoreArticleDeleteOutput{},
+			wantErr: false,
+		},
+		{
+			name: "記事削除のerrorを握りつぶさない",
+			fields: fields{
+				articleRepository: func(t *testing.T) repository.Article {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := repository.NewMockArticle(ctrl)
+					mock.EXPECT().Find(
+						gomock.Any(),
+						id,
+					).Return(article, nil)
+					mock.EXPECT().Delete(
+						gomock.Any(),
+						id,
+					).Return(fmt.Errorf("error"))
+					return mock
+				},
+			},
+			args: args{
+				ctx: context.Background(),
+				input: usecase.CoreArticleDeleteInput{
+					ArticleID: id,
+				},
+			},
+			want:    usecase.CoreArticleDeleteOutput{},
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			ca := interactor.NewCoreArticle(tt.fields.articleRepository(t))
+			got, err := ca.Delete(tt.args.ctx, tt.args.input)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("CoreArticle.Delete() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("CoreArticle.Delete() = %v, want %v", got, tt.want)
 			}
 		})
 	}

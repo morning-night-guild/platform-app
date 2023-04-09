@@ -10,7 +10,10 @@ import (
 	"github.com/morning-night-guild/platform-app/internal/adapter/gateway"
 	"github.com/morning-night-guild/platform-app/internal/domain/model"
 	"github.com/morning-night-guild/platform-app/internal/domain/model/article"
+	"github.com/morning-night-guild/platform-app/internal/domain/model/errors"
 	"github.com/morning-night-guild/platform-app/internal/domain/value"
+	"github.com/morning-night-guild/platform-app/pkg/ent"
+	entarticle "github.com/morning-night-guild/platform-app/pkg/ent/article"
 	"github.com/morning-night-guild/platform-app/pkg/ent/articletag"
 )
 
@@ -400,6 +403,137 @@ func TestArticleList(t *testing.T) {
 
 		if !reflect.DeepEqual(got, articles) {
 			t.Errorf("FindAll() = %v, want %v", got, articles)
+		}
+	})
+}
+
+func TestArticleFind(t *testing.T) {
+	t.Parallel()
+
+	t.Run("記事を取得できる", func(t *testing.T) {
+		t.Parallel()
+
+		rdb, err := gateway.NewRDBClientMock(t).Of(uuid.NewString())
+		if err != nil {
+			t.Fatalf("failed to NewRDBClientMock(): %v", err)
+		}
+
+		articleGateway := gateway.NewArticle(rdb)
+
+		ctx := context.Background()
+
+		item := model.CreateArticle(
+			article.URL("https://example.com"),
+			article.Title("title"),
+			article.Description("description"),
+			article.Thumbnail("https://example.com"),
+			article.TagList([]article.Tag{
+				article.Tag("tag1"),
+				article.Tag("tag2"),
+			}),
+		)
+
+		if err := articleGateway.Save(ctx, item); err != nil {
+			t.Fatalf("failed to Save(): %v", err)
+		}
+
+		got, err := articleGateway.Find(ctx, item.ID)
+		if err != nil {
+			t.Fatalf("failed to Find(): %v", err)
+		}
+
+		if !reflect.DeepEqual(got, item) {
+			t.Errorf("Find() = %v, want %v", got, item)
+		}
+	})
+
+	t.Run("存在しない記事を取得しようとするとNotFoundエラーになる", func(t *testing.T) {
+		t.Parallel()
+
+		rdb, err := gateway.NewRDBClientMock(t).Of(uuid.NewString())
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		articleGateway := gateway.NewArticle(rdb)
+
+		ctx := context.Background()
+
+		if _, err = articleGateway.Find(ctx, article.GenerateID()); err == nil {
+			t.Fatal("error is nil")
+		}
+
+		if !errors.AsNotFoundError(err) {
+			t.Errorf("error is not NotFoundError. got: %v", err)
+		}
+	})
+}
+
+func TestArticleDelete(t *testing.T) {
+	t.Parallel()
+
+	t.Run("記事を削除できる", func(t *testing.T) {
+		t.Parallel()
+
+		rdb, err := gateway.NewRDBClientMock(t).Of(uuid.NewString())
+		if err != nil {
+			t.Fatalf("failed to create rdb client. got %v", err)
+		}
+
+		articleGateway := gateway.NewArticle(rdb)
+
+		ctx := context.Background()
+
+		item := model.CreateArticle(
+			article.URL("https://example.com"),
+			article.Title("title"),
+			article.Description("description"),
+			article.Thumbnail("https://example.com"),
+			article.TagList([]article.Tag{
+				article.Tag("tag1"),
+				article.Tag("tag2"),
+			}),
+		)
+
+		if err := articleGateway.Save(ctx, item); err != nil {
+			t.Fatalf("failed to save. got %v", err)
+		}
+
+		if err := articleGateway.Delete(ctx, item.ID); err != nil {
+			t.Errorf("unexpected error while delete. got %v", err)
+		}
+
+		article, err := rdb.Article.Query().
+			Where(entarticle.IDEQ(item.ID.Value())).
+			WithTags().
+			First(ctx)
+		if err != nil {
+			if ent.IsNotFound(err) {
+				return
+			}
+
+			t.Errorf("unexpected error while find. got %v", err)
+		}
+
+		if article != nil {
+			t.Error("Delete target still exists")
+		}
+	})
+
+	t.Run("存在しない記事を削除しようとしてもエラーにならない", func(t *testing.T) {
+		t.Parallel()
+
+		rdb, err := gateway.NewRDBClientMock(t).Of(uuid.NewString())
+		if err != nil {
+			t.Fatalf("failed to create rdb client. got %v", err)
+		}
+
+		articleGateway := gateway.NewArticle(rdb)
+
+		ctx := context.Background()
+
+		if err := articleGateway.Delete(ctx, article.GenerateID()); err != nil {
+			t.Errorf("unexpected error while delete. got %v", err)
 		}
 	})
 }

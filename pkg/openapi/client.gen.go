@@ -14,6 +14,7 @@ import (
 	"strings"
 
 	"github.com/deepmap/oapi-codegen/pkg/runtime"
+	openapi_types "github.com/deepmap/oapi-codegen/pkg/types"
 )
 
 // RequestEditorFn  is the function signature for the RequestEditor callback function
@@ -97,6 +98,9 @@ type ClientInterface interface {
 
 	V1ArticleShare(ctx context.Context, body V1ArticleShareJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// V1ArticleDelete request
+	V1ArticleDelete(ctx context.Context, articleId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// V1AuthRefresh request
 	V1AuthRefresh(ctx context.Context, params *V1AuthRefreshParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -149,6 +153,18 @@ func (c *Client) V1ArticleShareWithBody(ctx context.Context, contentType string,
 
 func (c *Client) V1ArticleShare(ctx context.Context, body V1ArticleShareJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewV1ArticleShareRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) V1ArticleDelete(ctx context.Context, articleId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewV1ArticleDeleteRequest(c.Server, articleId)
 	if err != nil {
 		return nil, err
 	}
@@ -362,6 +378,40 @@ func NewV1ArticleShareRequestWithBody(server string, contentType string, body io
 	}
 
 	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewV1ArticleDeleteRequest generates requests for V1ArticleDelete
+func NewV1ArticleDeleteRequest(server string, articleId openapi_types.UUID) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", true, "articleId", runtime.ParamLocationPath, articleId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v1/articles/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
 
 	return req, nil
 }
@@ -676,6 +726,9 @@ type ClientWithResponsesInterface interface {
 
 	V1ArticleShareWithResponse(ctx context.Context, body V1ArticleShareJSONRequestBody, reqEditors ...RequestEditorFn) (*V1ArticleShareResponse, error)
 
+	// V1ArticleDelete request
+	V1ArticleDeleteWithResponse(ctx context.Context, articleId openapi_types.UUID, reqEditors ...RequestEditorFn) (*V1ArticleDeleteResponse, error)
+
 	// V1AuthRefresh request
 	V1AuthRefreshWithResponse(ctx context.Context, params *V1AuthRefreshParams, reqEditors ...RequestEditorFn) (*V1AuthRefreshResponse, error)
 
@@ -739,6 +792,27 @@ func (r V1ArticleShareResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r V1ArticleShareResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type V1ArticleDeleteResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+}
+
+// Status returns HTTPResponse.Status
+func (r V1ArticleDeleteResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r V1ArticleDeleteResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -919,6 +993,15 @@ func (c *ClientWithResponses) V1ArticleShareWithResponse(ctx context.Context, bo
 	return ParseV1ArticleShareResponse(rsp)
 }
 
+// V1ArticleDeleteWithResponse request returning *V1ArticleDeleteResponse
+func (c *ClientWithResponses) V1ArticleDeleteWithResponse(ctx context.Context, articleId openapi_types.UUID, reqEditors ...RequestEditorFn) (*V1ArticleDeleteResponse, error) {
+	rsp, err := c.V1ArticleDelete(ctx, articleId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseV1ArticleDeleteResponse(rsp)
+}
+
 // V1AuthRefreshWithResponse request returning *V1AuthRefreshResponse
 func (c *ClientWithResponses) V1AuthRefreshWithResponse(ctx context.Context, params *V1AuthRefreshParams, reqEditors ...RequestEditorFn) (*V1AuthRefreshResponse, error) {
 	rsp, err := c.V1AuthRefresh(ctx, params, reqEditors...)
@@ -1033,6 +1116,22 @@ func ParseV1ArticleShareResponse(rsp *http.Response) (*V1ArticleShareResponse, e
 	}
 
 	response := &V1ArticleShareResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	return response, nil
+}
+
+// ParseV1ArticleDeleteResponse parses an HTTP response from a V1ArticleDeleteWithResponse call
+func ParseV1ArticleDeleteResponse(rsp *http.Response) (*V1ArticleDeleteResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &V1ArticleDeleteResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}

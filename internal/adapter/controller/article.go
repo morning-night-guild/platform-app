@@ -69,7 +69,7 @@ func (a *Article) Share(
 
 	return connect.NewResponse(&articlev1.ShareResponse{
 		Article: &articlev1.Article{
-			Id:          output.Article.ID.String(),
+			ArticleId:   output.Article.ID.String(),
 			Title:       output.Article.Title.String(),
 			Url:         output.Article.URL.String(),
 			Description: output.Article.Description.String(),
@@ -107,7 +107,7 @@ func (a *Article) List(
 
 	for i, article := range output.Articles {
 		result[i] = &articlev1.Article{
-			Id:          article.ID.String(),
+			ArticleId:   article.ID.String(),
 			Title:       article.Title.String(),
 			Url:         article.URL.String(),
 			Description: article.Description.String(),
@@ -125,4 +125,25 @@ func (a *Article) List(
 		Articles:      result,
 		NextPageToken: next,
 	}), nil
+}
+
+// Delete 記事を削除するコントローラメソッド.
+func (a *Article) Delete(
+	ctx context.Context,
+	req *connect.Request[articlev1.DeleteRequest],
+) (*connect.Response[articlev1.DeleteResponse], error) {
+	articleID, err := article.NewID(req.Msg.ArticleId)
+	if err != nil {
+		return nil, a.ctl.HandleConnectError(ctx, err)
+	}
+
+	input := usecase.CoreArticleDeleteInput{
+		ArticleID: articleID,
+	}
+
+	if _, err = a.usecase.Delete(ctx, input); err != nil {
+		return nil, a.ctl.HandleConnectError(ctx, err)
+	}
+
+	return connect.NewResponse(&articlev1.DeleteResponse{}), nil
 }

@@ -5,10 +5,12 @@ import (
 	"time"
 
 	"github.com/morning-night-guild/platform-app/internal/domain/model"
+	"github.com/morning-night-guild/platform-app/internal/domain/model/article"
+	domainerrors "github.com/morning-night-guild/platform-app/internal/domain/model/errors"
 	"github.com/morning-night-guild/platform-app/internal/domain/repository"
 	"github.com/morning-night-guild/platform-app/internal/domain/value"
 	"github.com/morning-night-guild/platform-app/pkg/ent"
-	"github.com/morning-night-guild/platform-app/pkg/ent/article"
+	entarticle "github.com/morning-night-guild/platform-app/pkg/ent/article"
 	"github.com/pkg/errors"
 )
 
@@ -27,12 +29,12 @@ func NewArticle(rdb *RDB) *Article {
 }
 
 // Save 記事を保存するメソッド.
-func (ca *Article) Save(ctx context.Context, item model.Article) error {
+func (art *Article) Save(ctx context.Context, item model.Article) error {
 	id := item.ID.Value()
 
 	now := time.Now().UTC()
 
-	err := ca.rdb.Article.Create().
+	err := art.rdb.Article.Create().
 		SetID(id).
 		SetTitle(item.Title.String()).
 		SetURL(item.URL.String()).
@@ -44,8 +46,8 @@ func (ca *Article) Save(ctx context.Context, item model.Article) error {
 		DoNothing().
 		Exec(ctx)
 
-	if err != nil && ca.rdb.IsDuplicatedError(ctx, err) {
-		if ea, err := ca.rdb.Article.Query().Where(article.URLEQ(item.URL.String())).First(ctx); err == nil {
+	if err != nil && art.rdb.IsDuplicatedError(ctx, err) {
+		if ea, err := art.rdb.Article.Query().Where(entarticle.URLEQ(item.URL.String())).First(ctx); err == nil {
 			id = ea.ID
 		} else {
 			return errors.Wrap(err, "failed to save")
@@ -60,19 +62,19 @@ func (ca *Article) Save(ctx context.Context, item model.Article) error {
 
 	bulk := make([]*ent.ArticleTagCreate, item.TagList.Len())
 	for i, tag := range item.TagList {
-		bulk[i] = ca.rdb.ArticleTag.Create().
+		bulk[i] = art.rdb.ArticleTag.Create().
 			SetTag(tag.String()).
 			SetArticleID(id)
 	}
 
-	if err = ca.rdb.ArticleTag.CreateBulk(bulk...).
+	if err = art.rdb.ArticleTag.CreateBulk(bulk...).
 		OnConflict().
 		DoNothing().
 		Exec(ctx); err == nil {
 		return nil
 	}
 
-	if ca.rdb.IsDuplicatedError(ctx, err) {
+	if art.rdb.IsDuplicatedError(ctx, err) {
 		return nil
 	}
 
@@ -80,15 +82,15 @@ func (ca *Article) Save(ctx context.Context, item model.Article) error {
 }
 
 // FindAll 記事を取得するメソッド.
-func (ca *Article) FindAll(
+func (art *Article) FindAll(
 	ctx context.Context,
 	index value.Index,
 	size value.Size,
 ) ([]model.Article, error) {
 	// ent articles
-	eas, err := ca.rdb.Article.Query().
+	eas, err := art.rdb.Article.Query().
 		WithTags().
-		Order(ent.Desc(article.FieldCreatedAt)).
+		Order(ent.Desc(entarticle.FieldCreatedAt)).
 		Offset(index.Int()).
 		Limit(size.Int()).
 		All(ctx)
@@ -115,4 +117,45 @@ func (ca *Article) FindAll(
 	}
 
 	return articles, nil
+}
+
+// Find ID指定で記事を取得するメソッド.
+func (art *Article) Find(ctx context.Context, id article.ID) (model.Article, error) {
+	ea, err := art.rdb.Article.Query().
+		Where(entarticle.IDEQ(id.Value())).
+		WithTags().
+		First(ctx)
+	if err != nil {
+		if ent.IsNotFound(err) {
+			return model.Article{}, domainerrors.NewNotFoundError("article not found")
+		}
+
+		return model.Article{}, errors.Wrap(err, "failed to find")
+	}
+
+	tags := make([]string, len(ea.Edges.Tags))
+	for i, tag := range ea.Edges.Tags {
+		tags[i] = tag.Tag
+	}
+
+	return model.ReconstructArticle(
+		ea.ID,
+		ea.URL,
+		ea.Title,
+		ea.Description,
+		ea.Thumbnail,
+		tags,
+	), nil
+}
+
+func (art *Article) Delete(ctx context.Context, id article.ID) error {
+	if err := art.rdb.Article.DeleteOneID(id.Value()).Exec(ctx); err != nil {
+		if ent.IsNotFound(err) {
+			return nil
+		}
+
+		return errors.Wrap(err, "failed to delete article")
+	}
+
+	return nil
 }

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/deepmap/oapi-codegen/pkg/types"
 	"github.com/google/uuid"
 	"github.com/morning-night-guild/platform-app/internal/application/usecase"
 	"github.com/morning-night-guild/platform-app/internal/domain/model/article"
@@ -119,6 +120,35 @@ func (hdl *Handler) V1ArticleShare(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if _, err := hdl.article.Share(ctx, input); err != nil {
+		w.WriteHeader(hdl.HandleConnectError(ctx, err))
+
+		return
+	}
+}
+
+// 記事削除
+// (DELETE /v1/articles/{articleId}).
+func (hdl *Handler) V1ArticleDelete(
+	w http.ResponseWriter,
+	r *http.Request,
+	articleID types.UUID,
+) {
+	ctx := r.Context()
+
+	key := r.Header.Get("Api-Key")
+	if key != hdl.key {
+		log.GetLogCtx(ctx).Warn(fmt.Sprintf("invalid api key. api key = %s", key))
+
+		w.WriteHeader(http.StatusUnauthorized)
+
+		return
+	}
+
+	input := usecase.APIArticleDeleteInput{
+		ArticleID: article.ID(articleID),
+	}
+
+	if _, err := hdl.article.Delete(ctx, input); err != nil {
 		w.WriteHeader(hdl.HandleConnectError(ctx, err))
 
 		return

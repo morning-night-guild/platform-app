@@ -10,6 +10,7 @@ import (
 
 	gomock "github.com/golang/mock/gomock"
 	model "github.com/morning-night-guild/platform-app/internal/domain/model"
+	article "github.com/morning-night-guild/platform-app/internal/domain/model/article"
 	value "github.com/morning-night-guild/platform-app/internal/domain/value"
 )
 
@@ -34,6 +35,35 @@ func NewMockArticle(ctrl *gomock.Controller) *MockArticle {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockArticle) EXPECT() *MockArticleMockRecorder {
 	return m.recorder
+}
+
+// Delete mocks base method.
+func (m *MockArticle) Delete(arg0 context.Context, arg1 article.ID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Delete", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Delete indicates an expected call of Delete.
+func (mr *MockArticleMockRecorder) Delete(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockArticle)(nil).Delete), arg0, arg1)
+}
+
+// Find mocks base method.
+func (m *MockArticle) Find(arg0 context.Context, arg1 article.ID) (model.Article, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Find", arg0, arg1)
+	ret0, _ := ret[0].(model.Article)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Find indicates an expected call of Find.
+func (mr *MockArticleMockRecorder) Find(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Find", reflect.TypeOf((*MockArticle)(nil).Find), arg0, arg1)
 }
 
 // FindAll mocks base method.
