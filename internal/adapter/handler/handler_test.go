@@ -185,7 +185,7 @@ func TestHandlerExtractUserID(t *testing.T) {
 					},
 				},
 			},
-			want:    user.ID(token.UserID),
+			want:    token.UserID,
 			wantErr: false,
 		},
 		{
