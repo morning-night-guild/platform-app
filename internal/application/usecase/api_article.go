@@ -47,5 +47,4 @@ type APIArticleDeleteInput struct {
 }
 
 // APIArticleDeleteOutput.
-type APIArticleDeleteOutput struct {
-}
+type APIArticleDeleteOutput struct{}

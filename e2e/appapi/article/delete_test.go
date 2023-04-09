@@ -29,10 +29,12 @@ func TestAppAPIE2EArticleDelete(t *testing.T) {
 
 		client := helper.NewOpenAPIClient(t, url)
 
-		_, err := client.Client.V1ArticleDelete(context.Background(), ids[0])
+		res, err := client.Client.V1ArticleDelete(context.Background(), ids[0])
 		if err != nil {
 			t.Fatalf("failed to delete article: %s", err)
 		}
+
+		defer res.Body.Close()
 
 		article := db.SelectArticleByID(ids[0])
 
