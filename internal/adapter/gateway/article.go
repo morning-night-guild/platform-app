@@ -126,11 +126,11 @@ func (art *Article) Find(ctx context.Context, id article.ID) (model.Article, err
 		WithTags().
 		First(ctx)
 	if err != nil {
-		return model.Article{}, errors.Wrap(err, "failed to find")
-	}
+		if ent.IsNotFound(err) {
+			return model.Article{}, domainerrors.NewNotFoundError("article not found")
+		}
 
-	if ea == nil {
-		return model.Article{}, domainerrors.NewNotFoundError("article not found")
+		return model.Article{}, errors.Wrap(err, "failed to find")
 	}
 
 	tags := make([]string, len(ea.Edges.Tags))
