@@ -5,11 +5,11 @@ import (
 	"time"
 
 	"github.com/morning-night-guild/platform-app/internal/domain/model"
-	da "github.com/morning-night-guild/platform-app/internal/domain/model/article"
+	"github.com/morning-night-guild/platform-app/internal/domain/model/article"
 	"github.com/morning-night-guild/platform-app/internal/domain/repository"
 	"github.com/morning-night-guild/platform-app/internal/domain/value"
 	"github.com/morning-night-guild/platform-app/pkg/ent"
-	"github.com/morning-night-guild/platform-app/pkg/ent/article"
+	entarticle "github.com/morning-night-guild/platform-app/pkg/ent/article"
 	"github.com/pkg/errors"
 )
 
@@ -46,7 +46,7 @@ func (art *Article) Save(ctx context.Context, item model.Article) error {
 		Exec(ctx)
 
 	if err != nil && art.rdb.IsDuplicatedError(ctx, err) {
-		if ea, err := art.rdb.Article.Query().Where(article.URLEQ(item.URL.String())).First(ctx); err == nil {
+		if ea, err := art.rdb.Article.Query().Where(entarticle.URLEQ(item.URL.String())).First(ctx); err == nil {
 			id = ea.ID
 		} else {
 			return errors.Wrap(err, "failed to save")
@@ -89,7 +89,7 @@ func (art *Article) FindAll(
 	// ent articles
 	eas, err := art.rdb.Article.Query().
 		WithTags().
-		Order(ent.Desc(article.FieldCreatedAt)).
+		Order(ent.Desc(entarticle.FieldCreatedAt)).
 		Offset(index.Int()).
 		Limit(size.Int()).
 		All(ctx)
@@ -119,9 +119,9 @@ func (art *Article) FindAll(
 }
 
 // Find ID指定で記事を取得するメソッド.
-func (art *Article) Find(ctx context.Context, id da.ID) (model.Article, error) {
+func (art *Article) Find(ctx context.Context, id article.ID) (model.Article, error) {
 	ea, err := art.rdb.Article.Query().
-		Where(article.IDEQ(id.Value())).
+		Where(entarticle.IDEQ(id.Value())).
 		WithTags().
 		First(ctx)
 	if err != nil {
@@ -147,7 +147,7 @@ func (art *Article) Find(ctx context.Context, id da.ID) (model.Article, error) {
 	), nil
 }
 
-func (art *Article) Delete(ctx context.Context, id da.ID) error {
+func (art *Article) Delete(ctx context.Context, id article.ID) error {
 	if err := art.rdb.Article.DeleteOneID(id.Value()).Exec(ctx); err != nil {
 		if ent.IsNotFound(err) {
 			return nil
