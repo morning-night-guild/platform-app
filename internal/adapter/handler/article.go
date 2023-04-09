@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	openapi_types "github.com/deepmap/oapi-codegen/pkg/types"
+	"github.com/deepmap/oapi-codegen/pkg/types"
 	"github.com/google/uuid"
 	"github.com/morning-night-guild/platform-app/internal/application/usecase"
 	"github.com/morning-night-guild/platform-app/internal/domain/model/article"
@@ -121,7 +121,7 @@ func (hdl *Handler) V1ArticleShare(w http.ResponseWriter, r *http.Request) {
 func (hdl *Handler) V1ArticleDelete(
 	_ http.ResponseWriter,
 	_ *http.Request,
-	_ openapi_types.UUID,
+	_ types.UUID,
 ) {
 	//nolint:godox
 	// TODO: implement
