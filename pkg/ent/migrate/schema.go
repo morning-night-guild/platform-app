@@ -47,7 +47,7 @@ var (
 				Symbol:     "article_tags_articles_tags",
 				Columns:    []*schema.Column{ArticleTagsColumns[2]},
 				RefColumns: []*schema.Column{ArticlesColumns[0]},
-				OnDelete:   schema.NoAction,
+				OnDelete:   schema.Cascade,
 			},
 		},
 		Indexes: []*schema.Index{
