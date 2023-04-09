@@ -11,6 +11,7 @@ import (
 	"github.com/morning-night-guild/platform-app/internal/domain/model"
 	"github.com/morning-night-guild/platform-app/internal/domain/model/article"
 	"github.com/morning-night-guild/platform-app/internal/domain/value"
+	entarticle "github.com/morning-night-guild/platform-app/pkg/ent/article"
 	"github.com/morning-night-guild/platform-app/pkg/ent/articletag"
 )
 
@@ -438,13 +439,16 @@ func TestArticleDelete(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		article, err := articleGateway.Find(ctx, item.ID)
-		if err == nil {
-			t.Errorf("Delete() = %v, want %v", err, nil)
+		article, err := rdb.Article.Query().
+			Where(entarticle.IDEQ(item.ID.Value())).
+			WithTags().
+			First(ctx)
+		if err != nil {
+			t.Fatal(err)
 		}
 
-		if article.ID != item.ID {
-			t.Errorf("Delete() = %v, want %v", article, nil)
+		if article != nil {
+			t.Error("Delete target still exists")
 		}
 	})
 
