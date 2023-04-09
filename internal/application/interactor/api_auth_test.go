@@ -620,10 +620,7 @@ func TestAPIAuthRefresh(t *testing.T) {
 				input: usecase.APIAuthRefreshInput{
 					CodeID:    auth.CodeID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
 					Signature: sign(t, key, "01234567-0123-0123-0123-0123456789ab"),
-					SessionID: auth.GenerateSessionToken(
-						auth.SessionID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
-						auth.Secret("secret"),
-					).ID(auth.Secret("secret")),
+					SessionID: auth.SessionID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
 				},
 			},
 			want:    usecase.APIAuthRefreshOutput{},
