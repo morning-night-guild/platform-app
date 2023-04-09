@@ -58,6 +58,10 @@ func (siw *ServerInterfaceWrapper) V1ArticleList(w http.ResponseWriter, r *http.
 
 	var err error
 
+	ctx = context.WithValue(ctx, AuthTokenCookieScopes, []string{""})
+
+	ctx = context.WithValue(ctx, SessionTokenCookieScopes, []string{""})
+
 	// Parameter object where we will unmarshal all parameters from the context
 	var params V1ArticleListParams
 

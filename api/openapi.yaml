@@ -154,6 +154,9 @@ paths:
       summary: 記事一覧
       description: 記事一覧を取得する
       operationId: v1ArticleList
+      security:
+        - authTokenCookie: []
+        - sessionTokenCookie: []    
       parameters:
         - name: pageToken
           in: query
