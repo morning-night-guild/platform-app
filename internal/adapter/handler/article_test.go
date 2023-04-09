@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -295,6 +296,102 @@ func TestHandlerV1ShareArticle(t *testing.T) {
 			hdl.V1ArticleShare(got, tt.args.r)
 			if got.Code != tt.status {
 				t.Errorf("V1ShareArticle() = %v, want %v", got.Code, tt.status)
+			}
+		})
+	}
+}
+
+func TestHandlerV1DeleteArticle(t *testing.T) {
+	t.Parallel()
+
+	type fields struct {
+		secret  auth.Secret
+		cookie  handler.Cookie
+		auth    usecase.APIAuth
+		article func(*testing.T) usecase.APIArticle
+		health  usecase.APIHealth
+	}
+
+	type args struct {
+		r         *http.Request
+		articleID uuid.UUID
+	}
+
+	tests := []struct {
+		name   string
+		fields fields
+		args   args
+		status int
+	}{
+		{
+			name: "記事が削除できる",
+			fields: fields{
+				article: func(t *testing.T) usecase.APIArticle {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := usecase.NewMockAPIArticle(ctrl)
+					mock.EXPECT().Delete(gomock.Any(), usecase.APIArticleDeleteInput{
+						ArticleID: article.ID(uuid.MustParse(aid)),
+					}).Return(usecase.APIArticleDeleteOutput{}, nil)
+					return mock
+				},
+			},
+			args: args{
+				r: &http.Request{
+					Method: http.MethodDelete,
+					Header: http.Header{
+						"Api-Key": []string{"key"},
+					},
+					URL: &url.URL{
+						Path: "/v1/articles/" + aid,
+					},
+				},
+				articleID: uuid.MustParse(aid),
+			},
+			status: http.StatusOK,
+		},
+		{
+			name: "Api-Keyがなくて記事が削除できない",
+			fields: fields{
+				article: func(t *testing.T) usecase.APIArticle {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := usecase.NewMockAPIArticle(ctrl)
+					return mock
+				},
+			},
+			args: args{
+				r: &http.Request{
+					Method: http.MethodDelete,
+					Header: http.Header{
+						"Api-Key": []string{""},
+					},
+					URL: &url.URL{
+						Path: "/v1/articles/" + aid,
+					},
+				},
+				articleID: uuid.MustParse(aid),
+			},
+			status: http.StatusUnauthorized,
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			hdl := handler.New(
+				"key",
+				tt.fields.secret,
+				tt.fields.cookie,
+				tt.fields.auth,
+				tt.fields.article(t),
+				tt.fields.health,
+			)
+			got := httptest.NewRecorder()
+			hdl.V1ArticleDelete(got, tt.args.r, tt.args.articleID)
+			if got.Code != tt.status {
+				t.Errorf("V1DeleteArticle() = %v, want %v", got.Code, tt.status)
 			}
 		})
 	}
