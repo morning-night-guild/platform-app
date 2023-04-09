@@ -117,6 +117,6 @@ func (hdl *Handler) V1ArticleShare(w http.ResponseWriter, r *http.Request) {
 
 // 記事削除
 // (DELETE /v1/articles/{articleId}).
-func (hdl *Handler) V1ArticleDelete(w http.ResponseWriter, r *http.Request, articleId string) {
+func (hdl *Handler) V1ArticleDelete(w http.ResponseWriter, r *http.Request, articleID string) {
 	// TODO: implement
 }
