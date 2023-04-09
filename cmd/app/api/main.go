@@ -75,10 +75,7 @@ func main() {
 		panic(err)
 	}
 
-	secret := auth.Secret(cfg.JWTSecret)
-
 	authUsecase := interactor.NewAPIAuth(
-		secret,
 		authRPC,
 		userRPC,
 		authCache,
@@ -95,7 +92,7 @@ func main() {
 
 	si := handler.New(
 		cfg.APIKey,
-		secret,
+		auth.Secret(cfg.JWTSecret),
 		cookie.New(cfg.CookieDomain),
 		authUsecase,
 		articleUsecase,

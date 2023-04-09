@@ -6,7 +6,6 @@ import (
 	"github.com/morning-night-guild/platform-app/internal/application/usecase"
 	"github.com/morning-night-guild/platform-app/internal/domain/cache"
 	"github.com/morning-night-guild/platform-app/internal/domain/model"
-	"github.com/morning-night-guild/platform-app/internal/domain/model/auth"
 	"github.com/morning-night-guild/platform-app/internal/domain/model/errors"
 	"github.com/morning-night-guild/platform-app/internal/domain/rpc"
 	"github.com/morning-night-guild/platform-app/pkg/log"
@@ -15,7 +14,6 @@ import (
 var _ usecase.APIAuth = (*APIAuth)(nil)
 
 type APIAuth struct {
-	secret       auth.Secret
 	authRPC      rpc.Auth
 	userRPC      rpc.User
 	authCache    cache.Cache[model.Auth]
@@ -24,7 +22,6 @@ type APIAuth struct {
 }
 
 func NewAPIAuth(
-	secret auth.Secret,
 	authRPC rpc.Auth,
 	userRPC rpc.User,
 	authCache cache.Cache[model.Auth],
@@ -32,7 +29,6 @@ func NewAPIAuth(
 	sessionCache cache.Cache[model.Session],
 ) *APIAuth {
 	return &APIAuth{
-		secret:       secret,
 		authRPC:      authRPC,
 		userRPC:      userRPC,
 		authCache:    authCache,
@@ -88,7 +84,7 @@ func (aa *APIAuth) SignIn(
 
 	return usecase.APIAuthSignInOutput{
 		AuthToken:    at.ToToken(session.SessionID.ToSecret()),
-		SessionToken: session.ToToken(aa.secret),
+		SessionToken: session.ToToken(input.Secret),
 	}, nil
 }
 
@@ -96,15 +92,11 @@ func (aa *APIAuth) SignOut(
 	ctx context.Context,
 	input usecase.APIAuthSignOutInput,
 ) (usecase.APIAuthSignOutOutput, error) {
-	sid := input.SessionToken.ID(aa.secret)
-
-	uid := input.AuthToken.UserID(sid.ToSecret())
-
-	if err := aa.sessionCache.Del(ctx, sid.String()); err != nil {
+	if err := aa.sessionCache.Del(ctx, input.SessionID.String()); err != nil {
 		log.GetLogCtx(ctx).Warn("failed to delete session cache", log.ErrorField(err))
 	}
 
-	if err := aa.authCache.Del(ctx, uid.String()); err != nil {
+	if err := aa.authCache.Del(ctx, input.UserID.String()); err != nil {
 		log.GetLogCtx(ctx).Warn("failed to delete auth cache", log.ErrorField(err))
 	}
 
@@ -115,11 +107,7 @@ func (aa *APIAuth) Verify(
 	ctx context.Context,
 	input usecase.APIAuthVerifyInput,
 ) (usecase.APIAuthVerifyOutput, error) {
-	sid := input.SessionToken.ID(aa.secret)
-
-	uid := input.AuthToken.UserID(sid.ToSecret())
-
-	auth, err := aa.authCache.Get(ctx, uid.String())
+	auth, err := aa.authCache.Get(ctx, input.UserID.String())
 	if err != nil {
 		log.GetLogCtx(ctx).Warn("failed to get auth cache", log.ErrorField(err))
 
@@ -137,9 +125,7 @@ func (aa *APIAuth) Refresh(
 	ctx context.Context,
 	input usecase.APIAuthRefreshInput,
 ) (usecase.APIAuthRefreshOutput, error) {
-	sid := input.SessionToken.ID(aa.secret)
-
-	code, err := aa.codeCache.Get(ctx, sid.String())
+	code, err := aa.codeCache.Get(ctx, input.SessionID.String())
 	if err != nil {
 		return usecase.APIAuthRefreshOutput{}, errors.NewNotFoundError("code is not found", err)
 	}
@@ -152,7 +138,7 @@ func (aa *APIAuth) Refresh(
 		return usecase.APIAuthRefreshOutput{}, errors.NewValidationError("Code is expired")
 	}
 
-	session, err := aa.sessionCache.Get(ctx, sid.String())
+	session, err := aa.sessionCache.Get(ctx, input.SessionID.String())
 	if err != nil {
 		return usecase.APIAuthRefreshOutput{}, err
 	}
@@ -167,7 +153,7 @@ func (aa *APIAuth) Refresh(
 		return usecase.APIAuthRefreshOutput{}, errors.NewUnauthorizedError("signature invalid")
 	}
 
-	if err := aa.codeCache.Del(ctx, sid.String()); err != nil {
+	if err := aa.codeCache.Del(ctx, input.SessionID.String()); err != nil {
 		log.GetLogCtx(ctx).Warn(err.Error())
 	}
 
@@ -190,11 +176,9 @@ func (aa *APIAuth) GenerateCode(
 	ctx context.Context,
 	input usecase.APIAuthGenerateCodeInput,
 ) (usecase.APIAuthGenerateCodeOutput, error) {
-	sid := input.SessionToken.ID(aa.secret)
+	code := model.GenerateCode(input.SessionID)
 
-	code := model.GenerateCode(sid)
-
-	if err := aa.codeCache.Set(ctx, sid.String(), code, model.DefaultCodeExpiresIn); err != nil {
+	if err := aa.codeCache.Set(ctx, input.SessionID.String(), code, model.DefaultCodeExpiresIn); err != nil {
 		return usecase.APIAuthGenerateCodeOutput{}, err
 	}
 
