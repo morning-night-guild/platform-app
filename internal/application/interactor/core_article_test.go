@@ -241,11 +241,11 @@ func TestCoreArticleDelete(t *testing.T) {
 					mock := repository.NewMockArticle(ctrl)
 					mock.EXPECT().Find(
 						gomock.Any(),
-						gomock.Any(),
+						id,
 					).Return(&model.Article{}, nil)
 					mock.EXPECT().Delete(
 						gomock.Any(),
-						gomock.Any(),
+						id,
 					).Return(nil)
 					return mock
 				},
@@ -268,7 +268,7 @@ func TestCoreArticleDelete(t *testing.T) {
 					mock := repository.NewMockArticle(ctrl)
 					mock.EXPECT().Find(
 						gomock.Any(),
-						gomock.Any(),
+						id,
 					).Return(nil, nil)
 					return mock
 				},
@@ -291,11 +291,11 @@ func TestCoreArticleDelete(t *testing.T) {
 					mock := repository.NewMockArticle(ctrl)
 					mock.EXPECT().Find(
 						gomock.Any(),
-						gomock.Any(),
+						id,
 					).Return(&model.Article{}, nil)
 					mock.EXPECT().Delete(
 						gomock.Any(),
-						gomock.Any(),
+						id,
 					).Return(fmt.Errorf("error"))
 					return mock
 				},
