@@ -12,6 +12,7 @@ import (
 	"github.com/morning-night-guild/platform-app/internal/application/usecase"
 	"github.com/morning-night-guild/platform-app/internal/domain/model"
 	"github.com/morning-night-guild/platform-app/internal/domain/model/article"
+	"github.com/morning-night-guild/platform-app/internal/domain/model/errors"
 	"github.com/morning-night-guild/platform-app/internal/domain/repository"
 	"github.com/morning-night-guild/platform-app/internal/domain/value"
 )
@@ -225,6 +226,15 @@ func TestCoreArticleDelete(t *testing.T) {
 
 	id := article.ID(uuid.New())
 
+	article := model.Article{
+		ID:          id,
+		Title:       article.Title("title"),
+		URL:         article.URL("https://example.com"),
+		Description: article.Description("description"),
+		Thumbnail:   article.Thumbnail("https://example.com"),
+		TagList:     article.TagList{},
+	}
+
 	tests := []struct {
 		name    string
 		fields  fields
@@ -242,7 +252,7 @@ func TestCoreArticleDelete(t *testing.T) {
 					mock.EXPECT().Find(
 						gomock.Any(),
 						id,
-					).Return(model.Article{}, nil)
+					).Return(article, nil)
 					mock.EXPECT().Delete(
 						gomock.Any(),
 						id,
@@ -269,7 +279,7 @@ func TestCoreArticleDelete(t *testing.T) {
 					mock.EXPECT().Find(
 						gomock.Any(),
 						id,
-					).Return(model.Article{}, nil)
+					).Return(model.Article{}, errors.NewNotFoundError("article not found"))
 					return mock
 				},
 			},
@@ -292,7 +302,7 @@ func TestCoreArticleDelete(t *testing.T) {
 					mock.EXPECT().Find(
 						gomock.Any(),
 						id,
-					).Return(model.Article{}, nil)
+					).Return(article, nil)
 					mock.EXPECT().Delete(
 						gomock.Any(),
 						id,
