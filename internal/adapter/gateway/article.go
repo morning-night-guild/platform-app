@@ -119,17 +119,17 @@ func (ca *Article) FindAll(
 }
 
 // Find ID指定で記事を取得するメソッド.
-func (ca *Article) Find(ctx context.Context, id da.ID) (model.Article, error) {
+func (ca *Article) Find(ctx context.Context, id da.ID) (*model.Article, error) {
 	ea, err := ca.rdb.Article.Query().
 		Where(article.IDEQ(id.Value())).
 		WithTags().
 		First(ctx)
 	if err != nil {
-		return model.Article{}, errors.Wrap(err, "failed to find")
+		return nil, errors.Wrap(err, "failed to find")
 	}
 
 	if ea == nil {
-		return model.Article{}, nil
+		return nil, nil
 	}
 
 	tags := make([]string, len(ea.Edges.Tags))
@@ -137,14 +137,16 @@ func (ca *Article) Find(ctx context.Context, id da.ID) (model.Article, error) {
 		tags[i] = tag.Tag
 	}
 
-	return model.ReconstructArticle(
+	article := model.ReconstructArticle(
 		ea.ID,
 		ea.URL,
 		ea.Title,
 		ea.Description,
 		ea.Thumbnail,
 		tags,
-	), nil
+	)
+
+	return &article, nil
 }
 
 func (ca *Article) Delete(ctx context.Context, id da.ID) error {
