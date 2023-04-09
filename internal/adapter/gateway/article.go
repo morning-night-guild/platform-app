@@ -6,6 +6,7 @@ import (
 
 	"github.com/morning-night-guild/platform-app/internal/domain/model"
 	"github.com/morning-night-guild/platform-app/internal/domain/model/article"
+	domainerrors "github.com/morning-night-guild/platform-app/internal/domain/model/errors"
 	"github.com/morning-night-guild/platform-app/internal/domain/repository"
 	"github.com/morning-night-guild/platform-app/internal/domain/value"
 	"github.com/morning-night-guild/platform-app/pkg/ent"
@@ -129,7 +130,7 @@ func (art *Article) Find(ctx context.Context, id article.ID) (model.Article, err
 	}
 
 	if ea == nil {
-		return model.Article{}, nil
+		return model.Article{}, domainerrors.NewNotFoundError("article not found")
 	}
 
 	tags := make([]string, len(ea.Edges.Tags))

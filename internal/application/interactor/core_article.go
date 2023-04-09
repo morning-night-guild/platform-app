@@ -6,6 +6,7 @@ import (
 	"github.com/morning-night-guild/platform-app/internal/application/usecase"
 	"github.com/morning-night-guild/platform-app/internal/domain/model"
 	"github.com/morning-night-guild/platform-app/internal/domain/model/article"
+	"github.com/morning-night-guild/platform-app/internal/domain/model/errors"
 	"github.com/morning-night-guild/platform-app/internal/domain/repository"
 	"github.com/morning-night-guild/platform-app/pkg/log"
 )
@@ -61,12 +62,12 @@ func (ca *CoreArticle) Delete(
 	ctx context.Context,
 	input usecase.CoreArticleDeleteInput,
 ) (usecase.CoreArticleDeleteOutput, error) {
-	article, err := ca.articleRepository.Find(ctx, input.ArticleID)
+	_, err := ca.articleRepository.Find(ctx, input.ArticleID)
 	if err != nil {
 		return usecase.CoreArticleDeleteOutput{}, err
 	}
 
-	if article.ID != input.ArticleID {
+	if errors.AsNotFoundError(err) {
 		log.GetLogCtx(ctx).Sugar().Warnf("article not found. id=%s", input.ArticleID)
 		return usecase.CoreArticleDeleteOutput{}, nil
 	}
