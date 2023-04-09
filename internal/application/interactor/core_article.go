@@ -65,6 +65,7 @@ func (ca *CoreArticle) Delete(
 	if _, err := ca.articleRepository.Find(ctx, input.ArticleID); err != nil {
 		if errors.AsNotFoundError(err) {
 			log.GetLogCtx(ctx).Sugar().Warnf("article not found. id=%s", input.ArticleID)
+
 			return usecase.CoreArticleDeleteOutput{}, nil
 		}
 
