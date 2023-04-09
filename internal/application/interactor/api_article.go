@@ -54,8 +54,7 @@ func (aa *APIArticle) Delete(
 	ctx context.Context,
 	input usecase.APIArticleDeleteInput,
 ) (usecase.APIArticleDeleteOutput, error) {
-	err := aa.articleRPC.Delete(ctx, input.ArticleID)
-	if err != nil {
+	if err := aa.articleRPC.Delete(ctx, input.ArticleID); err != nil {
 		return usecase.APIArticleDeleteOutput{}, err
 	}
 
