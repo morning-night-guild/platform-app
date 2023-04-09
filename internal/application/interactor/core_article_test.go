@@ -239,10 +239,37 @@ func TestCoreArticleDelete(t *testing.T) {
 					t.Helper()
 					ctrl := gomock.NewController(t)
 					mock := repository.NewMockArticle(ctrl)
+					mock.EXPECT().Find(
+						gomock.Any(),
+						gomock.Any(),
+					).Return(&model.Article{}, nil)
 					mock.EXPECT().Delete(
 						gomock.Any(),
 						gomock.Any(),
 					).Return(nil)
+					return mock
+				},
+			},
+			args: args{
+				ctx: context.Background(),
+				input: usecase.CoreArticleDeleteInput{
+					ID: id,
+				},
+			},
+			want:    usecase.CoreArticleDeleteOutput{},
+			wantErr: false,
+		},
+		{
+			name: "存在しない記事の削除がエラーにならない",
+			fields: fields{
+				articleRepository: func(t *testing.T) repository.Article {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := repository.NewMockArticle(ctrl)
+					mock.EXPECT().Find(
+						gomock.Any(),
+						gomock.Any(),
+					).Return(nil, nil)
 					return mock
 				},
 			},
@@ -262,6 +289,10 @@ func TestCoreArticleDelete(t *testing.T) {
 					t.Helper()
 					ctrl := gomock.NewController(t)
 					mock := repository.NewMockArticle(ctrl)
+					mock.EXPECT().Find(
+						gomock.Any(),
+						gomock.Any(),
+					).Return(&model.Article{}, nil)
 					mock.EXPECT().Delete(
 						gomock.Any(),
 						gomock.Any(),
