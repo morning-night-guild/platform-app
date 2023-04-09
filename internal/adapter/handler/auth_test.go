@@ -21,7 +21,6 @@ import (
 	"github.com/morning-night-guild/platform-app/internal/application/usecase"
 	"github.com/morning-night-guild/platform-app/internal/domain/model"
 	"github.com/morning-night-guild/platform-app/internal/domain/model/auth"
-	"github.com/morning-night-guild/platform-app/internal/domain/model/user"
 	"github.com/morning-night-guild/platform-app/pkg/openapi"
 )
 
@@ -29,51 +28,6 @@ const (
 	sid = "01234567-0123-0123-0123-0123456789ab"
 	cid = "01234567-0123-0123-0123-0123456789ac"
 )
-
-func Cookie(t *testing.T) *handler.MockCookie {
-	t.Helper()
-
-	ctrl := gomock.NewController(t)
-
-	cookie := handler.NewMockCookie(ctrl)
-	cookie.EXPECT().Domain().Return("localhost").AnyTimes()
-	cookie.EXPECT().Secure().Return(false).AnyTimes()
-	cookie.EXPECT().SameSite().Return(http.SameSiteDefaultMode).AnyTimes()
-
-	return cookie
-}
-
-func GenerateToken(t *testing.T) struct {
-	UserID             user.ID
-	AuthToken          auth.AuthToken
-	AuthTokenString    string
-	SessionToken       auth.SessionToken
-	SessionTokenString string
-} {
-	t.Helper()
-
-	sid := auth.GenerateSessionID()
-
-	st := auth.GenerateSessionToken(sid, auth.Secret("secret"))
-
-	uid := user.GenerateID()
-
-	at := auth.GenerateAuthToken(uid, sid.ToSecret())
-
-	return struct {
-		UserID             user.ID
-		AuthToken          auth.AuthToken
-		AuthTokenString    string
-		SessionToken       auth.SessionToken
-		SessionTokenString string
-	}{
-		UserID:             uid,
-		AuthToken:          at,
-		AuthTokenString:    at.String(),
-		SessionToken:       st,
-		SessionTokenString: st.String(),
-	}
-}
 
 type Public struct {
 	T   *testing.T
