@@ -121,8 +121,7 @@ func (hdl *Handler) V1ArticleShare(w http.ResponseWriter, r *http.Request) {
 func (hdl *Handler) V1ArticleDelete(
 	//nolint:revive
 	w http.ResponseWriter,
-	//nolint:revive
-	r *http.Request,
+	_ *http.Request,
 	//nolint:revive
 	articleID openapi_types.UUID,
 ) {
