@@ -210,3 +210,89 @@ func TestCoreArticleList(t *testing.T) {
 		})
 	}
 }
+
+func TestCoreArticleDelete(t *testing.T) {
+	t.Parallel()
+
+	type fields struct {
+		articleRepository func(t *testing.T) repository.Article
+	}
+
+	type args struct {
+		ctx   context.Context
+		input usecase.CoreArticleDeleteInput
+	}
+
+	id := article.ID(uuid.New())
+
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		want    usecase.CoreArticleDeleteOutput
+		wantErr bool
+	}{
+		{
+			name: "記事を削除できる",
+			fields: fields{
+				articleRepository: func(t *testing.T) repository.Article {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := repository.NewMockArticle(ctrl)
+					mock.EXPECT().Delete(
+						gomock.Any(),
+						gomock.Any(),
+					).Return(nil)
+					return mock
+				},
+			},
+			args: args{
+				ctx: context.Background(),
+				input: usecase.CoreArticleDeleteInput{
+					ID: id,
+				},
+			},
+			want:    usecase.CoreArticleDeleteOutput{},
+			wantErr: false,
+		},
+		{
+			name: "記事Repositoryのerrorを握りつぶさない",
+			fields: fields{
+				articleRepository: func(t *testing.T) repository.Article {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := repository.NewMockArticle(ctrl)
+					mock.EXPECT().Delete(
+						gomock.Any(),
+						gomock.Any(),
+					).Return(fmt.Errorf("error"))
+					return mock
+				},
+			},
+			args: args{
+				ctx: context.Background(),
+				input: usecase.CoreArticleDeleteInput{
+					ID: id,
+				},
+			},
+			want:    usecase.CoreArticleDeleteOutput{},
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			ca := interactor.NewCoreArticle(tt.fields.articleRepository(t))
+			got, err := ca.Delete(tt.args.ctx, tt.args.input)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("CoreArticle.Delete() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("CoreArticle.Delete() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
