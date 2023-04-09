@@ -11,6 +11,8 @@ service ArticleService {
   rpc Share(ShareRequest) returns (ShareResponse) {}
   // 一覧
   rpc List(ListRequest) returns (ListResponse) {}
+  // 削除
+  rpc Delete(DeleteRequest) returns (DeleteResponse) {}
 }
 
 // 記事モデル
@@ -47,3 +49,11 @@ message ListResponse {
   repeated Article articles = 1;
   string next_page_token = 2;
 }
+
+// 削除リクエスト
+message DeleteRequest {
+  string id = 1;
+}
+
+// 削除レスポンス
+message DeleteResponse {}
