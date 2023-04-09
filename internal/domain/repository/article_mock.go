@@ -52,10 +52,10 @@ func (mr *MockArticleMockRecorder) Delete(arg0, arg1 interface{}) *gomock.Call {
 }
 
 // Find mocks base method.
-func (m *MockArticle) Find(arg0 context.Context, arg1 article.ID) (*model.Article, error) {
+func (m *MockArticle) Find(arg0 context.Context, arg1 article.ID) (model.Article, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Find", arg0, arg1)
-	ret0, _ := ret[0].(*model.Article)
+	ret0, _ := ret[0].(model.Article)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

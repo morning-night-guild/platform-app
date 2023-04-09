@@ -443,7 +443,7 @@ func TestArticleDelete(t *testing.T) {
 			t.Errorf("Delete() = %v, want %v", err, nil)
 		}
 
-		if article != nil {
+		if article.ID != item.ID {
 			t.Errorf("Delete() = %v, want %v", article, nil)
 		}
 	})
