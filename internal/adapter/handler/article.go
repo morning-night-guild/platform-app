@@ -121,8 +121,7 @@ func (hdl *Handler) V1ArticleShare(w http.ResponseWriter, r *http.Request) {
 func (hdl *Handler) V1ArticleDelete(
 	_ http.ResponseWriter,
 	_ *http.Request,
-	//nolint:revive
-	articleID openapi_types.UUID,
+	_ openapi_types.UUID,
 ) {
 	//nolint:godox
 	// TODO: implement
