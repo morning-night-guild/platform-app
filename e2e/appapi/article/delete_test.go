@@ -2,6 +2,7 @@ package article_test
 
 import (
 	"context"
+	"net/http"
 	"testing"
 
 	"github.com/google/uuid"
@@ -34,5 +35,9 @@ func TestAppAPIE2EArticleDelete(t *testing.T) {
 		}
 
 		defer res.Body.Close()
+
+		if res.StatusCode != http.StatusOK {
+			t.Fatalf("unexpected status code: %d", res.StatusCode)
+		}
 	})
 }
