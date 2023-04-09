@@ -393,3 +393,87 @@ func TestArticleList(t *testing.T) {
 		})
 	}
 }
+
+func TestArticleDelete(t *testing.T) {
+	t.Parallel()
+
+	type fields struct {
+		usecase func(*testing.T) usecase.CoreArticle
+	}
+
+	type args struct {
+		ctx context.Context
+		req *connect.Request[articlev1.DeleteRequest]
+	}
+
+	id := uuid.New()
+
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		want    *connect.Response[articlev1.DeleteResponse]
+		wantErr bool
+	}{
+		{
+			name: "記事が削除できる",
+			fields: fields{
+				usecase: func(t *testing.T) usecase.CoreArticle {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := usecase.NewMockCoreArticle(ctrl)
+					mock.EXPECT().Delete(gomock.Any(), usecase.CoreArticleDeleteInput{
+						ArticleID: article.ID(id),
+					}).Return(usecase.CoreArticleDeleteOutput{}, nil)
+					return mock
+				},
+			},
+			args: args{
+				ctx: context.Background(),
+				req: &connect.Request[articlev1.DeleteRequest]{
+					Msg: &articlev1.DeleteRequest{
+						ArticleId: id.String(),
+					},
+				},
+			},
+			want:    connect.NewResponse(&articlev1.DeleteResponse{}),
+			wantErr: false,
+		},
+		{
+			name: "不正なIDを指定して記事が削除できない",
+			fields: fields{
+				usecase: func(t *testing.T) usecase.CoreArticle {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := usecase.NewMockCoreArticle(ctrl)
+					return mock
+				},
+			},
+			args: args{
+				ctx: context.Background(),
+				req: &connect.Request[articlev1.DeleteRequest]{
+					Msg: &articlev1.DeleteRequest{
+						ArticleId: "invalid",
+					},
+				},
+			},
+			want:    nil,
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			a := controller.NewArticle(controller.New(), tt.fields.usecase(t))
+			got, err := a.Delete(tt.args.ctx, tt.args.req)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Article.Delete() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Article.Delete() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
