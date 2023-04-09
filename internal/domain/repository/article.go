@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/morning-night-guild/platform-app/internal/domain/model"
+	"github.com/morning-night-guild/platform-app/internal/domain/model/article"
 	"github.com/morning-night-guild/platform-app/internal/domain/value"
 )
 
@@ -12,4 +13,5 @@ import (
 type Article interface {
 	Save(context.Context, model.Article) error
 	FindAll(context.Context, value.Index, value.Size) ([]model.Article, error)
+	Delete(context.Context, article.ID) error
 }

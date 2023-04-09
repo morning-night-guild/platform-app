@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/morning-night-guild/platform-app/internal/domain/model"
+	da "github.com/morning-night-guild/platform-app/internal/domain/model/article"
 	"github.com/morning-night-guild/platform-app/internal/domain/repository"
 	"github.com/morning-night-guild/platform-app/internal/domain/value"
 	"github.com/morning-night-guild/platform-app/pkg/ent"
@@ -115,4 +116,13 @@ func (ca *Article) FindAll(
 	}
 
 	return articles, nil
+}
+
+func (ca *Article) Delete(ctx context.Context, id da.ID) error {
+	err := ca.rdb.Article.DeleteOneID(id.Value()).Exec(ctx)
+	if err != nil {
+		return errors.Wrap(err, "failed to delete")
+	}
+
+	return nil
 }
