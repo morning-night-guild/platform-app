@@ -500,7 +500,7 @@ func TestArticleDelete(t *testing.T) {
 		}
 
 		if err := articleGateway.Delete(ctx, item.ID); err != nil {
-			t.Fatal(err)
+			t.Errorf("unexpected error while delete. got %v", err)
 		}
 
 		article, err := rdb.Article.Query().
@@ -533,7 +533,7 @@ func TestArticleDelete(t *testing.T) {
 		ctx := context.Background()
 
 		if err := articleGateway.Delete(ctx, article.GenerateID()); err != nil {
-			t.Error(err)
+			t.Errorf("unexpected error while delete. got %v", err)
 		}
 	})
 }
