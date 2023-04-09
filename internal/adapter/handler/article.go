@@ -143,6 +143,4 @@ func (hdl *Handler) V1ArticleDelete(
 
 		return
 	}
-
-	w.WriteHeader(http.StatusOK)
 }
