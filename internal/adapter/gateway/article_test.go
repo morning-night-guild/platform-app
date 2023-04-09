@@ -533,7 +533,7 @@ func TestArticleDelete(t *testing.T) {
 		ctx := context.Background()
 
 		if err := articleGateway.Delete(ctx, article.GenerateID()); err != nil {
-			t.Fatal(err)
+			t.Error(err)
 		}
 	})
 }
