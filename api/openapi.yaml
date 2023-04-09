@@ -225,7 +225,7 @@ paths:
           example: 00000000-0000-0000-0000-000000000000
       responses:
         '200':
-          description: 成功
+          description: 成功、指定した記事IDが存在しない場合も成功扱いとなる
         '400':
           description: Bad Request
         '403':
