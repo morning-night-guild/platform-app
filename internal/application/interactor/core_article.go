@@ -66,7 +66,7 @@ func (ca *CoreArticle) Delete(
 		return usecase.CoreArticleDeleteOutput{}, err
 	}
 
-	if article.ID == input.ID {
+	if article.ID != input.ID {
 		log.Log().Sugar().Warnf("article not found. id=%s", input.ID)
 		return usecase.CoreArticleDeleteOutput{}, nil
 	}
