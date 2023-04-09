@@ -20,6 +20,8 @@
   
 - [proto/article/v1/article.proto](#proto_article_v1_article-proto)
     - [Article](#article-v1-Article)
+    - [DeleteRequest](#article-v1-DeleteRequest)
+    - [DeleteResponse](#article-v1-DeleteResponse)
     - [ListRequest](#article-v1-ListRequest)
     - [ListResponse](#article-v1-ListResponse)
     - [ShareRequest](#article-v1-ShareRequest)
@@ -189,12 +191,37 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| id | [string](#string) |  |  |
+| article_id | [string](#string) |  |  |
 | url | [string](#string) |  |  |
 | title | [string](#string) |  |  |
 | description | [string](#string) |  |  |
 | thumbnail | [string](#string) |  |  |
 | tags | [string](#string) | repeated |  |
+
+
+
+
+
+
+<a name="article-v1-DeleteRequest"></a>
+
+### DeleteRequest
+削除リクエスト
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| article_id | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="article-v1-DeleteResponse"></a>
+
+### DeleteResponse
+削除レスポンス
 
 
 
@@ -281,6 +308,7 @@
 | ----------- | ------------ | ------------- | ------------|
 | Share | [ShareRequest](#article-v1-ShareRequest) | [ShareResponse](#article-v1-ShareResponse) | 共有 Need X-Api-Key Header |
 | List | [ListRequest](#article-v1-ListRequest) | [ListResponse](#article-v1-ListResponse) | 一覧 |
+| Delete | [DeleteRequest](#article-v1-DeleteRequest) | [DeleteResponse](#article-v1-DeleteResponse) | 削除 |
 
  
 

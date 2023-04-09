@@ -290,6 +290,36 @@ To perform this operation, you must be authenticated by means of one of the foll
 apiKey
 </aside>
 
+## v1ArticleDelete
+
+<a id="opIdv1ArticleDelete"></a>
+
+`DELETE /v1/articles/{articleId}`
+
+*記事削除*
+
+記事を削除する
+
+<h3 id="v1articledelete-parameters">Parameters</h3>
+
+|Name|In|Type|Required|Description|
+|---|---|---|---|---|
+|articleId|path|string(uuid)|true|記事ID|
+
+<h3 id="v1articledelete-responses">Responses</h3>
+
+|Status|Meaning|Description|Schema|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|成功、指定した記事IDが存在しない場合も成功扱いとなる|None|
+|400|[Bad Request](https://tools.ietf.org/html/rfc7231#section-6.5.1)|Bad Request|None|
+|403|[Forbidden](https://tools.ietf.org/html/rfc7231#section-6.5.3)|Forbidden|None|
+|500|[Internal Server Error](https://tools.ietf.org/html/rfc7231#section-6.6.1)|Internal Server Error|None|
+
+<aside class="warning">
+To perform this operation, you must be authenticated by means of one of the following methods:
+apiKey
+</aside>
+
 <h1 id="morning-night-guild-app-api-health">health</h1>
 
 ヘルスチェック

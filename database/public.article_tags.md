@@ -14,7 +14,7 @@
 
 | Name | Type | Definition |
 | ---- | ---- | ---------- |
-| article_tags_articles_tags | FOREIGN KEY | FOREIGN KEY (article_id) REFERENCES articles(id) |
+| article_tags_articles_tags | FOREIGN KEY | FOREIGN KEY (article_id) REFERENCES articles(id) ON DELETE CASCADE |
 | article_tags_pkey | PRIMARY KEY | PRIMARY KEY (id) |
 
 ## Indexes
