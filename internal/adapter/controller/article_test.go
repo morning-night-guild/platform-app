@@ -77,7 +77,7 @@ func TestArticleShare(t *testing.T) {
 			},
 			want: connect.NewResponse(&articlev1.ShareResponse{
 				Article: &articlev1.Article{
-					Id:          aid,
+					ArticleId:   aid,
 					Url:         "https://example.com",
 					Title:       "title",
 					Description: "description",
@@ -214,8 +214,8 @@ func TestArticleShare(t *testing.T) {
 			if tt.want == nil {
 				return
 			}
-			if !reflect.DeepEqual(got.Msg.Article.Id, tt.want.Msg.Article.Id) {
-				t.Errorf("Article.Share() Msg Article Id = %v, want %v", got.Msg.Article.Id, tt.want.Msg.Article.Id)
+			if !reflect.DeepEqual(got.Msg.Article.ArticleId, tt.want.Msg.Article.ArticleId) {
+				t.Errorf("Article.Share() Msg Article Id = %v, want %v", got.Msg.Article.ArticleId, tt.want.Msg.Article.ArticleId)
 			}
 			if !reflect.DeepEqual(got.Msg.Article.Url, tt.want.Msg.Article.Url) {
 				t.Errorf("Article.Share() Msg Article Url = %v, want %v", got.Msg.Article.Url, tt.want.Msg.Article.Url)
@@ -291,7 +291,7 @@ func TestArticleList(t *testing.T) {
 			want: connect.NewResponse(&articlev1.ListResponse{
 				Articles: []*articlev1.Article{
 					{
-						Id:          id.String(),
+						ArticleId:   id.String(),
 						Title:       "title",
 						Url:         "https://example.com",
 						Description: "description",
@@ -340,7 +340,7 @@ func TestArticleList(t *testing.T) {
 			want: connect.NewResponse(&articlev1.ListResponse{
 				Articles: []*articlev1.Article{
 					{
-						Id:          id.String(),
+						ArticleId:   id.String(),
 						Title:       "title",
 						Url:         "https://example.com",
 						Description: "description",

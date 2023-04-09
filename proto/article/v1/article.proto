@@ -17,7 +17,7 @@ service ArticleService {
 
 // 記事モデル
 message Article {
-  string id = 1;
+  string article_id = 1;
   string url = 2;
   string title = 3;
   string description = 4;
@@ -52,7 +52,7 @@ message ListResponse {
 
 // 削除リクエスト
 message DeleteRequest {
-  string id = 1;
+  string article_id = 1;
 }
 
 // 削除レスポンス

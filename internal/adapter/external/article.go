@@ -53,7 +53,7 @@ func (aa *Article) Share(
 	}
 
 	article := model.ReconstructArticle(
-		uuid.MustParse(res.Msg.Article.Id),
+		uuid.MustParse(res.Msg.Article.ArticleId),
 		res.Msg.Article.Url,
 		res.Msg.Article.Title,
 		res.Msg.Article.Description,
@@ -85,7 +85,7 @@ func (aa *Article) List(
 
 	for i, article := range res.Msg.Articles {
 		articles[i] = model.ReconstructArticle(
-			uuid.MustParse(article.Id),
+			uuid.MustParse(article.ArticleId),
 			article.Url,
 			article.Title,
 			article.Description,
