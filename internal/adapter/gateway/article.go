@@ -28,12 +28,12 @@ func NewArticle(rdb *RDB) *Article {
 }
 
 // Save 記事を保存するメソッド.
-func (ca *Article) Save(ctx context.Context, item model.Article) error {
+func (art *Article) Save(ctx context.Context, item model.Article) error {
 	id := item.ID.Value()
 
 	now := time.Now().UTC()
 
-	err := ca.rdb.Article.Create().
+	err := art.rdb.Article.Create().
 		SetID(id).
 		SetTitle(item.Title.String()).
 		SetURL(item.URL.String()).
@@ -45,8 +45,8 @@ func (ca *Article) Save(ctx context.Context, item model.Article) error {
 		DoNothing().
 		Exec(ctx)
 
-	if err != nil && ca.rdb.IsDuplicatedError(ctx, err) {
-		if ea, err := ca.rdb.Article.Query().Where(article.URLEQ(item.URL.String())).First(ctx); err == nil {
+	if err != nil && art.rdb.IsDuplicatedError(ctx, err) {
+		if ea, err := art.rdb.Article.Query().Where(article.URLEQ(item.URL.String())).First(ctx); err == nil {
 			id = ea.ID
 		} else {
 			return errors.Wrap(err, "failed to save")
@@ -61,19 +61,19 @@ func (ca *Article) Save(ctx context.Context, item model.Article) error {
 
 	bulk := make([]*ent.ArticleTagCreate, item.TagList.Len())
 	for i, tag := range item.TagList {
-		bulk[i] = ca.rdb.ArticleTag.Create().
+		bulk[i] = art.rdb.ArticleTag.Create().
 			SetTag(tag.String()).
 			SetArticleID(id)
 	}
 
-	if err = ca.rdb.ArticleTag.CreateBulk(bulk...).
+	if err = art.rdb.ArticleTag.CreateBulk(bulk...).
 		OnConflict().
 		DoNothing().
 		Exec(ctx); err == nil {
 		return nil
 	}
 
-	if ca.rdb.IsDuplicatedError(ctx, err) {
+	if art.rdb.IsDuplicatedError(ctx, err) {
 		return nil
 	}
 
@@ -81,13 +81,13 @@ func (ca *Article) Save(ctx context.Context, item model.Article) error {
 }
 
 // FindAll 記事を取得するメソッド.
-func (ca *Article) FindAll(
+func (art *Article) FindAll(
 	ctx context.Context,
 	index value.Index,
 	size value.Size,
 ) ([]model.Article, error) {
 	// ent articles
-	eas, err := ca.rdb.Article.Query().
+	eas, err := art.rdb.Article.Query().
 		WithTags().
 		Order(ent.Desc(article.FieldCreatedAt)).
 		Offset(index.Int()).
@@ -119,8 +119,8 @@ func (ca *Article) FindAll(
 }
 
 // Find ID指定で記事を取得するメソッド.
-func (ca *Article) Find(ctx context.Context, id da.ID) (*model.Article, error) {
-	ea, err := ca.rdb.Article.Query().
+func (art *Article) Find(ctx context.Context, id da.ID) (*model.Article, error) {
+	ea, err := art.rdb.Article.Query().
 		Where(article.IDEQ(id.Value())).
 		WithTags().
 		First(ctx)
@@ -149,8 +149,8 @@ func (ca *Article) Find(ctx context.Context, id da.ID) (*model.Article, error) {
 	return &article, nil
 }
 
-func (ca *Article) Delete(ctx context.Context, id da.ID) error {
-	err := ca.rdb.Article.DeleteOneID(id.Value()).Exec(ctx)
+func (art *Article) Delete(ctx context.Context, id da.ID) error {
+	err := art.rdb.Article.DeleteOneID(id.Value()).Exec(ctx)
 	if err != nil {
 		return errors.Wrap(err, "failed to delete")
 	}
