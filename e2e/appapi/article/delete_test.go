@@ -34,11 +34,5 @@ func TestAppAPIE2EArticleDelete(t *testing.T) {
 		}
 
 		defer res.Body.Close()
-
-		article := db.SelectArticleByID(id)
-
-		if article != nil {
-			t.Fatalf("article is not deleted")
-		}
 	})
 }

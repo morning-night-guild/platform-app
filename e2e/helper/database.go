@@ -79,21 +79,6 @@ func (db *Database) SelectArticleByTitle(title string) *ent.Article {
 	return article
 }
 
-func (db *Database) SelectArticleByID(id uuid.UUID) *ent.Article {
-	db.T.Helper()
-
-	article, err := db.client.Article.Query().Where(article.IDEQ(id)).Only(context.Background())
-	if err != nil {
-		if ent.IsNotFound(err) {
-			return nil
-		}
-
-		db.T.Error(err)
-	}
-
-	return article
-}
-
 func (db *Database) BulkDeleteArticles(ids []uuid.UUID) {
 	db.T.Helper()
 
