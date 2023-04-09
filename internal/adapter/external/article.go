@@ -105,8 +105,7 @@ func (aa *Article) Delete(
 		ArticleId: articleID.String(),
 	})
 
-	_, err := aa.connect.Delete(ctx, req)
-	if err != nil {
+	if _, err := aa.connect.Delete(ctx, req); err != nil {
 		log.GetLogCtx(ctx).Sugar().Warnf("failed to delete articles. articleID=%s", articleID.String(), log.ErrorField(err))
 
 		return err
