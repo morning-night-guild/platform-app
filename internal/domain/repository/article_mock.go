@@ -51,6 +51,21 @@ func (mr *MockArticleMockRecorder) Delete(arg0, arg1 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockArticle)(nil).Delete), arg0, arg1)
 }
 
+// Find mocks base method.
+func (m *MockArticle) Find(arg0 context.Context, arg1 article.ID) (model.Article, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Find", arg0, arg1)
+	ret0, _ := ret[0].(model.Article)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Find indicates an expected call of Find.
+func (mr *MockArticleMockRecorder) Find(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Find", reflect.TypeOf((*MockArticle)(nil).Find), arg0, arg1)
+}
+
 // FindAll mocks base method.
 func (m *MockArticle) FindAll(arg0 context.Context, arg1 value.Index, arg2 value.Size) ([]model.Article, error) {
 	m.ctrl.T.Helper()
