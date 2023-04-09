@@ -9,6 +9,7 @@ import (
 	"net/http"
 
 	"github.com/deepmap/oapi-codegen/pkg/runtime"
+	openapi_types "github.com/deepmap/oapi-codegen/pkg/types"
 	"github.com/go-chi/chi/v5"
 )
 
@@ -22,7 +23,7 @@ type ServerInterface interface {
 	V1ArticleShare(w http.ResponseWriter, r *http.Request)
 	// 記事削除
 	// (DELETE /v1/articles/{articleId})
-	V1ArticleDelete(w http.ResponseWriter, r *http.Request, articleId string)
+	V1ArticleDelete(w http.ResponseWriter, r *http.Request, articleId openapi_types.UUID)
 	// リフレッシュ
 	// (GET /v1/auth/refresh)
 	V1AuthRefresh(w http.ResponseWriter, r *http.Request, params V1AuthRefreshParams)
@@ -122,7 +123,7 @@ func (siw *ServerInterfaceWrapper) V1ArticleDelete(w http.ResponseWriter, r *htt
 	var err error
 
 	// ------------- Path parameter "articleId" -------------
-	var articleId string
+	var articleId openapi_types.UUID
 
 	err = runtime.BindStyledParameterWithLocation("simple", true, "articleId", runtime.ParamLocationPath, chi.URLParam(r, "articleId"), &articleId)
 	if err != nil {

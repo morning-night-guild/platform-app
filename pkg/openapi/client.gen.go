@@ -14,6 +14,7 @@ import (
 	"strings"
 
 	"github.com/deepmap/oapi-codegen/pkg/runtime"
+	openapi_types "github.com/deepmap/oapi-codegen/pkg/types"
 )
 
 // RequestEditorFn  is the function signature for the RequestEditor callback function
@@ -98,7 +99,7 @@ type ClientInterface interface {
 	V1ArticleShare(ctx context.Context, body V1ArticleShareJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// V1ArticleDelete request
-	V1ArticleDelete(ctx context.Context, articleId string, reqEditors ...RequestEditorFn) (*http.Response, error)
+	V1ArticleDelete(ctx context.Context, articleId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// V1AuthRefresh request
 	V1AuthRefresh(ctx context.Context, params *V1AuthRefreshParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -162,7 +163,7 @@ func (c *Client) V1ArticleShare(ctx context.Context, body V1ArticleShareJSONRequ
 	return c.Client.Do(req)
 }
 
-func (c *Client) V1ArticleDelete(ctx context.Context, articleId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (c *Client) V1ArticleDelete(ctx context.Context, articleId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewV1ArticleDeleteRequest(c.Server, articleId)
 	if err != nil {
 		return nil, err
@@ -382,7 +383,7 @@ func NewV1ArticleShareRequestWithBody(server string, contentType string, body io
 }
 
 // NewV1ArticleDeleteRequest generates requests for V1ArticleDelete
-func NewV1ArticleDeleteRequest(server string, articleId string) (*http.Request, error) {
+func NewV1ArticleDeleteRequest(server string, articleId openapi_types.UUID) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -726,7 +727,7 @@ type ClientWithResponsesInterface interface {
 	V1ArticleShareWithResponse(ctx context.Context, body V1ArticleShareJSONRequestBody, reqEditors ...RequestEditorFn) (*V1ArticleShareResponse, error)
 
 	// V1ArticleDelete request
-	V1ArticleDeleteWithResponse(ctx context.Context, articleId string, reqEditors ...RequestEditorFn) (*V1ArticleDeleteResponse, error)
+	V1ArticleDeleteWithResponse(ctx context.Context, articleId openapi_types.UUID, reqEditors ...RequestEditorFn) (*V1ArticleDeleteResponse, error)
 
 	// V1AuthRefresh request
 	V1AuthRefreshWithResponse(ctx context.Context, params *V1AuthRefreshParams, reqEditors ...RequestEditorFn) (*V1AuthRefreshResponse, error)
@@ -993,7 +994,7 @@ func (c *ClientWithResponses) V1ArticleShareWithResponse(ctx context.Context, bo
 }
 
 // V1ArticleDeleteWithResponse request returning *V1ArticleDeleteResponse
-func (c *ClientWithResponses) V1ArticleDeleteWithResponse(ctx context.Context, articleId string, reqEditors ...RequestEditorFn) (*V1ArticleDeleteResponse, error) {
+func (c *ClientWithResponses) V1ArticleDeleteWithResponse(ctx context.Context, articleId openapi_types.UUID, reqEditors ...RequestEditorFn) (*V1ArticleDeleteResponse, error) {
 	rsp, err := c.V1ArticleDelete(ctx, articleId, reqEditors...)
 	if err != nil {
 		return nil, err

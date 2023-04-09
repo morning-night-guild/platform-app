@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
+	openapi_types "github.com/deepmap/oapi-codegen/pkg/types"
 	"github.com/google/uuid"
 	"github.com/morning-night-guild/platform-app/internal/application/usecase"
 	"github.com/morning-night-guild/platform-app/internal/domain/model/article"
@@ -123,7 +124,7 @@ func (hdl *Handler) V1ArticleDelete(
 	//nolint:revive
 	r *http.Request,
 	//nolint:revive
-	articleID string,
+	articleID openapi_types.UUID,
 ) {
 	//nolint:godox
 	// TODO: implement
