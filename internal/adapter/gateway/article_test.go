@@ -403,3 +403,65 @@ func TestArticleList(t *testing.T) {
 		}
 	})
 }
+
+func TestArticleDelete(t *testing.T) {
+	t.Parallel()
+
+	t.Run("記事を削除できる", func(t *testing.T) {
+		t.Parallel()
+
+		rdb, err := gateway.NewRDBClientMock(t).Of(uuid.NewString())
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		articleGateway := gateway.NewArticle(rdb)
+
+		ctx := context.Background()
+
+		item := model.CreateArticle(
+			article.URL("https://example.com"),
+			article.Title("title"),
+			article.Description("description"),
+			article.Thumbnail("https://example.com"),
+			article.TagList([]article.Tag{
+				article.Tag("tag1"),
+				article.Tag("tag2"),
+			}),
+		)
+
+		if err := articleGateway.Save(ctx, item); err != nil {
+			t.Fatal(err)
+		}
+
+		if err := articleGateway.Delete(ctx, item.ID); err != nil {
+			t.Fatal(err)
+		}
+
+		article, err := articleGateway.Find(ctx, item.ID)
+		if err == nil {
+			t.Errorf("Delete() = %v, want %v", err, nil)
+		}
+
+		if article != nil {
+			t.Errorf("Delete() = %v, want %v", article, nil)
+		}
+	})
+
+	t.Run("存在しない記事を削除しようとしてもエラーにならない", func(t *testing.T) {
+		t.Parallel()
+
+		rdb, err := gateway.NewRDBClientMock(t).Of(uuid.NewString())
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		articleGateway := gateway.NewArticle(rdb)
+
+		ctx := context.Background()
+
+		if err := articleGateway.Delete(ctx, article.GenerateID()); err != nil {
+			t.Fatal(err)
+		}
+	})
+}
