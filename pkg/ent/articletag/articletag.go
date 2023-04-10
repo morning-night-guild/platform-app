@@ -3,6 +3,8 @@
 package articletag
 
 import (
+	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/google/uuid"
 )
 
@@ -49,3 +51,35 @@ var (
 	// DefaultID holds the default value on creation for the "id" field.
 	DefaultID func() uuid.UUID
 )
+
+// Order defines the ordering method for the ArticleTag queries.
+type Order func(*sql.Selector)
+
+// ByID orders the results by the id field.
+func ByID(opts ...sql.OrderTermOption) Order {
+	return sql.OrderByField(FieldID, opts...).ToFunc()
+}
+
+// ByTag orders the results by the tag field.
+func ByTag(opts ...sql.OrderTermOption) Order {
+	return sql.OrderByField(FieldTag, opts...).ToFunc()
+}
+
+// ByArticleID orders the results by the article_id field.
+func ByArticleID(opts ...sql.OrderTermOption) Order {
+	return sql.OrderByField(FieldArticleID, opts...).ToFunc()
+}
+
+// ByArticleField orders the results by article field.
+func ByArticleField(field string, opts ...sql.OrderTermOption) Order {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newArticleStep(), sql.OrderByField(field, opts...))
+	}
+}
+func newArticleStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ArticleInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, true, ArticleTable, ArticleColumn),
+	)
+}

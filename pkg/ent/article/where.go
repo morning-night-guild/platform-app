@@ -440,11 +440,7 @@ func HasTags() predicate.Article {
 // HasTagsWith applies the HasEdge predicate on the "tags" edge with a given conditions (other predicates).
 func HasTagsWith(preds ...predicate.ArticleTag) predicate.Article {
 	return predicate.Article(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(TagsInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, TagsTable, TagsColumn),
-		)
+		step := newTagsStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

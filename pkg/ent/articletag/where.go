@@ -163,11 +163,7 @@ func HasArticle() predicate.ArticleTag {
 // HasArticleWith applies the HasEdge predicate on the "article" edge with a given conditions (other predicates).
 func HasArticleWith(preds ...predicate.Article) predicate.ArticleTag {
 	return predicate.ArticleTag(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(ArticleInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, ArticleTable, ArticleColumn),
-		)
+		step := newArticleStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)
