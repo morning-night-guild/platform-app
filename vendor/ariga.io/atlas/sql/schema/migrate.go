@@ -304,8 +304,8 @@ type (
 // Changes is a list of changes allow for searching and mutating changes.
 type Changes []Change
 
-// IndexAddTable returns the index of the first AddTable in the changes with
-// the given name, or -1 if there is no such change in the Changes.
+// IndexAddTable returns the index of the first AddTable in the changes
+// with the given name, or -1 if there is no such change in the Changes.
 func (c Changes) IndexAddTable(name string) int {
 	return c.search(func(c Change) bool {
 		a, ok := c.(*AddTable)
@@ -313,8 +313,8 @@ func (c Changes) IndexAddTable(name string) int {
 	})
 }
 
-// IndexDropTable returns the index of the first DropTable in the changes with
-// the given name, or -1 if there is no such change in the Changes.
+// IndexDropTable returns the index of the first DropTable in the changes
+// with the given name, or -1 if there is no such change in the Changes.
 func (c Changes) IndexDropTable(name string) int {
 	return c.search(func(c Change) bool {
 		a, ok := c.(*DropTable)
@@ -322,8 +322,26 @@ func (c Changes) IndexDropTable(name string) int {
 	})
 }
 
-// IndexAddColumn returns the index of the first AddColumn in the changes with
-// the given name, or -1 if there is no such change in the Changes.
+// LastIndexAddTable returns the index of the last AddTable in the changes
+// with the given name, or -1 if there is no such change in the Changes.
+func (c Changes) LastIndexAddTable(name string) int {
+	return c.rsearch(func(c Change) bool {
+		a, ok := c.(*AddTable)
+		return ok && a.T.Name == name
+	})
+}
+
+// LastIndexDropTable returns the index of the last DropTable in the changes
+// with the given name, or -1 if there is no such change in the Changes.
+func (c Changes) LastIndexDropTable(name string) int {
+	return c.rsearch(func(c Change) bool {
+		a, ok := c.(*DropTable)
+		return ok && a.T.Name == name
+	})
+}
+
+// IndexAddColumn returns the index of the first AddColumn in the changes
+// with the given name, or -1 if there is no such change in the Changes.
 func (c Changes) IndexAddColumn(name string) int {
 	return c.search(func(c Change) bool {
 		a, ok := c.(*AddColumn)
@@ -331,8 +349,8 @@ func (c Changes) IndexAddColumn(name string) int {
 	})
 }
 
-// IndexDropColumn returns the index of the first DropColumn in the changes with
-// the given name, or -1 if there is no such change in the Changes.
+// IndexDropColumn returns the index of the first DropColumn in the changes
+// with the given name, or -1 if there is no such change in the Changes.
 func (c Changes) IndexDropColumn(name string) int {
 	return c.search(func(c Change) bool {
 		d, ok := c.(*DropColumn)
@@ -340,8 +358,17 @@ func (c Changes) IndexDropColumn(name string) int {
 	})
 }
 
-// IndexAddIndex returns the index of the first AddIndex in the changes with
-// the given name, or -1 if there is no such change in the Changes.
+// IndexModifyColumn returns the index of the first ModifyColumn in the changes
+// with the given name, or -1 if there is no such change in the Changes.
+func (c Changes) IndexModifyColumn(name string) int {
+	return c.search(func(c Change) bool {
+		a, ok := c.(*ModifyColumn)
+		return ok && a.From.Name == name
+	})
+}
+
+// IndexAddIndex returns the index of the first AddIndex in the changes
+// with the given name, or -1 if there is no such change in the Changes.
 func (c Changes) IndexAddIndex(name string) int {
 	return c.search(func(c Change) bool {
 		a, ok := c.(*AddIndex)
@@ -349,8 +376,8 @@ func (c Changes) IndexAddIndex(name string) int {
 	})
 }
 
-// IndexDropIndex returns the index of the first DropIndex in the changes with
-// the given name, or -1 if there is no such change in the Changes.
+// IndexDropIndex returns the index of the first DropIndex in the changes
+// with the given name, or -1 if there is no such change in the Changes.
 func (c Changes) IndexDropIndex(name string) int {
 	return c.search(func(c Change) bool {
 		a, ok := c.(*DropIndex)
@@ -376,6 +403,17 @@ Loop:
 // search returns the index of the first call to f that returns true, or -1.
 func (c Changes) search(f func(Change) bool) int {
 	for i := range c {
+		if f(c[i]) {
+			return i
+		}
+	}
+	return -1
+}
+
+// rsearch is the reversed version of search. It returns the
+// index of the last call to f that returns true, or -1.
+func (c Changes) rsearch(f func(Change) bool) int {
+	for i := len(c) - 1; i >= 0; i-- {
 		if f(c[i]) {
 			return i
 		}

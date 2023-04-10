@@ -598,7 +598,7 @@ func nArgs(start, n int) string {
 	return b.String()
 }
 
-var reNextval = regexp.MustCompile(`(?i) *nextval\('(?:[\w$]+\.)*([\w$]+_[\w$]+_seq)'(?:::regclass)*\) *$`)
+var reNextval = regexp.MustCompile(`(?i) *nextval\('(?:")?(?:[\w$]+\.)*([\w$]+_[\w$]+_seq)(?:")?'(?:::regclass)*\) *$`)
 
 func defaultExpr(c *schema.Column, s string) {
 	switch m := reNextval.FindStringSubmatch(s); {
@@ -870,6 +870,12 @@ type (
 		X     schema.Expr
 		C     *schema.Column
 		Attrs []schema.Attr
+	}
+
+	// Cascade describes that a CASCADE clause should be added to the DROP [TABLE|SCHEMA]
+	// operation. Note, this clause is automatically added to DROP SCHEMA by the planner.
+	Cascade struct {
+		schema.Clause
 	}
 )
 

@@ -140,7 +140,7 @@ func (t *TableBuilder) Column(c *ColumnBuilder) *TableBuilder {
 	return t
 }
 
-// Columns appends the a list of columns to the builder.
+// Columns appends a list of columns to the builder.
 func (t *TableBuilder) Columns(columns ...*ColumnBuilder) *TableBuilder {
 	t.columns = make([]Querier, 0, len(columns))
 	for i := range columns {
@@ -195,7 +195,7 @@ func (t *TableBuilder) Collate(s string) *TableBuilder {
 	return t
 }
 
-// Options appends additional options to to the statement (MySQL only).
+// Options appends additional options to the statement (MySQL only).
 func (t *TableBuilder) Options(s string) *TableBuilder {
 	t.options = s
 	return t
@@ -484,7 +484,7 @@ type ReferenceBuilder struct {
 	columns []string // referenced columns.
 }
 
-// Reference create a reference builder for the reference_option clause.
+// Reference creates a reference builder for the reference_option clause.
 //
 //	Reference().Table("groups").Columns("id")
 func Reference() *ReferenceBuilder { return &ReferenceBuilder{} }
@@ -2025,12 +2025,22 @@ func Distinct(idents ...string) string {
 // TableView is a view that returns a table view. Can be a Table, Selector or a View (WITH statement).
 type TableView interface {
 	view()
+	// C returns a formatted string prefixed
+	// with the table view qualifier.
+	C(string) string
 }
 
 // queryView allows using Querier (expressions) in the FROM clause.
 type queryView struct{ Querier }
 
 func (*queryView) view() {}
+
+func (q *queryView) C(column string) string {
+	if tv, ok := q.Querier.(TableView); ok {
+		return tv.C(column)
+	}
+	return column
+}
 
 // SelectTable is a table selector.
 type SelectTable struct {
@@ -2085,7 +2095,7 @@ func (s *SelectTable) Columns(columns ...string) []string {
 }
 
 // Unquote makes the table name to be formatted as raw string (unquoted).
-// It is useful whe you don't want to query tables under the current database.
+// It is useful when you don't want to query tables under the current database.
 // For example: "INFORMATION_SCHEMA.TABLE_CONSTRAINTS" in MySQL.
 func (s *SelectTable) Unquote() *SelectTable {
 	s.quote = false
@@ -2204,6 +2214,20 @@ func (s *Selector) AppendSelect(columns ...string) *Selector {
 	return s
 }
 
+// AppendSelectAs appends additional column to the SELECT statement with the given alias.
+func (s *Selector) AppendSelectAs(column, as string) *Selector {
+	s.selection = append(s.selection, ExprFunc(func(b *Builder) {
+		if b.isIdent(column) || isFunc(column) || isModifier(column) {
+			b.WriteString(column)
+		} else {
+			b.WriteString(s.C(column))
+		}
+		b.WriteString(" AS ")
+		b.Ident(as)
+	}))
+	return s
+}
+
 // SelectExpr changes the columns selection of the SELECT statement
 // with custom list of expressions.
 func (s *Selector) SelectExpr(exprs ...Querier) *Selector {
@@ -2225,10 +2249,13 @@ func (s *Selector) AppendSelectExpr(exprs ...Querier) *Selector {
 // AppendSelectExprAs appends additional expressions to the SELECT statement with the given name.
 func (s *Selector) AppendSelectExprAs(expr Querier, as string) *Selector {
 	s.selection = append(s.selection, ExprFunc(func(b *Builder) {
-		b.WriteByte('(')
-		b.Join(expr)
-		b.WriteString(") AS ")
-		b.Ident(as)
+		switch expr.(type) {
+		case *raw:
+			// Raw expressions are not wrapped in parentheses.
+			b.Join(expr).S(" AS ").Ident(as)
+		default:
+			b.S("(").Join(expr).S(") AS ").Ident(as)
+		}
 	}))
 	return s
 }
@@ -2244,7 +2271,7 @@ func (s *Selector) SelectedColumns() []string {
 	return columns
 }
 
-// UnqualifiedColumns returns the an unqualified version of the
+// UnqualifiedColumns returns an unqualified version of the
 // selected columns in the Selector. e.g. "t1"."c" => "c".
 func (s *Selector) UnqualifiedColumns() []string {
 	columns := make([]string, 0, len(s.selection))
@@ -2378,11 +2405,11 @@ func (s *Selector) Table() *SelectTable {
 }
 
 // selectTable returns a *SelectTable from the given TableView.
-func selectTable(tb TableView) *SelectTable {
-	if tb == nil {
+func selectTable(t TableView) *SelectTable {
+	if t == nil {
 		return nil
 	}
-	switch view := tb.(type) {
+	switch view := t.(type) {
 	case *SelectTable:
 		return view
 	case *Selector:
@@ -2390,8 +2417,10 @@ func selectTable(tb TableView) *SelectTable {
 			return nil
 		}
 		return selectTable(view.from[0])
+	case *queryView, *WithBuilder:
+		return nil
 	default:
-		panic(fmt.Sprintf("unhandled TableView type %T", tb))
+		panic(fmt.Sprintf("unexpected TableView %T", t))
 	}
 }
 
@@ -2405,6 +2434,43 @@ func (s *Selector) TableName() string {
 	default:
 		panic(fmt.Sprintf("unhandled TableView type %T", s.from))
 	}
+}
+
+// HasJoins reports if the selector has any JOINs.
+func (s *Selector) HasJoins() bool {
+	return len(s.joins) > 0
+}
+
+// JoinedTable returns the first joined table with the given name.
+func (s *Selector) JoinedTable(name string) (*SelectTable, bool) {
+	for _, j := range s.joins {
+		if t := selectTable(j.table); t != nil && t.name == name {
+			return t, true
+		}
+	}
+	return nil, false
+}
+
+// JoinedTableView returns the first joined TableView with the given name or alias.
+func (s *Selector) JoinedTableView(name string) (TableView, bool) {
+	for _, j := range s.joins {
+		switch t := j.table.(type) {
+		case *SelectTable:
+			if t.name == name || t.as == name {
+				return t, true
+			}
+		case *Selector:
+			if t.as == name {
+				return t, true
+			}
+			for _, t2 := range t.from {
+				if t3 := selectTable(t2); t3 != nil && (t3.name == name || t3.as == name) {
+					return t3, true
+				}
+			}
+		}
+	}
+	return nil, false
 }
 
 // Join appends a `JOIN` clause to the statement.
@@ -2777,6 +2843,14 @@ func (s *Selector) OrderExpr(exprs ...Querier) *Selector {
 	return s
 }
 
+// OrderExprFunc appends the `ORDER BY` expression that evaluates
+// the given function.
+func (s *Selector) OrderExprFunc(f func(*Builder)) *Selector {
+	return s.OrderExpr(
+		Dialect(s.Dialect()).Expr(f),
+	)
+}
+
 // ClearOrder clears the ORDER BY clause to be empty.
 func (s *Selector) ClearOrder() *Selector {
 	s.order = nil
@@ -2824,8 +2898,10 @@ func (s *Selector) Query() (string, []any) {
 			b.Wrap(func(b *Builder) {
 				b.Join(t)
 			})
-			b.WriteString(" AS ")
-			b.Ident(t.as)
+			if t.as != "" {
+				b.WriteString(" AS ")
+				b.Ident(t.as)
+			}
 		case *WithBuilder:
 			t.SetDialect(s.dialect)
 			b.Ident(t.Name())
@@ -3079,7 +3155,7 @@ type WindowBuilder struct {
 }
 
 // RowNumber returns a new window clause with the ROW_NUMBER() as a function.
-// Using this function will assign a each row a number, from 1 to N, in the
+// Using this function will assign each row a number, from 1 to N, in the
 // order defined by the ORDER BY clause in the window spec.
 func RowNumber() *WindowBuilder {
 	return Window(func(b *Builder) {
@@ -3088,7 +3164,7 @@ func RowNumber() *WindowBuilder {
 }
 
 // Window returns a new window clause with a custom selector allowing
-// for custom windown functions.
+// for custom window functions.
 //
 //	Window(func(b *Builder) {
 //		b.WriteString(Sum(posts.C("duration")))
@@ -3225,8 +3301,9 @@ type exprFunc struct {
 }
 
 func (e *exprFunc) Query() (string, []any) {
-	e.fn(&e.Builder)
-	return e.Builder.Query()
+	b := e.Builder.clone()
+	e.fn(&b)
+	return b.Query()
 }
 
 // Queries are list of queries join with space between them.
@@ -3279,12 +3356,12 @@ func (b *Builder) Quote(ident string) string {
 func (b *Builder) Ident(s string) *Builder {
 	switch {
 	case len(s) == 0:
-	case !strings.HasSuffix(s, "*") && !b.isIdent(s) && !isFunc(s) && !isModifier(s):
+	case !strings.HasSuffix(s, "*") && !b.isIdent(s) && !isFunc(s) && !isModifier(s) && !isAlias(s):
 		if b.qualifier != "" {
 			b.WriteString(b.Quote(b.qualifier)).WriteByte('.')
 		}
 		b.WriteString(b.Quote(s))
-	case (isFunc(s) || isModifier(s)) && b.postgres():
+	case (isFunc(s) || isModifier(s) || isAlias(s)) && b.postgres():
 		// Modifiers and aggregation functions that
 		// were called without dialect information.
 		b.WriteString(strings.ReplaceAll(s, "`", `"`))
@@ -3329,6 +3406,11 @@ func (b *Builder) WriteString(s string) *Builder {
 	}
 	b.sb.WriteString(s)
 	return b
+}
+
+// S is a short version of WriteString.
+func (b *Builder) S(s string) *Builder {
+	return b.WriteString(s)
 }
 
 // Len returns the number of accumulated bytes.
@@ -3381,8 +3463,8 @@ func (b *Builder) Err() error {
 // An Op represents an operator.
 type Op int
 
+// Predicate and arithmetic operators.
 const (
-	// Predicate operators.
 	OpEQ      Op = iota // =
 	OpNEQ               // <>
 	OpGT                // >
@@ -3394,13 +3476,11 @@ const (
 	OpLike              // LIKE
 	OpIsNull            // IS NULL
 	OpNotNull           // IS NOT NULL
-
-	// Arithmetic operators.
-	OpAdd // +
-	OpSub // -
-	OpMul // *
-	OpDiv // / (Quotient)
-	OpMod // % (Reminder)
+	OpAdd               // +
+	OpSub               // -
+	OpMul               // *
+	OpDiv               // / (Quotient)
+	OpMod               // % (Reminder)
 )
 
 var ops = [...]string{
@@ -3444,7 +3524,7 @@ type (
 	}
 	// ParamFormatter wraps the FormatPram function.
 	ParamFormatter interface {
-		// The FormatParam function lets users to define
+		// The FormatParam function lets users define
 		// custom placeholder formatting for their types.
 		// For example, formatting the default placeholder
 		// from '?' to 'ST_GeomFromWKB(?)' for MySQL dialect.
@@ -3454,15 +3534,15 @@ type (
 
 // Arg appends an input argument to the builder.
 func (b *Builder) Arg(a any) *Builder {
-	switch a := a.(type) {
+	switch v := a.(type) {
 	case nil:
 		b.WriteString("NULL")
 		return b
 	case *raw:
-		b.WriteString(a.s)
+		b.WriteString(v.s)
 		return b
 	case Querier:
-		b.Join(a)
+		b.Join(v)
 		return b
 	}
 	// Default placeholder param (MySQL and SQLite).
@@ -3662,6 +3742,19 @@ func Dialect(name string) *DialectBuilder {
 	return &DialectBuilder{name}
 }
 
+// String builds a dialect-aware expression string from the given callback.
+func (d *DialectBuilder) String(f func(*Builder)) string {
+	b := &Builder{}
+	b.SetDialect(d.dialect)
+	f(b)
+	return b.String()
+}
+
+// Expr builds a dialect-aware expression from the given callback.
+func (d *DialectBuilder) Expr(f func(*Builder)) Querier {
+	return Expr(d.String(f))
+}
+
 // Describe creates a DescribeBuilder for the configured dialect.
 //
 //	Dialect(dialect.Postgres).
@@ -3817,6 +3910,10 @@ func (d *DialectBuilder) DropIndex(name string) *DropIndexBuilder {
 	b := DropIndex(name)
 	b.SetDialect(d.dialect)
 	return b
+}
+
+func isAlias(s string) bool {
+	return strings.Contains(s, " AS ") || strings.Contains(s, " as ")
 }
 
 func isFunc(s string) bool {
