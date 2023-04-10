@@ -40,8 +40,8 @@ func main() {
 
 	defer secondary.Close()
 
-	if err := secondary.Debug().Schema.Create(ctx); err != nil {
-		log.Log().Panic("failed to create secondary schema", log.ErrorField(err))
+	if err := ResetTable(ctx, secondary); err != nil {
+		log.Log().Panic("failed to drop table", log.ErrorField(err))
 	}
 
 	if err := Import(ctx, secondary, entity); err != nil {
@@ -84,9 +84,9 @@ func Export(ctx context.Context, client *gateway.RDB) (Entity, error) {
 
 const dropTableQuery = "DROP TABLE IF EXISTS %s CASCADE"
 
-//nolint:funlen
-func Import(ctx context.Context, client *gateway.RDB, entity Entity) error { //nolint:cyclop
-	log.GetLogCtx(ctx).Info("start import")
+//nolint:cyclop
+func ResetTable(ctx context.Context, client *gateway.RDB) error {
+	log.GetLogCtx(ctx).Info("start drop table")
 
 	tx, err := client.BeginTx(ctx, nil)
 	if err != nil {
@@ -115,6 +115,32 @@ func Import(ctx context.Context, client *gateway.RDB, entity Entity) error { //n
 		}
 
 		return fmt.Errorf("failed to drop article tag table: %w", err)
+	}
+
+	if err := tx.Client().Debug().Schema.Create(ctx); err != nil {
+		log.Log().Panic("failed to create secondary schema", log.ErrorField(err))
+	}
+
+	if err := tx.Commit(); err != nil {
+		if err := tx.Rollback(); err != nil {
+			return fmt.Errorf("failed to rollback transaction: %w", err)
+		}
+
+		return fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	log.GetLogCtx(ctx).Info("commit transaction")
+
+	return nil
+}
+
+//nolint:funlen
+func Import(ctx context.Context, client *gateway.RDB, entity Entity) error { //nolint:cyclop
+	log.GetLogCtx(ctx).Info("start import")
+
+	tx, err := client.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("failed to begin transaction: %w", err)
 	}
 
 	userBulk := make([]*ent.UserCreate, len(entity.Users))
