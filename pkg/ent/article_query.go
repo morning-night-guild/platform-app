@@ -21,7 +21,7 @@ import (
 type ArticleQuery struct {
 	config
 	ctx        *QueryContext
-	order      []OrderFunc
+	order      []article.Order
 	inters     []Interceptor
 	predicates []predicate.Article
 	withTags   *ArticleTagQuery
@@ -56,7 +56,7 @@ func (aq *ArticleQuery) Unique(unique bool) *ArticleQuery {
 }
 
 // Order specifies how the records should be ordered.
-func (aq *ArticleQuery) Order(o ...OrderFunc) *ArticleQuery {
+func (aq *ArticleQuery) Order(o ...article.Order) *ArticleQuery {
 	aq.order = append(aq.order, o...)
 	return aq
 }
@@ -272,7 +272,7 @@ func (aq *ArticleQuery) Clone() *ArticleQuery {
 	return &ArticleQuery{
 		config:     aq.config,
 		ctx:        aq.ctx.Clone(),
-		order:      append([]OrderFunc{}, aq.order...),
+		order:      append([]article.Order{}, aq.order...),
 		inters:     append([]Interceptor{}, aq.inters...),
 		predicates: append([]predicate.Article{}, aq.predicates...),
 		withTags:   aq.withTags.Clone(),

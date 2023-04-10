@@ -20,7 +20,7 @@ import (
 type ArticleTagQuery struct {
 	config
 	ctx         *QueryContext
-	order       []OrderFunc
+	order       []articletag.Order
 	inters      []Interceptor
 	predicates  []predicate.ArticleTag
 	withArticle *ArticleQuery
@@ -55,7 +55,7 @@ func (atq *ArticleTagQuery) Unique(unique bool) *ArticleTagQuery {
 }
 
 // Order specifies how the records should be ordered.
-func (atq *ArticleTagQuery) Order(o ...OrderFunc) *ArticleTagQuery {
+func (atq *ArticleTagQuery) Order(o ...articletag.Order) *ArticleTagQuery {
 	atq.order = append(atq.order, o...)
 	return atq
 }
@@ -271,7 +271,7 @@ func (atq *ArticleTagQuery) Clone() *ArticleTagQuery {
 	return &ArticleTagQuery{
 		config:      atq.config,
 		ctx:         atq.ctx.Clone(),
-		order:       append([]OrderFunc{}, atq.order...),
+		order:       append([]articletag.Order{}, atq.order...),
 		inters:      append([]Interceptor{}, atq.inters...),
 		predicates:  append([]predicate.ArticleTag{}, atq.predicates...),
 		withArticle: atq.withArticle.Clone(),
@@ -455,6 +455,9 @@ func (atq *ArticleTagQuery) querySpec() *sqlgraph.QuerySpec {
 			if fields[i] != articletag.FieldID {
 				_spec.Node.Columns = append(_spec.Node.Columns, fields[i])
 			}
+		}
+		if atq.withArticle != nil {
+			_spec.Node.AddColumnOnce(articletag.FieldArticleID)
 		}
 	}
 	if ps := atq.predicates; len(ps) > 0 {

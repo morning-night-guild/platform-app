@@ -142,12 +142,29 @@ func NewStep(opts ...StepOption) *Step {
 	return s
 }
 
+// FromEdgeOwner returns true if the step is from an edge owner.
+// i.e., from the table that holds the foreign-key.
+func (s *Step) FromEdgeOwner() bool {
+	return s.Edge.Rel == M2O || (s.Edge.Rel == O2O && s.Edge.Inverse)
+}
+
+// ToEdgeOwner returns true if the step is to an edge owner.
+// i.e., to the table that holds the foreign-key.
+func (s *Step) ToEdgeOwner() bool {
+	return s.Edge.Rel == O2M || (s.Edge.Rel == O2O && !s.Edge.Inverse)
+}
+
+// ThroughEdgeTable returns true if the step is through a join-table.
+func (s *Step) ThroughEdgeTable() bool {
+	return s.Edge.Rel == M2M
+}
+
 // Neighbors returns a Selector for evaluating the path-step
 // and getting the neighbors of one vertex.
 func Neighbors(dialect string, s *Step) (q *sql.Selector) {
 	builder := sql.Dialect(dialect)
-	switch r := s.Edge.Rel; {
-	case r == M2M:
+	switch {
+	case s.ThroughEdgeTable():
 		pk1, pk2 := s.Edge.Columns[1], s.Edge.Columns[0]
 		if s.Edge.Inverse {
 			pk1, pk2 = pk2, pk1
@@ -161,7 +178,7 @@ func Neighbors(dialect string, s *Step) (q *sql.Selector) {
 			From(to).
 			Join(match).
 			On(to.C(s.To.Column), match.C(pk1))
-	case r == M2O || (r == O2O && s.Edge.Inverse):
+	case s.FromEdgeOwner():
 		t1 := builder.Table(s.To.Table).Schema(s.To.Schema)
 		t2 := builder.Select(s.Edge.Columns[0]).
 			From(builder.Table(s.Edge.Table).Schema(s.Edge.Schema)).
@@ -170,7 +187,7 @@ func Neighbors(dialect string, s *Step) (q *sql.Selector) {
 			From(t1).
 			Join(t2).
 			On(t1.C(s.To.Column), t2.C(s.Edge.Columns[0]))
-	case r == O2M || (r == O2O && !s.Edge.Inverse):
+	case s.ToEdgeOwner():
 		q = builder.Select().
 			From(builder.Table(s.To.Table).Schema(s.To.Schema)).
 			Where(sql.EQ(s.Edge.Columns[0], s.From.V))
@@ -183,8 +200,8 @@ func Neighbors(dialect string, s *Step) (q *sql.Selector) {
 func SetNeighbors(dialect string, s *Step) (q *sql.Selector) {
 	set := s.From.V.(*sql.Selector)
 	builder := sql.Dialect(dialect)
-	switch r := s.Edge.Rel; {
-	case r == M2M:
+	switch {
+	case s.ThroughEdgeTable():
 		pk1, pk2 := s.Edge.Columns[1], s.Edge.Columns[0]
 		if s.Edge.Inverse {
 			pk1, pk2 = pk2, pk1
@@ -200,14 +217,14 @@ func SetNeighbors(dialect string, s *Step) (q *sql.Selector) {
 			From(to).
 			Join(match).
 			On(to.C(s.To.Column), match.C(pk1))
-	case r == M2O || (r == O2O && s.Edge.Inverse):
+	case s.FromEdgeOwner():
 		t1 := builder.Table(s.To.Table).Schema(s.To.Schema)
 		set.Select(set.C(s.Edge.Columns[0]))
 		q = builder.Select().
 			From(t1).
 			Join(set).
 			On(t1.C(s.To.Column), set.C(s.Edge.Columns[0]))
-	case r == O2M || (r == O2O && !s.Edge.Inverse):
+	case s.ToEdgeOwner():
 		t1 := builder.Table(s.To.Table).Schema(s.To.Schema)
 		set.Select(set.C(s.From.Column))
 		q = builder.Select().
@@ -221,8 +238,8 @@ func SetNeighbors(dialect string, s *Step) (q *sql.Selector) {
 // HasNeighbors applies on the given Selector a neighbors check.
 func HasNeighbors(q *sql.Selector, s *Step) {
 	builder := sql.Dialect(q.Dialect())
-	switch r := s.Edge.Rel; {
-	case r == M2M:
+	switch {
+	case s.ThroughEdgeTable():
 		pk1 := s.Edge.Columns[0]
 		if s.Edge.Inverse {
 			pk1 = s.Edge.Columns[1]
@@ -234,9 +251,9 @@ func HasNeighbors(q *sql.Selector, s *Step) {
 				builder.Select(join.C(pk1)).From(join),
 			),
 		)
-	case r == M2O || (r == O2O && s.Edge.Inverse):
+	case s.FromEdgeOwner():
 		q.Where(sql.NotNull(q.C(s.Edge.Columns[0])))
-	case r == O2M || (r == O2O && !s.Edge.Inverse):
+	case s.ToEdgeOwner():
 		to := builder.Table(s.Edge.Table).Schema(s.Edge.Schema)
 		q.Where(
 			sql.In(
@@ -253,8 +270,8 @@ func HasNeighbors(q *sql.Selector, s *Step) {
 // The given predicate applies its filtering on the selector.
 func HasNeighborsWith(q *sql.Selector, s *Step, pred func(*sql.Selector)) {
 	builder := sql.Dialect(q.Dialect())
-	switch r := s.Edge.Rel; {
-	case r == M2M:
+	switch {
+	case s.ThroughEdgeTable():
 		pk1, pk2 := s.Edge.Columns[1], s.Edge.Columns[0]
 		if s.Edge.Inverse {
 			pk1, pk2 = pk2, pk1
@@ -270,14 +287,14 @@ func HasNeighborsWith(q *sql.Selector, s *Step, pred func(*sql.Selector)) {
 		pred(matches)
 		join.FromSelect(matches)
 		q.Where(sql.In(q.C(s.From.Column), join))
-	case r == M2O || (r == O2O && s.Edge.Inverse):
+	case s.FromEdgeOwner():
 		to := builder.Table(s.To.Table).Schema(s.To.Schema)
 		matches := builder.Select(to.C(s.To.Column)).
 			From(to)
 		matches.WithContext(q.Context())
 		pred(matches)
 		q.Where(sql.In(q.C(s.Edge.Columns[0]), matches))
-	case r == O2M || (r == O2O && !s.Edge.Inverse):
+	case s.ToEdgeOwner():
 		to := builder.Table(s.Edge.Table).Schema(s.Edge.Schema)
 		matches := builder.Select(to.C(s.Edge.Columns[0])).
 			From(to)
@@ -285,6 +302,198 @@ func HasNeighborsWith(q *sql.Selector, s *Step, pred func(*sql.Selector)) {
 		pred(matches)
 		q.Where(sql.In(q.C(s.From.Column), matches))
 	}
+}
+
+// countAlias returns the alias to use for the count column.
+func countAlias(q *sql.Selector, s *Step, opt *sql.OrderTermOptions) string {
+	if opt.As != "" {
+		return opt.As
+	}
+	selected := make(map[string]struct{})
+	for _, c := range q.SelectedColumns() {
+		selected[c] = struct{}{}
+	}
+	column := fmt.Sprintf("count_%s", s.To.Table)
+	// If the column was already selected,
+	// try to find a free alias.
+	if _, ok := selected[column]; ok {
+		for i := 1; i <= 5; i++ {
+			ci := fmt.Sprintf("%s_%d", column, i)
+			if _, ok := selected[ci]; !ok {
+				return ci
+			}
+		}
+	}
+	return column
+}
+
+// OrderByNeighborsCount appends ordering based on the number of neighbors.
+// For example, order users by their number of posts.
+func OrderByNeighborsCount(q *sql.Selector, s *Step, opts ...sql.OrderTermOption) {
+	var (
+		join  *sql.Selector
+		opt   = sql.NewOrderTermOptions(opts...)
+		build = sql.Dialect(q.Dialect())
+	)
+	switch {
+	case s.FromEdgeOwner():
+		// For M2O and O2O inverse, the FK resides in the same table.
+		// Hence, the order by is on the nullability of the column.
+		x := func(b *sql.Builder) {
+			b.Ident(s.From.Column)
+			if opt.Desc {
+				b.WriteOp(sql.OpNotNull)
+			} else {
+				b.WriteOp(sql.OpIsNull)
+			}
+		}
+		q.OrderExpr(build.Expr(x))
+	case s.ThroughEdgeTable():
+		countAs := countAlias(q, s, opt)
+		terms := []sql.OrderTerm{
+			sql.OrderByCount("*", append([]sql.OrderTermOption{sql.OrderAs(countAs)}, opts...)...),
+		}
+		pk1 := s.Edge.Columns[0]
+		if s.Edge.Inverse {
+			pk1 = s.Edge.Columns[1]
+		}
+		joinT := build.Table(s.Edge.Table).Schema(s.Edge.Schema)
+		join = build.Select(
+			joinT.C(pk1),
+		).From(joinT).GroupBy(joinT.C(pk1))
+		selectTerms(join, terms)
+		q.LeftJoin(join).
+			On(
+				q.C(s.From.Column),
+				join.C(pk1),
+			)
+		orderTerms(q, join, terms)
+	case s.ToEdgeOwner():
+		countAs := countAlias(q, s, opt)
+		terms := []sql.OrderTerm{
+			sql.OrderByCount("*", append([]sql.OrderTermOption{sql.OrderAs(countAs)}, opts...)...),
+		}
+		edgeT := build.Table(s.Edge.Table).Schema(s.Edge.Schema)
+		join = build.Select(
+			edgeT.C(s.Edge.Columns[0]),
+		).From(edgeT).GroupBy(edgeT.C(s.Edge.Columns[0]))
+		selectTerms(join, terms)
+		q.LeftJoin(join).
+			On(
+				q.C(s.From.Column),
+				join.C(s.Edge.Columns[0]),
+			)
+		orderTerms(q, join, terms)
+	}
+}
+
+func orderTerms(q, join *sql.Selector, ts []sql.OrderTerm) {
+	for _, t := range ts {
+		t := t
+		q.OrderExprFunc(func(b *sql.Builder) {
+			var desc, nullsfirst, nullslast bool
+			switch t := t.(type) {
+			case *sql.OrderFieldTerm:
+				f := t.Field
+				if t.As != "" {
+					f = t.As
+				}
+				c := join.C(f)
+				b.WriteString(c)
+				if t.Selected {
+					q.AppendSelect(c)
+				}
+				desc = t.Desc
+				nullsfirst = t.NullsFirst
+				nullslast = t.NullsLast
+			case *sql.OrderExprTerm:
+				if t.As != "" {
+					c := join.C(t.As)
+					b.WriteString(c)
+					if t.Selected {
+						q.AppendSelect(c)
+					}
+				} else {
+					b.Join(t.Expr(join))
+				}
+				desc = t.Desc
+				nullsfirst = t.NullsFirst
+				nullslast = t.NullsLast
+			default:
+				return
+			}
+			// Unlike MySQL and SQLite, NULL values sort as if larger than any other value. Therefore,
+			// we need to explicitly order NULLs first on ASC and last on DESC unless specified otherwise.
+			switch normalizePG := b.Dialect() == dialect.Postgres && !nullsfirst && !nullslast; {
+			case normalizePG && desc:
+				b.WriteString(" DESC NULLS LAST")
+			case normalizePG:
+				b.WriteString(" NULLS FIRST")
+			case desc:
+				b.WriteString(" DESC")
+			}
+			if nullsfirst {
+				b.WriteString(" NULLS FIRST")
+			} else if nullslast {
+				b.WriteString(" NULLS LAST")
+			}
+		})
+	}
+}
+
+// selectTerms appends the select terms to the joined query.
+// Afterward, the term aliases are utilized to order the root query.
+func selectTerms(q *sql.Selector, ts []sql.OrderTerm) {
+	for _, t := range ts {
+		switch t := t.(type) {
+		case *sql.OrderFieldTerm:
+			q.AppendSelect(q.C(t.Field))
+		case *sql.OrderExprTerm:
+			q.AppendSelectExprAs(t.Expr(q), t.As)
+		}
+	}
+}
+
+// OrderByNeighborTerms appends ordering based on the number of neighbors.
+// For example, order users by their number of posts.
+func OrderByNeighborTerms(q *sql.Selector, s *Step, opts ...sql.OrderTerm) {
+	var (
+		join  *sql.Selector
+		build = sql.Dialect(q.Dialect())
+	)
+	switch {
+	case s.FromEdgeOwner():
+		toT := build.Table(s.To.Table).Schema(s.To.Schema)
+		join = build.Select(toT.C(s.To.Column)).
+			From(toT)
+		selectTerms(join, opts)
+		q.LeftJoin(join).
+			On(q.C(s.Edge.Columns[0]), join.C(s.To.Column))
+	case s.ThroughEdgeTable():
+		pk1, pk2 := s.Edge.Columns[1], s.Edge.Columns[0]
+		if s.Edge.Inverse {
+			pk1, pk2 = pk2, pk1
+		}
+		toT := build.Table(s.To.Table).Schema(s.To.Schema)
+		joinT := build.Table(s.Edge.Table).Schema(s.Edge.Schema)
+		join = build.Select(pk2).
+			From(toT).
+			Join(joinT).
+			On(toT.C(s.To.Column), joinT.C(pk1)).
+			GroupBy(pk2)
+		selectTerms(join, opts)
+		q.LeftJoin(join).
+			On(q.C(s.From.Column), join.C(pk2))
+	case s.ToEdgeOwner():
+		toT := build.Table(s.Edge.Table).Schema(s.Edge.Schema)
+		join = build.Select(toT.C(s.Edge.Columns[0])).
+			From(toT).
+			GroupBy(toT.C(s.Edge.Columns[0]))
+		selectTerms(join, opts)
+		q.LeftJoin(join).
+			On(q.C(s.From.Column), join.C(s.Edge.Columns[0]))
+	}
+	orderTerms(q, join, opts)
 }
 
 type (
@@ -335,6 +544,17 @@ type (
 // NewFieldSpec creates a new FieldSpec with its required fields.
 func NewFieldSpec(column string, typ field.Type) *FieldSpec {
 	return &FieldSpec{Column: column, Type: typ}
+}
+
+// AddColumnOnce adds the given column to the spec if it is not already present.
+func (n *NodeSpec) AddColumnOnce(column string) *NodeSpec {
+	for _, c := range n.Columns {
+		if c == column {
+			return n
+		}
+	}
+	n.Columns = append(n.Columns, column)
+	return n
 }
 
 // FieldValues returns the values of additional fields that were set on the join-table.
@@ -668,6 +888,11 @@ func (q *query) nodes(ctx context.Context, drv dialect.Driver) error {
 		values, err := q.ScanValues(columns)
 		if err != nil {
 			return err
+		}
+		for i, v := range values {
+			if _, ok := v.(*sql.UnknownType); ok {
+				values[i] = sql.ScanTypeOf(rows, i)
+			}
 		}
 		if err := rows.Scan(values...); err != nil {
 			return err
@@ -1011,6 +1236,11 @@ func (u *updater) scan(rows *sql.Rows) error {
 	if err != nil {
 		return err
 	}
+	for i, v := range values {
+		if _, ok := v.(*sql.UnknownType); ok {
+			values[i] = sql.ScanTypeOf(rows, i)
+		}
+	}
 	if err := rows.Scan(values...); err != nil {
 		return fmt.Errorf("failed scanning rows: %w", err)
 	}
@@ -1180,7 +1410,7 @@ func (c *batchCreator) nodes(ctx context.Context, drv dialect.Driver) error {
 					// If the ID value was provided to one of the nodes, it should be
 					// provided to all others because this affects the way we calculate
 					// their values in MySQL and SQLite dialects.
-					return fmt.Errorf("incosistent id values for batch insert")
+					return fmt.Errorf("inconsistent id values for batch insert")
 				}
 				// Assign NULL values for empty placeholders.
 				values[i][column] = nil
@@ -1619,7 +1849,7 @@ func (c *batchCreator) insertLastIDs(ctx context.Context, tx dialect.ExecQuerier
 				return err
 			}
 		}
-		return nil
+		return rows.Err()
 	}
 	// MySQL.
 	var res sql.Result
