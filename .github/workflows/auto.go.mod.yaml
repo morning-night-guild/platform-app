@@ -32,7 +32,7 @@ jobs:
       - name: Setup aqua
         uses: aquaproj/aqua-installer@v2.1.1
         with:
-          aqua_version: v2.3.1
+          aqua_version: v2.3.2
       - name: Install buf
         run: ${AQUA_ROOT_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/aquaproj-aqua}/bin/aqua install -t buf
       - name: Install protoc-gen-go
