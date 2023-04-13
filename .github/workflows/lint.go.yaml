@@ -30,6 +30,12 @@ jobs:
           version: v1.52.2
           working-directory: e2e # FIXME: https://github.com/golangci/golangci-lint/issues/3711
           args: --allow-parallel-runners
+      - name: Golangci-lint integration
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: v1.52.2
+          working-directory: integration # FIXME: https://github.com/golangci/golangci-lint/issues/3711
+          args: --allow-parallel-runners
       - name: Golangci-lint cmd
         uses: golangci/golangci-lint-action@v3
         with:
