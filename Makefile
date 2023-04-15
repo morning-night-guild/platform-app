@@ -24,6 +24,10 @@ tool: ## Install tool.
 dev: ## Make development.
 	@docker compose --project-name ${APP_NAME} --file ./.docker/docker-compose.yaml up -d
 
+.PHONY: devtest
+devtest: ## Make development for test.
+	@docker compose --project-name ${APP_NAME} --file ./.docker/test.docker-compose.yaml up -d
+
 .PHONY: redev
 redev: ## restart dev container
 	@touch cmd/app/core/main.go
@@ -63,6 +67,7 @@ fmt: ## Format code.
 lint: ## Lint code. FIXME: https://github.com/golangci/golangci-lint/issues/3711
 	@golangci-lint run ./internal/... --fix
 	@golangci-lint run ./e2e/... --fix
+	@golangci-lint run ./integration/... --fix
 	@golangci-lint run ./cmd/... --fix
 
 .PHONY: mod
@@ -93,6 +98,18 @@ if [ -z "$1" ]; then \
 	go test ./internal/... ; \
 else \
 	go test ./internal/... -count=1 ; \
+fi
+endef
+
+.PHONY: integration
+integration: ## Run integration test. If you want to invalidate the cache, please specify an argument like `make integration c=c`.
+	@$(call _integration,${c})
+
+define _integration
+if [ -z "$1" ]; then \
+	go test ./integration/... ; \
+else \
+	go test ./integration/... -count=1 ; \
 fi
 endef
 
