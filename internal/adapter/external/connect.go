@@ -22,5 +22,5 @@ func NewRequest[T any](ctx context.Context, msg *T) *connect.Request[T] {
 
 	req.Header().Set(HeaderUID, model.GetUIDCtx(ctx).String())
 
-	return connect.NewRequest(msg)
+	return req
 }
