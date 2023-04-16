@@ -131,9 +131,7 @@ func (hdl *Handler) ExtractUserID(
 		return user.GenerateZeroID(), derr.NewUnauthorizedError("failed to new auth token", err)
 	}
 
-	sid := sessionToken.ID(hdl.secret)
-
-	uid := authToken.UserID(sid.ToSecret())
+	uid := authToken.UserID()
 
 	return uid, nil
 }

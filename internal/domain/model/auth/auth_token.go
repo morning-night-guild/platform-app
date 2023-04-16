@@ -1,7 +1,10 @@
 package auth
 
 import (
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
@@ -69,16 +72,28 @@ func (at AuthToken) String() string {
 	return string(at)
 }
 
-func (at AuthToken) UserID(secret Secret) user.ID {
-	parsedToken, _ := jwt.Parse(at.String(), func(token *jwt.Token) (interface{}, error) {
-		return []byte(secret.String()), nil
-	})
+func (at AuthToken) UserID() user.ID {
+	decoded := strings.Split(at.String(), ".")
 
-	claims, _ := parsedToken.Claims.(jwt.MapClaims)
+	dec, err := base64.StdEncoding.DecodeString(decoded[1])
+	if err != nil {
+		return user.GenerateZeroID()
+	}
 
-	id, _ := claims["sub"].(string)
+	type payload struct {
+		Sub string `json:"sub"`
+	}
 
-	uid, _ := user.NewID(id)
+	var p payload
+
+	if err := json.Unmarshal(dec, &p); err != nil {
+		return user.GenerateZeroID()
+	}
+
+	uid, err := user.NewID(p.Sub)
+	if err != nil {
+		return user.GenerateZeroID()
+	}
 
 	return uid
 }
