@@ -91,7 +91,7 @@ func (hdl *Handler) StringToPointer(s string) *string {
 	return &s
 }
 
-func NewRequestWithTID[T any](ctx context.Context, msg *T) *connect.Request[T] {
+func NewRequest[T any](ctx context.Context, msg *T) *connect.Request[T] {
 	req := connect.NewRequest(msg)
 
 	req.Header().Set("tid", trace.GetTIDCtx(ctx))

@@ -28,7 +28,7 @@ func NewHealth(
 }
 
 func (ch *Health) Check(ctx context.Context) error {
-	req := NewRequestWithTID(ctx, &healthv1.CheckRequest{})
+	req := NewRequest(ctx, &healthv1.CheckRequest{})
 
 	if _, err := ch.connect.Check(ctx, req); err != nil {
 		log.GetLogCtx(ctx).Warn("failed to check health core", log.ErrorField(err))

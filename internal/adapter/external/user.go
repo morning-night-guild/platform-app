@@ -31,7 +31,7 @@ func NewUser(
 }
 
 func (usr *User) Create(ctx context.Context) (model.User, error) {
-	req := NewRequestWithTID(ctx, &userv1.CreateRequest{})
+	req := NewRequest(ctx, &userv1.CreateRequest{})
 
 	res, err := usr.connect.Create(ctx, req)
 	if err != nil {
@@ -46,7 +46,7 @@ func (usr *User) Create(ctx context.Context) (model.User, error) {
 }
 
 func (usr *User) Update(ctx context.Context, uid user.ID) (model.User, error) {
-	req := NewRequestWithTID(ctx, &userv1.UpdateRequest{
+	req := NewRequest(ctx, &userv1.UpdateRequest{
 		UserId: uid.String(),
 	})
 
