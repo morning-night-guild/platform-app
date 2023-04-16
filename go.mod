@@ -3,7 +3,7 @@ module github.com/morning-night-guild/platform-app
 go 1.20
 
 require (
-	entgo.io/ent v0.12.0
+	entgo.io/ent v0.12.1
 	firebase.google.com/go/v4 v4.11.0
 	github.com/bufbuild/connect-go v1.6.0
 	github.com/bufbuild/connect-grpchealth-go v1.0.0
