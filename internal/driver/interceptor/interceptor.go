@@ -5,6 +5,9 @@ import (
 	"time"
 
 	"github.com/bufbuild/connect-go"
+	"github.com/morning-night-guild/platform-app/internal/adapter/external"
+	"github.com/morning-night-guild/platform-app/internal/domain/model"
+	"github.com/morning-night-guild/platform-app/internal/domain/model/user"
 	"github.com/morning-night-guild/platform-app/pkg/log"
 	"github.com/morning-night-guild/platform-app/pkg/trace"
 	"go.uber.org/zap"
@@ -20,11 +23,17 @@ func New() connect.UnaryInterceptorFunc {
 		) (connect.AnyResponse, error) {
 			now := time.Now()
 
-			tid := req.Header().Get("tid")
+			tid := req.Header().Get(external.HeaderTID)
 
 			ctx = trace.SetTIDCtx(ctx, tid)
 
 			ctx = log.SetLogCtx(ctx, trace.GetTIDCtx(ctx))
+
+			uid := req.Header().Get(external.HeaderUID)
+
+			userID, _ := user.NewID(uid)
+
+			ctx = model.SetUIDCtx(ctx, userID)
 
 			logger := log.GetLogCtx(ctx)
 
@@ -32,6 +41,7 @@ func New() connect.UnaryInterceptorFunc {
 
 			logger.Info(
 				"access log",
+				zap.String("uid", uid),
 				zap.String("path", req.Spec().Procedure),
 				zap.String("protocol", req.Peer().Protocol),
 				zap.String("addr", req.Peer().Addr),

@@ -38,7 +38,7 @@ func (aa *Article) Share(
 	description article.Description,
 	thumbnail article.Thumbnail,
 ) (model.Article, error) {
-	req := NewRequestWithTID(ctx, &articlev1.ShareRequest{
+	req := NewRequest(ctx, &articlev1.ShareRequest{
 		Url:         url.String(),
 		Title:       title.String(),
 		Description: description.String(),
@@ -69,7 +69,7 @@ func (aa *Article) List(
 	index value.Index,
 	size value.Size,
 ) ([]model.Article, error) {
-	req := NewRequestWithTID(ctx, &articlev1.ListRequest{
+	req := NewRequest(ctx, &articlev1.ListRequest{
 		PageToken:   string(value.CreateNextTokenFromIndex(index)),
 		MaxPageSize: uint32(size),
 	})
@@ -101,7 +101,7 @@ func (aa *Article) Delete(
 	ctx context.Context,
 	articleID article.ID,
 ) error {
-	req := NewRequestWithTID(ctx, &articlev1.DeleteRequest{
+	req := NewRequest(ctx, &articlev1.DeleteRequest{
 		ArticleId: articleID.String(),
 	})
 

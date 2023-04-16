@@ -219,7 +219,7 @@ func (hdl *Handler) V1AuthSignOut(_ http.ResponseWriter, r *http.Request) {
 	}
 
 	input := usecase.APIAuthSignOutInput{
-		UserID:    authToken.UserID(sessionToken.ToSecret(hdl.secret)),
+		UserID:    authToken.UserID(),
 		SessionID: sessionToken.ID(hdl.secret),
 	}
 
@@ -327,12 +327,8 @@ func (hdl *Handler) V1AuthVerify(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sid := sessionToken.ID(hdl.secret)
-
-	uid := authToken.UserID(sid.ToSecret())
-
 	input := usecase.APIAuthVerifyInput{
-		UserID: uid,
+		UserID: authToken.UserID(),
 	}
 
 	if _, err := hdl.auth.Verify(ctx, input); err != nil {
