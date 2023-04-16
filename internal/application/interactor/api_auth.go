@@ -68,17 +68,19 @@ func (aa *APIAuth) SignIn(
 
 	session := model.IssueSession(user.UserID, input.PublicKey)
 
-	if err := aa.sessionCache.Set(ctx, session.SessionID.String(), session, model.DefaultSessionExpiresIn); err != nil {
+	sCmd, err := aa.sessionCache.CreateTxSetCmd(ctx, session.SessionID.String(), session, model.DefaultSessionExpiresIn)
+	if err != nil {
 		return usecase.APIAuthSignInOutput{}, err
 	}
 
 	at := model.IssueAuth(user.UserID)
 
-	if err := aa.authCache.Set(ctx, at.UserID.String(), at, model.DefaultAuthExpiresIn); err != nil {
-		if err := aa.sessionCache.Del(ctx, session.SessionID.String()); err != nil {
-			log.GetLogCtx(ctx).Warn("failed to delete session", log.ErrorField(err))
-		}
+	aCmd, err := aa.authCache.CreateTxSetCmd(ctx, at.UserID.String(), at, model.DefaultAuthExpiresIn)
+	if err != nil {
+		return usecase.APIAuthSignInOutput{}, err
+	}
 
+	if err := aa.sessionCache.Tx(ctx, []cache.TxSetCmd{sCmd, aCmd}, []cache.TxDelCmd{}); err != nil {
 		return usecase.APIAuthSignInOutput{}, err
 	}
 
@@ -153,17 +155,19 @@ func (aa *APIAuth) Refresh(
 		return usecase.APIAuthRefreshOutput{}, errors.NewUnauthorizedError("signature invalid")
 	}
 
-	if err := aa.codeCache.Del(ctx, input.SessionID.String()); err != nil {
-		log.GetLogCtx(ctx).Warn(err.Error())
+	cCmd, err := aa.codeCache.CreateTxDelCmd(ctx, input.SessionID.String())
+	if err != nil {
+		return usecase.APIAuthRefreshOutput{}, err
 	}
 
 	at := model.IssueAuth(session.UserID)
 
-	if err := aa.authCache.Set(ctx, at.UserID.String(), at, model.DefaultAuthExpiresIn); err != nil {
-		if err := aa.sessionCache.Del(ctx, session.SessionID.String()); err != nil {
-			log.GetLogCtx(ctx).Warn("failed to delete session", log.ErrorField(err))
-		}
+	aCmd, err := aa.authCache.CreateTxSetCmd(ctx, at.UserID.String(), at, model.DefaultAuthExpiresIn)
+	if err != nil {
+		return usecase.APIAuthRefreshOutput{}, err
+	}
 
+	if err := aa.authCache.Tx(ctx, []cache.TxSetCmd{aCmd}, []cache.TxDelCmd{cCmd}); err != nil {
 		return usecase.APIAuthRefreshOutput{}, err
 	}
 
