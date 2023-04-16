@@ -8,6 +8,7 @@ import (
 	"github.com/deepmap/oapi-codegen/pkg/types"
 	"github.com/google/uuid"
 	"github.com/morning-night-guild/platform-app/internal/application/usecase"
+	"github.com/morning-night-guild/platform-app/internal/domain/model"
 	"github.com/morning-night-guild/platform-app/internal/domain/model/article"
 	"github.com/morning-night-guild/platform-app/internal/domain/value"
 	"github.com/morning-night-guild/platform-app/pkg/log"
@@ -49,6 +50,8 @@ func (hdl *Handler) V1ArticleList(w http.ResponseWriter, r *http.Request, params
 		Index:  token.ToIndex(),
 		Size:   size,
 	}
+
+	ctx = model.SetUIDCtx(ctx, uid)
 
 	output, err := hdl.article.List(ctx, input)
 	if err != nil {
