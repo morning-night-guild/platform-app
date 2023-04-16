@@ -34,7 +34,7 @@ func (middle *Middleware) Handle(next http.Handler) http.Handler {
 			"access log",
 			zap.String("method", r.Method),
 			zap.String("path", r.RequestURI),
-			// zap.String("addr", req.Peer().Addr),
+			zap.String("addr", r.RemoteAddr),
 			zap.String("ua", r.Header["User-Agent"][0]),
 			// zap.String("code", status.Code(err).String()),
 			zap.String("elapsed", time.Since(now).String()),
