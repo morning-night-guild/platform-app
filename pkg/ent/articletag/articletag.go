@@ -52,26 +52,26 @@ var (
 	DefaultID func() uuid.UUID
 )
 
-// Order defines the ordering method for the ArticleTag queries.
-type Order func(*sql.Selector)
+// OrderOption defines the ordering options for the ArticleTag queries.
+type OrderOption func(*sql.Selector)
 
 // ByID orders the results by the id field.
-func ByID(opts ...sql.OrderTermOption) Order {
+func ByID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldID, opts...).ToFunc()
 }
 
 // ByTag orders the results by the tag field.
-func ByTag(opts ...sql.OrderTermOption) Order {
+func ByTag(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldTag, opts...).ToFunc()
 }
 
 // ByArticleID orders the results by the article_id field.
-func ByArticleID(opts ...sql.OrderTermOption) Order {
+func ByArticleID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldArticleID, opts...).ToFunc()
 }
 
 // ByArticleField orders the results by article field.
-func ByArticleField(field string, opts ...sql.OrderTermOption) Order {
+func ByArticleField(field string, opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
 		sqlgraph.OrderByNeighborTerms(s, newArticleStep(), sql.OrderByField(field, opts...))
 	}
