@@ -42,3 +42,27 @@ func (mock *CacheMock[V]) Del(ctx context.Context, key string) error {
 
 	return mock.DelErr
 }
+
+func (mock *CacheMock[V]) CreateTxSetCmd(ctx context.Context, key string, value V, ttl time.Duration) (TxSetCmd, error) {
+	mock.T.Helper()
+
+	return TxSetCmd{
+		Key:   key,
+		Value: "value",
+		TTL:   ttl,
+	}, nil
+}
+
+func (mock *CacheMock[V]) CreateTxDelCmd(ctx context.Context, key string) (TxDelCmd, error) {
+	mock.T.Helper()
+
+	return TxDelCmd{
+		Key: key,
+	}, nil
+}
+
+func (mock *CacheMock[V]) Tx(ctx context.Context, setCmds []TxSetCmd, delCmds []TxDelCmd) error {
+	mock.T.Helper()
+
+	return nil
+}
