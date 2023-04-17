@@ -77,7 +77,7 @@ func (kvs *KVS[T]) Del(ctx context.Context, key string) error {
 	return nil
 }
 
-func (kvs *KVS[T]) CreateTxSetCmd(ctx context.Context, key string, value T, ttl time.Duration) (cache.TxSetCmd, error) {
+func (kvs *KVS[T]) CreateTxSetCmd(_ context.Context, key string, value T, ttl time.Duration) (cache.TxSetCmd, error) {
 	val, err := json.Marshal(value)
 	if err != nil {
 		return cache.TxSetCmd{}, fmt.Errorf("failed to marshal json: %w", err)
@@ -94,7 +94,7 @@ func (kvs *KVS[T]) CreateTxSetCmd(ctx context.Context, key string, value T, ttl 
 	}, nil
 }
 
-func (kvs *KVS[T]) CreateTxDelCmd(ctx context.Context, key string) (cache.TxDelCmd, error) {
+func (kvs *KVS[T]) CreateTxDelCmd(_ context.Context, key string) (cache.TxDelCmd, error) {
 	key = fmt.Sprintf(prefix, kvs.Prefix, key)
 
 	return cache.TxDelCmd{
