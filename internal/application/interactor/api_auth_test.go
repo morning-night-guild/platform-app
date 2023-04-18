@@ -236,7 +236,7 @@ func TestAPIAuthSignIn(t *testing.T) {
 				},
 				authCache: &cache.CacheMock[model.Auth]{
 					T: t,
-					SetAssert: func(t *testing.T, key string, value model.Auth, ttl time.Duration) {
+					CreateTxSetCmdAssert: func(t *testing.T, key string, value model.Auth, ttl time.Duration) {
 						t.Helper()
 						if !reflect.DeepEqual(ttl, model.DefaultAuthExpiresIn) {
 							t.Errorf("ttl = %v, want %v", ttl, model.DefaultAuthExpiresIn)
@@ -245,11 +245,14 @@ func TestAPIAuthSignIn(t *testing.T) {
 				},
 				sessionCache: &cache.CacheMock[model.Session]{
 					T: t,
-					SetAssert: func(t *testing.T, key string, value model.Session, ttl time.Duration) {
+					CreateTxSetCmdAssert: func(t *testing.T, key string, value model.Session, ttl time.Duration) {
 						t.Helper()
 						if !reflect.DeepEqual(ttl, model.DefaultSessionExpiresIn) {
 							t.Errorf("ttl = %v, want %v", ttl, model.DefaultSessionExpiresIn)
 						}
+					},
+					TxAssert: func(t *testing.T, setCmds []cache.TxSetCmd, delCmds []cache.TxDelCmd) {
+						t.Helper()
 					},
 				},
 			},
@@ -588,17 +591,20 @@ func TestAPIAuthRefresh(t *testing.T) {
 					GetAssert: func(t *testing.T, key string) {
 						t.Helper()
 					},
-					DelAssert: func(t *testing.T, key string) {
+					CreateTxDelCmdAssert: func(t *testing.T, key string) {
 						t.Helper()
 					},
 				},
 				authCache: &cache.CacheMock[model.Auth]{
 					T: t,
-					SetAssert: func(t *testing.T, key string, value model.Auth, ttl time.Duration) {
+					CreateTxSetCmdAssert: func(t *testing.T, key string, value model.Auth, ttl time.Duration) {
 						t.Helper()
 						if !reflect.DeepEqual(ttl, model.DefaultAuthExpiresIn) {
 							t.Errorf("ttl = %v, want %v", ttl, model.DefaultAuthExpiresIn)
 						}
+					},
+					TxAssert: func(t *testing.T, setCmds []cache.TxSetCmd, delCmds []cache.TxDelCmd) {
+						t.Helper()
 					},
 				},
 				sessionCache: &cache.CacheMock[model.Session]{

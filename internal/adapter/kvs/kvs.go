@@ -76,3 +76,58 @@ func (kvs *KVS[T]) Del(ctx context.Context, key string) error {
 
 	return nil
 }
+
+func (kvs *KVS[T]) CreateTxSetCmd(_ context.Context, key string, value T, ttl time.Duration) (cache.TxSetCmd, error) {
+	val, err := json.Marshal(value)
+	if err != nil {
+		return cache.TxSetCmd{}, fmt.Errorf("failed to marshal json: %w", err)
+	}
+
+	key = fmt.Sprintf(prefix, kvs.Prefix, key)
+
+	enc := base64.StdEncoding.EncodeToString(val)
+
+	return cache.TxSetCmd{
+		Key:   key,
+		Value: enc,
+		TTL:   ttl,
+	}, nil
+}
+
+func (kvs *KVS[T]) CreateTxDelCmd(_ context.Context, key string) (cache.TxDelCmd, error) {
+	key = fmt.Sprintf(prefix, kvs.Prefix, key)
+
+	return cache.TxDelCmd{
+		Key: key,
+	}, nil
+}
+
+func (kvs *KVS[T]) Tx(
+	ctx context.Context,
+	sets []cache.TxSetCmd,
+	dels []cache.TxDelCmd,
+) error {
+	if _, err := kvs.Client.TxPipelined(ctx, func(pipe redis.Pipeliner) error {
+		if len(sets) != 0 {
+			for _, set := range sets {
+				if err := pipe.Set(ctx, set.Key, set.Value, set.TTL).Err(); err != nil {
+					return fmt.Errorf("failed to set cache: %w", err)
+				}
+			}
+		}
+
+		if len(dels) != 0 {
+			for _, del := range dels {
+				if err := pipe.Del(ctx, del.Key).Err(); err != nil {
+					return fmt.Errorf("failed to del cache: %w", err)
+				}
+			}
+		}
+
+		return nil
+	}); err != nil {
+		return fmt.Errorf("failed to transaction: %w", err)
+	}
+
+	return nil
+}
