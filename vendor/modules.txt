@@ -114,6 +114,7 @@ github.com/go-openapi/inflect
 github.com/golang-jwt/jwt/v4
 # github.com/golang-jwt/jwt/v5 v5.0.0
 ## explicit; go 1.18
+github.com/golang-jwt/jwt/v5
 # github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da
 ## explicit
 github.com/golang/groupcache/lru
