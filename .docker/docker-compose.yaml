@@ -1,7 +1,7 @@
 services:
   redis:
     container_name: ${APP_NAME}-redis
-    image: redis:7.0.10-alpine
+    image: redis:7.0.11-alpine
     ports:
       - ${REDIS_PORT}:6379
     restart: always
