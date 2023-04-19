@@ -1,13 +1,11 @@
 name: auto pr merge
 run-name: ${{ github.ref_name }} by @${{ github.actor }} ${{ github.workflow }}
 on:
-  pull_request:
-    types:
-      - opened
+  workflow_dispatch:
+# TODO 月次でPRをオートマージするように修正する
 jobs:
   aqua:
     runs-on: ubuntu-22.04
-    if: "startsWith( github.head_ref , 'renovate/aquaproj')"
     steps:
       - name: Check branch
         run: echo "${{ github.head_ref }}"
