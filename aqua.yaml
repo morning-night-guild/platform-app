@@ -11,6 +11,6 @@ packages:
   - name: bufbuild/buf@v1.17.0
   - name: deepmap/oapi-codegen@v1.12.4
   - name: protocolbuffers/protobuf-go/protoc-gen-go@v1.30.0
-  - name: bufbuild/connect-go/protoc-gen-connect-go@v1.6.0
+  - name: bufbuild/connect-go/protoc-gen-connect-go@v1.7.0
   - name: k1LoW/tbls@v1.65.3
   - name: golang/mock@v1.6.0
