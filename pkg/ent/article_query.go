@@ -413,6 +413,9 @@ func (aq *ArticleQuery) loadTags(ctx context.Context, query *ArticleTagQuery, no
 			init(nodes[i])
 		}
 	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(articletag.FieldArticleID)
+	}
 	query.Where(predicate.ArticleTag(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(article.TagsColumn), fks...))
 	}))
@@ -424,7 +427,7 @@ func (aq *ArticleQuery) loadTags(ctx context.Context, query *ArticleTagQuery, no
 		fk := n.ArticleID
 		node, ok := nodeids[fk]
 		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "article_id" returned %v for node %v`, fk, n.ID)
+			return fmt.Errorf(`unexpected referenced foreign-key "article_id" returned %v for node %v`, fk, n.ID)
 		}
 		assign(node, n)
 	}
