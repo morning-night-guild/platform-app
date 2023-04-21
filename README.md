@@ -10,35 +10,50 @@
 
 ## directory structure
 
-four layered architecture
+```shell
+.
+├── api                 // open api schema
+├── cmd                 // application entry point
+├── e2e                 // e2e test
+├── integration         // integration test
+├── internal            // main application code
+├── pkg                 // auto generate code
+├── proto               // proto schema
+└── vendor              // vendor code
+```
+
+four layered architecture (internal directory)
 
 ```shell
 .
 ├── domain
 │   ├── model           // domain model include id
 │   ├── value           // value object
-│   ├── repository      // interface domain model persistence
+│   ├── repository      // interface domain model persistence 
+│   ├── cache           // interface domain model volatilization
 │   └── rpc             // interface domain model remote procedure call
-├── usecase
-│   ├── interactor      // implements port
-│   ├── port            // usecase interface
-│   └── mock            // for test
+├── application
+│   ├── interactor      // implements usecase
+│   └── usecase         // interface
 ├── adapter
 │   ├── controller      // core adapter
 │   ├── gateway         // core adapter (implements repository)
 │   ├── handler         // api adapter
-│   ├── external        // api adapter (implements rpc)
-│   └── mock            // for test
+│   ├── kvs             // api adapter (implements cache)
+│   └── external        // api adapter (implements rpc)
 └── driver
     ├── config
     ├── connect
+    ├── cookie
     ├── cors
-    ├── database
+    ├── postgres
+    ├── firebase
     ├── env
     ├── http
     ├── interceptor
     ├── middleware
     ├── newrelic
+    ├── redis
     ├── router
     └── server
 ```
