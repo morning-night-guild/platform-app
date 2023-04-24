@@ -28,19 +28,19 @@ func TestNewExpiresIn(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "有効期限(3600s)が作成できる",
+			name: "有効期限(600s)が作成できる",
+			args: args{
+				value: 600,
+			},
+			want:    auth.ExpiresIn(600),
+			wantErr: false,
+		},
+		{
+			name: "最大値で有効期限(3600s)が作成できる",
 			args: args{
 				value: 3600,
 			},
 			want:    auth.ExpiresIn(3600),
-			wantErr: false,
-		},
-		{
-			name: "最大値で有効期限(86400s)が作成できる",
-			args: args{
-				value: 86400,
-			},
-			want:    auth.ExpiresIn(86400),
 			wantErr: false,
 		},
 		{
@@ -52,9 +52,9 @@ func TestNewExpiresIn(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "最大値で有効期限(86400s)より大きい値で作成できない",
+			name: "最大値で有効期限(3600s)より大きい値で作成できない",
 			args: args{
-				value: 86401,
+				value: 3601,
 			},
 			want:    auth.ExpiresIn(-1),
 			wantErr: true,

@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	DefaultExpiresInSecond = 86400 // 1 day (60s * 60m * 24h)
+	DefaultExpiresInSecond = 3600 // 1 hour (60s * 60m)
 	DefaultExpiresIn       = ExpiresIn(DefaultExpiresInSecond)
 )
 
