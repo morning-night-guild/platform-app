@@ -67,6 +67,7 @@ type APIAuthRefreshInput struct {
 	CodeID    auth.CodeID
 	Signature auth.Signature
 	SessionID auth.SessionID
+	ExpiresIn auth.ExpiresIn
 }
 
 type APIAuthRefreshOutput struct {

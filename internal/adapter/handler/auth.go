@@ -57,10 +57,16 @@ func (hdl *Handler) V1AuthRefresh(w http.ResponseWriter, r *http.Request, params
 		return
 	}
 
+	expiresIn := auth.DefaultExpiresIn
+	if params.ExpiresIn != nil {
+		expiresIn = auth.ExpiresIn(*params.ExpiresIn)
+	}
+
 	input := usecase.APIAuthRefreshInput{
 		CodeID:    codeID,
 		Signature: signature,
 		SessionID: sessionToken.ID(hdl.secret),
+		ExpiresIn: expiresIn,
 	}
 
 	output, err := hdl.auth.Refresh(ctx, input)

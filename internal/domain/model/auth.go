@@ -39,6 +39,7 @@ func NewAuth(
 
 func IssueAuth(
 	userID user.ID,
+	expiresIn auth.ExpiresIn,
 ) Auth {
 	now := time.Now()
 
@@ -46,7 +47,7 @@ func IssueAuth(
 		AuthID:    userID,
 		UserID:    userID,
 		IssuedAt:  now,
-		ExpiresAt: now.Add(DefaultAuthExpiresIn),
+		ExpiresAt: now.Add(expiresIn.Duration()),
 	}
 }
 

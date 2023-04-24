@@ -73,7 +73,7 @@ func (aa *APIAuth) SignIn(
 		return usecase.APIAuthSignInOutput{}, err
 	}
 
-	at := model.IssueAuth(user.UserID)
+	at := model.IssueAuth(user.UserID, input.ExpiresIn)
 
 	aCmd, err := aa.authCache.CreateTxSetCmd(ctx, at.UserID.String(), at, at.ExpiresIn().Duration())
 	if err != nil {
@@ -161,7 +161,7 @@ func (aa *APIAuth) Refresh(
 		return usecase.APIAuthRefreshOutput{}, err
 	}
 
-	at := model.IssueAuth(session.UserID)
+	at := model.IssueAuth(session.UserID, input.ExpiresIn)
 
 	aCmd, err := aa.authCache.CreateTxSetCmd(ctx, at.UserID.String(), at, model.DefaultAuthExpiresIn)
 	if err != nil {

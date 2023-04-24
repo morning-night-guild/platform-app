@@ -111,6 +111,7 @@ func TestHandlerV1AuthRefresh(t *testing.T) {
 						CodeID:    auth.CodeID(uuid.MustParse(cid)),
 						Signature: auth.Signature("signature"),
 						SessionID: auth.SessionID(uuid.MustParse(sid)),
+						ExpiresIn: auth.DefaultExpiresIn,
 					}).Return(usecase.APIAuthRefreshOutput{}, nil)
 					return mock
 				},
@@ -168,6 +169,7 @@ func TestHandlerV1AuthRefresh(t *testing.T) {
 						CodeID:    auth.CodeID(uuid.MustParse(cid)),
 						Signature: auth.Signature("signature"),
 						SessionID: auth.SessionID(uuid.MustParse(sid)),
+						ExpiresIn: auth.DefaultExpiresIn,
 					}).Return(usecase.APIAuthRefreshOutput{}, fmt.Errorf("error"))
 					return mock
 				},
