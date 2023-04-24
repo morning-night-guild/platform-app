@@ -38,6 +38,7 @@ func GenerateAuthToken(
 	claims := jwt.MapClaims{
 		"sub": userID.String(),
 		"iat": now.Unix(),
+		"exp": now.Add(DefaultExpiresIn.Duration()).Unix(),
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
@@ -75,7 +76,7 @@ func (at AuthToken) String() string {
 func (at AuthToken) UserID() user.ID {
 	decoded := strings.Split(at.String(), ".")
 
-	dec, err := base64.StdEncoding.DecodeString(decoded[1])
+	dec, err := base64.RawStdEncoding.Strict().DecodeString(decoded[1])
 	if err != nil {
 		return user.GenerateZeroID()
 	}
