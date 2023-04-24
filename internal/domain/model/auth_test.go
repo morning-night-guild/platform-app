@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/morning-night-guild/platform-app/internal/domain/model"
+	"github.com/morning-night-guild/platform-app/internal/domain/model/auth"
 	"github.com/morning-night-guild/platform-app/internal/domain/model/user"
 )
 
@@ -124,6 +125,58 @@ func TestAuthIsExpired(t *testing.T) {
 			}
 			if got := at.IsExpired(); got != tt.want {
 				t.Errorf("Auth.IsExpired() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestAuthExpiresIn(t *testing.T) {
+	t.Parallel()
+
+	type fields struct {
+		AuthID    user.ID
+		UserID    user.ID
+		IssuedAt  time.Time
+		ExpiresAt time.Time
+	}
+
+	now := time.Now()
+
+	tests := []struct {
+		name   string
+		fields fields
+		want   auth.ExpiresIn
+	}{
+		{
+			name: "有効期限[s]が計算できる",
+			fields: fields{
+				IssuedAt:  now,
+				ExpiresAt: now.Add(time.Hour),
+			},
+			want: auth.ExpiresIn(time.Hour.Seconds()),
+		},
+		{
+			name: "有効期限[s]が0となる",
+			fields: fields{
+				IssuedAt:  now,
+				ExpiresAt: now.Add(-time.Hour),
+			},
+			want: auth.ExpiresIn(0),
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			at := model.Auth{
+				AuthID:    tt.fields.AuthID,
+				UserID:    tt.fields.UserID,
+				IssuedAt:  tt.fields.IssuedAt,
+				ExpiresAt: tt.fields.ExpiresAt,
+			}
+			if got := at.ExpiresIn(); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Auth.ExpiresIn() = %v, want %v", got, tt.want)
 			}
 		})
 	}

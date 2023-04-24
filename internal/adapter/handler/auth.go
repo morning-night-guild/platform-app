@@ -160,14 +160,12 @@ func (hdl *Handler) V1AuthSignIn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	now := time.Now()
-
 	http.SetCookie(w, &http.Cookie{
 		Name:     auth.AuthTokenKey,
 		Value:    output.AuthToken.String(),
 		Path:     path,
 		Domain:   hdl.cookie.Domain(),
-		Expires:  now.Add(model.DefaultAuthExpiresIn),
+		Expires:  output.Auth.ExpiresAt,
 		Secure:   hdl.cookie.Secure(),
 		HttpOnly: true,
 		SameSite: hdl.cookie.SameSite(),
@@ -178,7 +176,7 @@ func (hdl *Handler) V1AuthSignIn(w http.ResponseWriter, r *http.Request) {
 		Value:    output.SessionToken.String(),
 		Path:     path,
 		Domain:   hdl.cookie.Domain(),
-		Expires:  now.Add(model.DefaultSessionExpiresIn),
+		Expires:  output.Auth.IssuedAt.Add(model.DefaultSessionExpiresIn),
 		Secure:   hdl.cookie.Secure(),
 		HttpOnly: true,
 		SameSite: hdl.cookie.SameSite(),

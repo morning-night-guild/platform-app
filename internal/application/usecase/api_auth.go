@@ -37,6 +37,7 @@ type APIAuthSignInInput struct {
 }
 
 type APIAuthSignInOutput struct {
+	Auth         model.Auth
 	AuthToken    auth.AuthToken
 	SessionToken auth.SessionToken
 }
@@ -69,5 +70,6 @@ type APIAuthRefreshInput struct {
 }
 
 type APIAuthRefreshOutput struct {
+	Auth      model.Auth
 	AuthToken auth.AuthToken
 }

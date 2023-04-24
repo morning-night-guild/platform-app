@@ -2,6 +2,7 @@ package auth
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/morning-night-guild/platform-app/internal/domain/model/errors"
 )
@@ -25,6 +26,10 @@ func NewExpiresIn(value int) (ExpiresIn, error) {
 
 func (ei ExpiresIn) Int() int {
 	return int(ei)
+}
+
+func (ei ExpiresIn) Duration() time.Duration {
+	return time.Duration(ei.Int()) * time.Second
 }
 
 func (ei ExpiresIn) validate() error {

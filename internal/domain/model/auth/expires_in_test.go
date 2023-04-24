@@ -2,6 +2,7 @@ package auth_test
 
 import (
 	"testing"
+	"time"
 
 	"github.com/morning-night-guild/platform-app/internal/domain/model/auth"
 )
@@ -72,6 +73,32 @@ func TestNewExpiresIn(t *testing.T) {
 			}
 			if got != tt.want {
 				t.Errorf("NewExpiresIn() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestExpiresInDuration(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name string
+		ei   auth.ExpiresIn
+		want time.Duration
+	}{
+		{
+			name: "有効期限のDurationが取得できる",
+			ei:   auth.ExpiresIn(600),
+			want: time.Duration(600) * time.Second,
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			if got := tt.ei.Duration(); got != tt.want {
+				t.Errorf("ExpiresIn.Duration() = %v, want %v", got, tt.want)
 			}
 		})
 	}

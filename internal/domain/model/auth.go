@@ -67,3 +67,13 @@ func (at Auth) ToToken(
 ) auth.AuthToken {
 	return auth.GenerateAuthToken(at.UserID, secret)
 }
+
+func (at Auth) ExpiresIn() auth.ExpiresIn {
+	expiresIn := at.ExpiresAt.Unix() - time.Now().Unix()
+
+	if expiresIn > 0 {
+		return auth.ExpiresIn(expiresIn)
+	}
+
+	return auth.ExpiresIn(0)
+}
