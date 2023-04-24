@@ -114,11 +114,11 @@ func (aa *APIAuth) Verify(
 	if err != nil {
 		log.GetLogCtx(ctx).Warn("failed to get auth cache", log.ErrorField(err))
 
-		return usecase.APIAuthVerifyOutput{}, err
+		return usecase.APIAuthVerifyOutput{}, errors.NewUnauthorizedError("not found auth", err)
 	}
 
 	if auth.IsExpired() {
-		return usecase.APIAuthVerifyOutput{}, errors.NewUnauthorizedError("auth token is expired")
+		return usecase.APIAuthVerifyOutput{}, errors.NewUnauthorizedError("auth is expired")
 	}
 
 	return usecase.APIAuthVerifyOutput{}, nil
