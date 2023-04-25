@@ -85,7 +85,7 @@ apiKey
   "email": "morning.night.guild@example.com",
   "password": "password",
   "publicKey": "string",
-  "expiresIn": 86400
+  "expiresIn": 3600
 }
 ```
 
@@ -148,7 +148,7 @@ authTokenCookie, sessionTokenCookie
 
 *リフレッシュ*
 
-セッショントークンとクライアント署名によりIDトークンを再発行する
+セッショントークンとクライアント署名により認証トークンを再発行する
 
 <h3 id="v1authrefresh-parameters">Parameters</h3>
 
@@ -434,7 +434,7 @@ This operation does not require authentication
   "email": "morning.night.guild@example.com",
   "password": "password",
   "publicKey": "string",
-  "expiresIn": 86400
+  "expiresIn": 3600
 }
 
 ```
