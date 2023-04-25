@@ -57,10 +57,16 @@ func (hdl *Handler) V1AuthRefresh(w http.ResponseWriter, r *http.Request, params
 		return
 	}
 
+	expiresIn := auth.DefaultExpiresIn
+	if params.ExpiresIn != nil {
+		expiresIn = auth.ExpiresIn(*params.ExpiresIn)
+	}
+
 	input := usecase.APIAuthRefreshInput{
 		CodeID:    codeID,
 		Signature: signature,
 		SessionID: sessionToken.ID(hdl.secret),
+		ExpiresIn: expiresIn,
 	}
 
 	output, err := hdl.auth.Refresh(ctx, input)
@@ -160,14 +166,12 @@ func (hdl *Handler) V1AuthSignIn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	now := time.Now()
-
 	http.SetCookie(w, &http.Cookie{
 		Name:     auth.AuthTokenKey,
 		Value:    output.AuthToken.String(),
 		Path:     path,
 		Domain:   hdl.cookie.Domain(),
-		Expires:  now.Add(model.DefaultAuthExpiresIn),
+		Expires:  output.Auth.ExpiresAt,
 		Secure:   hdl.cookie.Secure(),
 		HttpOnly: true,
 		SameSite: hdl.cookie.SameSite(),
@@ -178,7 +182,7 @@ func (hdl *Handler) V1AuthSignIn(w http.ResponseWriter, r *http.Request) {
 		Value:    output.SessionToken.String(),
 		Path:     path,
 		Domain:   hdl.cookie.Domain(),
-		Expires:  now.Add(model.DefaultSessionExpiresIn),
+		Expires:  output.Auth.IssuedAt.Add(model.DefaultSessionExpiresIn),
 		Secure:   hdl.cookie.Secure(),
 		HttpOnly: true,
 		SameSite: hdl.cookie.SameSite(),

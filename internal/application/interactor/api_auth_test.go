@@ -262,12 +262,14 @@ func TestAPIAuthSignIn(t *testing.T) {
 					EMail:     auth.EMail("test@example.com"),
 					Password:  auth.Password("password"),
 					PublicKey: rsa.PublicKey{},
+					ExpiresIn: auth.DefaultExpiresIn,
 				},
 			},
 			want: usecase.APIAuthSignInOutput{
 				AuthToken: auth.GenerateAuthToken(
 					user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
 					auth.SessionID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")).ToSecret(),
+					auth.DefaultExpiresIn,
 				),
 				SessionToken: auth.GenerateSessionToken(
 					auth.SessionID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
@@ -627,6 +629,7 @@ func TestAPIAuthRefresh(t *testing.T) {
 					CodeID:    auth.CodeID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
 					Signature: sign(t, key, "01234567-0123-0123-0123-0123456789ab"),
 					SessionID: auth.SessionID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+					ExpiresIn: auth.DefaultExpiresIn,
 				},
 			},
 			want:    usecase.APIAuthRefreshOutput{},

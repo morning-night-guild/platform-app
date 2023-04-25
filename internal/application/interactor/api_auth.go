@@ -73,9 +73,9 @@ func (aa *APIAuth) SignIn(
 		return usecase.APIAuthSignInOutput{}, err
 	}
 
-	at := model.IssueAuth(user.UserID)
+	at := model.IssueAuth(user.UserID, input.ExpiresIn)
 
-	aCmd, err := aa.authCache.CreateTxSetCmd(ctx, at.UserID.String(), at, model.DefaultAuthExpiresIn)
+	aCmd, err := aa.authCache.CreateTxSetCmd(ctx, at.UserID.String(), at, at.ExpiresIn().Duration())
 	if err != nil {
 		return usecase.APIAuthSignInOutput{}, err
 	}
@@ -85,7 +85,8 @@ func (aa *APIAuth) SignIn(
 	}
 
 	return usecase.APIAuthSignInOutput{
-		AuthToken:    at.ToToken(session.SessionID.ToSecret()),
+		Auth:         at,
+		AuthToken:    at.ToToken(session.SessionID.ToSecret()), // secret を model.Auth{} にトークンに変換するときに secret が不要になる
 		SessionToken: session.ToToken(input.Secret),
 	}, nil
 }
@@ -113,11 +114,11 @@ func (aa *APIAuth) Verify(
 	if err != nil {
 		log.GetLogCtx(ctx).Warn("failed to get auth cache", log.ErrorField(err))
 
-		return usecase.APIAuthVerifyOutput{}, err
+		return usecase.APIAuthVerifyOutput{}, errors.NewUnauthorizedError("not found auth", err)
 	}
 
 	if auth.IsExpired() {
-		return usecase.APIAuthVerifyOutput{}, errors.NewUnauthorizedError("auth token is expired")
+		return usecase.APIAuthVerifyOutput{}, errors.NewUnauthorizedError("auth is expired")
 	}
 
 	return usecase.APIAuthVerifyOutput{}, nil
@@ -160,7 +161,7 @@ func (aa *APIAuth) Refresh(
 		return usecase.APIAuthRefreshOutput{}, err
 	}
 
-	at := model.IssueAuth(session.UserID)
+	at := model.IssueAuth(session.UserID, input.ExpiresIn)
 
 	aCmd, err := aa.authCache.CreateTxSetCmd(ctx, at.UserID.String(), at, model.DefaultAuthExpiresIn)
 	if err != nil {

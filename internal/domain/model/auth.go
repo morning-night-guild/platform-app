@@ -39,6 +39,7 @@ func NewAuth(
 
 func IssueAuth(
 	userID user.ID,
+	expiresIn auth.ExpiresIn,
 ) Auth {
 	now := time.Now()
 
@@ -46,7 +47,7 @@ func IssueAuth(
 		AuthID:    userID,
 		UserID:    userID,
 		IssuedAt:  now,
-		ExpiresAt: now.Add(DefaultAuthExpiresIn),
+		ExpiresAt: now.Add(expiresIn.Duration()),
 	}
 }
 
@@ -65,5 +66,15 @@ func (at Auth) IsExpired() bool {
 func (at Auth) ToToken(
 	secret auth.Secret,
 ) auth.AuthToken {
-	return auth.GenerateAuthToken(at.UserID, secret)
+	return auth.GenerateAuthToken(at.UserID, secret, at.ExpiresIn())
+}
+
+func (at Auth) ExpiresIn() auth.ExpiresIn {
+	expiresIn := at.ExpiresAt.Unix() - time.Now().Unix()
+
+	if expiresIn > 0 {
+		return auth.ExpiresIn(expiresIn)
+	}
+
+	return auth.ExpiresIn(0)
 }

@@ -94,7 +94,7 @@ paths:
       tags:
         - auth
       summary: リフレッシュ
-      description: セッショントークンとクライアント署名によりIDトークンを再発行する
+      description: セッショントークンとクライアント署名により認証トークンを再発行する
       operationId: v1AuthRefresh
       security:
         - sessionTokenCookie: []
@@ -120,9 +120,9 @@ paths:
           schema:
             type: integer
             description: トークン有効期限(秒)
-            default: 86400
+            default: 3600
             minimum: 0
-            maximum: 86400
+            maximum: 3600
       responses:
         '200':
           description: OK
@@ -339,9 +339,9 @@ components:
         expiresIn:
           type: integer
           description: トークン有効期限(秒)
-          default: 86400
+          default: 3600
           minimum: 0
-          maximum: 86400
+          maximum: 3600
       required:
         - email
         - password

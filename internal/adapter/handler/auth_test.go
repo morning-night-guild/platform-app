@@ -15,7 +15,7 @@ import (
 	"testing"
 	"time"
 
-	gomock "github.com/golang/mock/gomock"
+	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
 	"github.com/morning-night-guild/platform-app/internal/adapter/handler"
 	"github.com/morning-night-guild/platform-app/internal/application/usecase"
@@ -111,6 +111,7 @@ func TestHandlerV1AuthRefresh(t *testing.T) {
 						CodeID:    auth.CodeID(uuid.MustParse(cid)),
 						Signature: auth.Signature("signature"),
 						SessionID: auth.SessionID(uuid.MustParse(sid)),
+						ExpiresIn: auth.DefaultExpiresIn,
 					}).Return(usecase.APIAuthRefreshOutput{}, nil)
 					return mock
 				},
@@ -168,6 +169,7 @@ func TestHandlerV1AuthRefresh(t *testing.T) {
 						CodeID:    auth.CodeID(uuid.MustParse(cid)),
 						Signature: auth.Signature("signature"),
 						SessionID: auth.SessionID(uuid.MustParse(sid)),
+						ExpiresIn: auth.DefaultExpiresIn,
 					}).Return(usecase.APIAuthRefreshOutput{}, fmt.Errorf("error"))
 					return mock
 				},
@@ -228,6 +230,8 @@ func TestHandlerV1AuthSignIn(t *testing.T) {
 
 	pubkey := NewPublicKey(t)
 
+	expiresIn := 600
+
 	tests := []struct {
 		name   string
 		fields fields
@@ -259,6 +263,36 @@ func TestHandlerV1AuthSignIn(t *testing.T) {
 					Email:     "test@example.com",
 					Password:  "password",
 					PublicKey: pubkey.String(),
+				},
+			},
+			status: http.StatusOK,
+		},
+		{
+			name: "有効期限を指定してサインインできる",
+			fields: fields{
+				auth: func(t *testing.T) usecase.APIAuth {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := usecase.NewMockAPIAuth(ctrl)
+					mock.EXPECT().SignIn(gomock.Any(), usecase.APIAuthSignInInput{
+						Secret:    auth.Secret("secret"),
+						EMail:     auth.EMail("test@example.com"),
+						Password:  auth.Password("password"),
+						PublicKey: pubkey.Key,
+						ExpiresIn: auth.ExpiresIn(600),
+					}).Return(usecase.APIAuthSignInOutput{}, nil)
+					return mock
+				},
+			},
+			args: args{
+				r: &http.Request{
+					Method: http.MethodPost,
+				},
+				body: openapi.V1AuthSignInRequestSchema{
+					Email:     "test@example.com",
+					Password:  "password",
+					PublicKey: pubkey.String(),
+					ExpiresIn: &expiresIn,
 				},
 			},
 			status: http.StatusOK,
