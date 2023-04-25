@@ -23,43 +23,55 @@ func main() {
 
 	primary, err := postgres.New().Of(primaryDSN)
 	if err != nil {
-		log.Log().Panic("failed to connect to primary database", log.ErrorField(err))
+		log.GetLogCtx(ctx).Panic("failed to connect to primary database", log.ErrorField(err))
 	}
 
 	defer primary.Close()
 
 	entity, err := Export(ctx, primary)
 	if err != nil {
-		log.Log().Panic("failed to export", log.ErrorField(err))
+		log.GetLogCtx(ctx).Panic("failed to export", log.ErrorField(err))
 	}
 
 	secondary, err := postgres.New().Of(secondaryDSN)
 	if err != nil {
-		log.Log().Panic("failed to connect to secondary database", log.ErrorField(err))
+		log.GetLogCtx(ctx).Panic("failed to connect to secondary database", log.ErrorField(err))
 	}
 
 	defer secondary.Close()
 
+	log.GetLogCtx(ctx).Info("start transaction")
+
 	tx, err := secondary.Tx(ctx)
 	if err != nil {
-		log.Log().Panic("failed to begin transaction", log.ErrorField(err))
+		log.GetLogCtx(ctx).Panic("failed to begin transaction", log.ErrorField(err))
 	}
 
 	if err := ResetTable(ctx, tx); err != nil {
-		log.Log().Panic("failed to drop table", log.ErrorField(err))
+		if err := tx.Rollback(); err != nil {
+			log.GetLogCtx(ctx).Panic("failed to rollback transaction", log.ErrorField(err))
+		}
+
+		log.GetLogCtx(ctx).Panic("failed to drop table", log.ErrorField(err))
 	}
 
 	if err := Import(ctx, tx, entity); err != nil {
-		log.Log().Panic("failed to import", log.ErrorField(err))
+		if err := tx.Rollback(); err != nil {
+			log.GetLogCtx(ctx).Panic("failed to rollback transaction", log.ErrorField(err))
+		}
+
+		log.GetLogCtx(ctx).Panic("failed to import", log.ErrorField(err))
 	}
 
 	if err := tx.Commit(); err != nil {
 		if err := tx.Rollback(); err != nil {
-			log.Log().Panic("failed to rollback transaction", log.ErrorField(err))
+			log.GetLogCtx(ctx).Panic("failed to rollback transaction", log.ErrorField(err))
 		}
 
-		log.Log().Panic("failed to commit transaction", log.ErrorField(err))
+		log.GetLogCtx(ctx).Panic("failed to commit transaction", log.ErrorField(err))
 	}
+
+	log.GetLogCtx(ctx).Info("end transaction")
 
 	log.GetLogCtx(ctx).Info("success backup")
 }
@@ -102,41 +114,29 @@ func ResetTable(ctx context.Context, tx *ent.Tx) error {
 	log.GetLogCtx(ctx).Info("start drop table")
 
 	if _, err := tx.ExecContext(ctx, fmt.Sprintf(dropTableQuery, user.Table)); err != nil {
-		if err := tx.Rollback(); err != nil {
-			return fmt.Errorf("failed to rollback transaction: %w", err)
-		}
-
 		return fmt.Errorf("failed to drop user table: %w", err)
 	}
 
 	if _, err := tx.ExecContext(ctx, fmt.Sprintf(dropTableQuery, article.Table)); err != nil {
-		if err := tx.Rollback(); err != nil {
-			return fmt.Errorf("failed to rollback transaction: %w", err)
-		}
-
 		return fmt.Errorf("failed to drop article table: %w", err)
 	}
 
 	if _, err := tx.ExecContext(ctx, fmt.Sprintf(dropTableQuery, articletag.Table)); err != nil {
-		if err := tx.Rollback(); err != nil {
-			return fmt.Errorf("failed to rollback transaction: %w", err)
-		}
-
 		return fmt.Errorf("failed to drop article tag table: %w", err)
 	}
 
 	if err := tx.Client().Debug().Schema.Create(ctx); err != nil {
-		log.Log().Panic("failed to create secondary schema", log.ErrorField(err))
+		return fmt.Errorf("failed to create primary schema: %w", err)
 	}
 
-	log.GetLogCtx(ctx).Info("commit transaction")
+	log.GetLogCtx(ctx).Info("end drop table")
 
 	return nil
 }
 
 //nolint:funlen
 func Import(ctx context.Context, tx *ent.Tx, entity Entity) error { //nolint:cyclop
-	log.GetLogCtx(ctx).Info("start import")
+	log.GetLogCtx(ctx).Info("start import data")
 
 	userBulk := make([]*ent.UserCreate, len(entity.Users))
 	for i, user := range entity.Users {
@@ -147,10 +147,6 @@ func Import(ctx context.Context, tx *ent.Tx, entity Entity) error { //nolint:cyc
 	}
 
 	if _, err := tx.User.CreateBulk(userBulk...).Save(ctx); err != nil {
-		if err := tx.Rollback(); err != nil {
-			return fmt.Errorf("failed to rollback transaction: %w", err)
-		}
-
 		return fmt.Errorf("failed to bulk create users: %w", err)
 	}
 
@@ -167,10 +163,6 @@ func Import(ctx context.Context, tx *ent.Tx, entity Entity) error { //nolint:cyc
 	}
 
 	if _, err := tx.Article.CreateBulk(articleBulk...).Save(ctx); err != nil {
-		if err := tx.Rollback(); err != nil {
-			return fmt.Errorf("failed to rollback transaction: %w", err)
-		}
-
 		return fmt.Errorf("failed to bulk create articles: %w", err)
 	}
 
@@ -183,14 +175,10 @@ func Import(ctx context.Context, tx *ent.Tx, entity Entity) error { //nolint:cyc
 	}
 
 	if _, err := tx.ArticleTag.CreateBulk(articleTagBulk...).Save(ctx); err != nil {
-		if err := tx.Rollback(); err != nil {
-			return fmt.Errorf("failed to rollback transaction: %w", err)
-		}
-
 		return fmt.Errorf("failed to bulk create article tags: %w", err)
 	}
 
-	log.GetLogCtx(ctx).Info("commit transaction")
+	log.GetLogCtx(ctx).Info("end import data")
 
 	return nil
 }
