@@ -14,6 +14,7 @@ import (
 	"github.com/morning-night-guild/platform-app/pkg/log"
 )
 
+//nolint:cyclop
 func main() {
 	ctx := context.Background()
 
@@ -109,7 +110,6 @@ func Export(ctx context.Context, client *gateway.RDB) (Entity, error) {
 
 const dropTableQuery = "DROP TABLE IF EXISTS %s CASCADE"
 
-//nolint:cyclop
 func ResetTable(ctx context.Context, tx *ent.Tx) error {
 	log.GetLogCtx(ctx).Info("start drop table")
 
@@ -134,8 +134,7 @@ func ResetTable(ctx context.Context, tx *ent.Tx) error {
 	return nil
 }
 
-//nolint:funlen
-func Import(ctx context.Context, tx *ent.Tx, entity Entity) error { //nolint:cyclop
+func Import(ctx context.Context, tx *ent.Tx, entity Entity) error {
 	log.GetLogCtx(ctx).Info("start import data")
 
 	userBulk := make([]*ent.UserCreate, len(entity.Users))
