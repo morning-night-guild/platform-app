@@ -269,6 +269,7 @@ func TestAPIAuthSignIn(t *testing.T) {
 				AuthToken: auth.GenerateAuthToken(
 					user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
 					auth.SessionID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")).ToSecret(),
+					auth.DefaultExpiresIn,
 				),
 				SessionToken: auth.GenerateSessionToken(
 					auth.SessionID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),

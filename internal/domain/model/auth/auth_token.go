@@ -32,13 +32,14 @@ func ParseAuthToken(
 func GenerateAuthToken(
 	userID user.ID,
 	secret Secret,
+	expiresIn ExpiresIn,
 ) AuthToken {
 	now := time.Now()
 
 	claims := jwt.MapClaims{
 		"sub": userID.String(),
 		"iat": now.Unix(),
-		"exp": now.Add(DefaultExpiresIn.Duration()).Unix(),
+		"exp": now.Add(expiresIn.Duration()).Unix(),
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)

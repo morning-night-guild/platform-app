@@ -42,7 +42,7 @@ func GenerateToken(t *testing.T) struct {
 
 	uid := user.GenerateID()
 
-	at := auth.GenerateAuthToken(uid, sid.ToSecret())
+	at := auth.GenerateAuthToken(uid, sid.ToSecret(), auth.DefaultExpiresIn)
 
 	return struct {
 		UserID             user.ID

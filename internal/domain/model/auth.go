@@ -66,7 +66,7 @@ func (at Auth) IsExpired() bool {
 func (at Auth) ToToken(
 	secret auth.Secret,
 ) auth.AuthToken {
-	return auth.GenerateAuthToken(at.UserID, secret)
+	return auth.GenerateAuthToken(at.UserID, secret, at.ExpiresIn())
 }
 
 func (at Auth) ExpiresIn() auth.ExpiresIn {

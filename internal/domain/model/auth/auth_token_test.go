@@ -19,7 +19,7 @@ func TestAuthTokenUserID(t *testing.T) {
 	}{
 		{
 			name: "認証トークンからUserIDを取得できる",
-			at:   auth.GenerateAuthToken(user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")), auth.Secret("secret")),
+			at:   auth.GenerateAuthToken(user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")), auth.Secret("secret"), auth.DefaultExpiresIn),
 			want: user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
 		},
 	}
