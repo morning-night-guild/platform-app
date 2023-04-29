@@ -192,8 +192,8 @@ github.com/mattn/go-sqlite3
 # github.com/mitchellh/go-wordwrap v1.0.1
 ## explicit; go 1.14
 github.com/mitchellh/go-wordwrap
-# github.com/newrelic/go-agent/v3 v3.21.0
-## explicit; go 1.17
+# github.com/newrelic/go-agent/v3 v3.21.1
+## explicit; go 1.18
 github.com/newrelic/go-agent/v3/internal
 github.com/newrelic/go-agent/v3/internal/cat
 github.com/newrelic/go-agent/v3/internal/com_newrelic_trace_v1
