@@ -37,18 +37,18 @@ func NewAPIAuth(
 	}
 }
 
-func (aa *APIAuth) SignUp(
+func (itr *APIAuth) SignUp(
 	ctx context.Context,
 	input usecase.APIAuthSignUpInput,
 ) (usecase.APIAuthSignUpOutput, error) {
-	user, err := aa.userRPC.Create(ctx)
+	user, err := itr.userRPC.Create(ctx)
 	if err != nil {
 		log.GetLogCtx(ctx).Warn("failed to create user", log.ErrorField(err))
 
 		return usecase.APIAuthSignUpOutput{}, err
 	}
 
-	if err := aa.authRPC.SignUp(ctx, user.UserID, input.EMail, input.Password); err != nil {
+	if err := itr.authRPC.SignUp(ctx, user.UserID, input.EMail, input.Password); err != nil {
 		log.GetLogCtx(ctx).Warn("failed to sign up", log.ErrorField(err))
 
 		return usecase.APIAuthSignUpOutput{}, err
@@ -57,30 +57,30 @@ func (aa *APIAuth) SignUp(
 	return usecase.APIAuthSignUpOutput{}, nil
 }
 
-func (aa *APIAuth) SignIn(
+func (itr *APIAuth) SignIn(
 	ctx context.Context,
 	input usecase.APIAuthSignInInput,
 ) (usecase.APIAuthSignInOutput, error) {
-	user, err := aa.authRPC.SignIn(ctx, input.EMail, input.Password)
+	user, err := itr.authRPC.SignIn(ctx, input.EMail, input.Password)
 	if err != nil {
 		return usecase.APIAuthSignInOutput{}, err
 	}
 
 	session := model.IssueSession(user.UserID, input.PublicKey)
 
-	sCmd, err := aa.sessionCache.CreateTxSetCmd(ctx, session.SessionID.String(), session, model.DefaultSessionExpiresIn)
+	sCmd, err := itr.sessionCache.CreateTxSetCmd(ctx, session.SessionID.String(), session, model.DefaultSessionExpiresIn)
 	if err != nil {
 		return usecase.APIAuthSignInOutput{}, err
 	}
 
 	at := model.IssueAuth(user.UserID, input.ExpiresIn)
 
-	aCmd, err := aa.authCache.CreateTxSetCmd(ctx, at.UserID.String(), at, at.ExpiresIn().Duration())
+	aCmd, err := itr.authCache.CreateTxSetCmd(ctx, at.UserID.String(), at, at.ExpiresIn().Duration())
 	if err != nil {
 		return usecase.APIAuthSignInOutput{}, err
 	}
 
-	if err := aa.sessionCache.Tx(ctx, []cache.TxSetCmd{sCmd, aCmd}, []cache.TxDelCmd{}); err != nil {
+	if err := itr.sessionCache.Tx(ctx, []cache.TxSetCmd{sCmd, aCmd}, []cache.TxDelCmd{}); err != nil {
 		return usecase.APIAuthSignInOutput{}, err
 	}
 
@@ -91,26 +91,26 @@ func (aa *APIAuth) SignIn(
 	}, nil
 }
 
-func (aa *APIAuth) SignOut(
+func (itr *APIAuth) SignOut(
 	ctx context.Context,
 	input usecase.APIAuthSignOutInput,
 ) (usecase.APIAuthSignOutOutput, error) {
-	if err := aa.sessionCache.Del(ctx, input.SessionID.String()); err != nil {
+	if err := itr.sessionCache.Del(ctx, input.SessionID.String()); err != nil {
 		log.GetLogCtx(ctx).Warn("failed to delete session cache", log.ErrorField(err))
 	}
 
-	if err := aa.authCache.Del(ctx, input.UserID.String()); err != nil {
+	if err := itr.authCache.Del(ctx, input.UserID.String()); err != nil {
 		log.GetLogCtx(ctx).Warn("failed to delete auth cache", log.ErrorField(err))
 	}
 
 	return usecase.APIAuthSignOutOutput{}, nil
 }
 
-func (aa *APIAuth) Verify(
+func (itr *APIAuth) Verify(
 	ctx context.Context,
 	input usecase.APIAuthVerifyInput,
 ) (usecase.APIAuthVerifyOutput, error) {
-	auth, err := aa.authCache.Get(ctx, input.UserID.String())
+	auth, err := itr.authCache.Get(ctx, input.UserID.String())
 	if err != nil {
 		log.GetLogCtx(ctx).Warn("failed to get auth cache", log.ErrorField(err))
 
@@ -124,11 +124,11 @@ func (aa *APIAuth) Verify(
 	return usecase.APIAuthVerifyOutput{}, nil
 }
 
-func (aa *APIAuth) Refresh(
+func (itr *APIAuth) Refresh(
 	ctx context.Context,
 	input usecase.APIAuthRefreshInput,
 ) (usecase.APIAuthRefreshOutput, error) {
-	code, err := aa.codeCache.Get(ctx, input.SessionID.String())
+	code, err := itr.codeCache.Get(ctx, input.SessionID.String())
 	if err != nil {
 		return usecase.APIAuthRefreshOutput{}, errors.NewNotFoundError("code is not found", err)
 	}
@@ -141,7 +141,7 @@ func (aa *APIAuth) Refresh(
 		return usecase.APIAuthRefreshOutput{}, errors.NewValidationError("Code is expired")
 	}
 
-	session, err := aa.sessionCache.Get(ctx, input.SessionID.String())
+	session, err := itr.sessionCache.Get(ctx, input.SessionID.String())
 	if err != nil {
 		return usecase.APIAuthRefreshOutput{}, err
 	}
@@ -156,19 +156,19 @@ func (aa *APIAuth) Refresh(
 		return usecase.APIAuthRefreshOutput{}, errors.NewUnauthorizedError("signature invalid")
 	}
 
-	cCmd, err := aa.codeCache.CreateTxDelCmd(ctx, input.SessionID.String())
+	cCmd, err := itr.codeCache.CreateTxDelCmd(ctx, input.SessionID.String())
 	if err != nil {
 		return usecase.APIAuthRefreshOutput{}, err
 	}
 
 	at := model.IssueAuth(session.UserID, input.ExpiresIn)
 
-	aCmd, err := aa.authCache.CreateTxSetCmd(ctx, at.UserID.String(), at, model.DefaultAuthExpiresIn)
+	aCmd, err := itr.authCache.CreateTxSetCmd(ctx, at.UserID.String(), at, model.DefaultAuthExpiresIn)
 	if err != nil {
 		return usecase.APIAuthRefreshOutput{}, err
 	}
 
-	if err := aa.authCache.Tx(ctx, []cache.TxSetCmd{aCmd}, []cache.TxDelCmd{cCmd}); err != nil {
+	if err := itr.authCache.Tx(ctx, []cache.TxSetCmd{aCmd}, []cache.TxDelCmd{cCmd}); err != nil {
 		return usecase.APIAuthRefreshOutput{}, err
 	}
 
@@ -177,13 +177,13 @@ func (aa *APIAuth) Refresh(
 	}, nil
 }
 
-func (aa *APIAuth) GenerateCode(
+func (itr *APIAuth) GenerateCode(
 	ctx context.Context,
 	input usecase.APIAuthGenerateCodeInput,
 ) (usecase.APIAuthGenerateCodeOutput, error) {
 	code := model.GenerateCode(input.SessionID)
 
-	if err := aa.codeCache.Set(ctx, input.SessionID.String(), code, model.DefaultCodeExpiresIn); err != nil {
+	if err := itr.codeCache.Set(ctx, input.SessionID.String(), code, model.DefaultCodeExpiresIn); err != nil {
 		return usecase.APIAuthGenerateCodeOutput{}, err
 	}
 

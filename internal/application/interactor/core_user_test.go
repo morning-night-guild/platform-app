@@ -78,8 +78,8 @@ func TestCoreUserCreate(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			cu := interactor.NewCoreUser(tt.fields.userRepository(t))
-			got, err := cu.Create(tt.args.ctx, tt.args.input)
+			itr := interactor.NewCoreUser(tt.fields.userRepository(t))
+			got, err := itr.Create(tt.args.ctx, tt.args.input)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("CoreUser.Create() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -190,8 +190,8 @@ func TestCoreUserUpdate(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			cu := interactor.NewCoreUser(tt.fields.userRepository(t))
-			got, err := cu.Update(tt.args.ctx, tt.args.input)
+			itr := interactor.NewCoreUser(tt.fields.userRepository(t))
+			got, err := itr.Update(tt.args.ctx, tt.args.input)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("CoreUser.Update() error = %v, wantErr %v", err, tt.wantErr)
 				return

@@ -27,13 +27,13 @@ func NewCoreArticle(
 }
 
 // Share.
-func (ca *CoreArticle) Share(
+func (itr *CoreArticle) Share(
 	ctx context.Context,
 	input usecase.CoreArticleShareInput,
 ) (usecase.CoreArticleShareOutput, error) {
 	item := model.CreateArticle(input.URL, input.Title, input.Description, input.Thumbnail, []article.Tag{})
 
-	if err := ca.articleRepository.Save(ctx, item); err != nil {
+	if err := itr.articleRepository.Save(ctx, item); err != nil {
 		return usecase.CoreArticleShareOutput{}, err
 	}
 
@@ -43,11 +43,11 @@ func (ca *CoreArticle) Share(
 }
 
 // List.
-func (ca *CoreArticle) List(
+func (itr *CoreArticle) List(
 	ctx context.Context,
 	input usecase.CoreArticleListInput,
 ) (usecase.CoreArticleListOutput, error) {
-	articles, err := ca.articleRepository.FindAll(ctx, input.Index, input.Size)
+	articles, err := itr.articleRepository.FindAll(ctx, input.Index, input.Size)
 	if err != nil {
 		return usecase.CoreArticleListOutput{}, err
 	}
@@ -58,11 +58,11 @@ func (ca *CoreArticle) List(
 }
 
 // Delete.
-func (ca *CoreArticle) Delete(
+func (itr *CoreArticle) Delete(
 	ctx context.Context,
 	input usecase.CoreArticleDeleteInput,
 ) (usecase.CoreArticleDeleteOutput, error) {
-	if _, err := ca.articleRepository.Find(ctx, input.ArticleID); err != nil {
+	if _, err := itr.articleRepository.Find(ctx, input.ArticleID); err != nil {
 		if errors.AsNotFoundError(err) {
 			log.GetLogCtx(ctx).Sugar().Warnf("article not found. id=%s", input.ArticleID)
 
@@ -72,7 +72,7 @@ func (ca *CoreArticle) Delete(
 		return usecase.CoreArticleDeleteOutput{}, err
 	}
 
-	if err := ca.articleRepository.Delete(ctx, input.ArticleID); err != nil {
+	if err := itr.articleRepository.Delete(ctx, input.ArticleID); err != nil {
 		return usecase.CoreArticleDeleteOutput{}, err
 	}
 

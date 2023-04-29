@@ -23,13 +23,13 @@ func NewCoreUser(
 	}
 }
 
-func (cu *CoreUser) Create(
+func (itr *CoreUser) Create(
 	ctx context.Context,
 	_ usecase.CoreUserCreateInput,
 ) (usecase.CoreUserCreateOutput, error) {
 	user := model.CreateUser()
 
-	if err := cu.userRepository.Save(ctx, user); err != nil {
+	if err := itr.userRepository.Save(ctx, user); err != nil {
 		log.GetLogCtx(ctx).Warn("failed to save user", log.ErrorField(err))
 
 		return usecase.CoreUserCreateOutput{}, err
@@ -40,18 +40,18 @@ func (cu *CoreUser) Create(
 	}, nil
 }
 
-func (cu *CoreUser) Update(
+func (itr *CoreUser) Update(
 	ctx context.Context,
 	input usecase.CoreUserUpdateInput,
 ) (usecase.CoreUserUpdateOutput, error) {
-	user, err := cu.userRepository.Find(ctx, input.UserID)
+	user, err := itr.userRepository.Find(ctx, input.UserID)
 	if err != nil {
 		log.GetLogCtx(ctx).Warn("failed to find user", log.ErrorField(err))
 
 		return usecase.CoreUserUpdateOutput{}, err
 	}
 
-	if err := cu.userRepository.Save(ctx, user); err != nil {
+	if err := itr.userRepository.Save(ctx, user); err != nil {
 		log.GetLogCtx(ctx).Warn("failed to save user", log.ErrorField(err))
 
 		return usecase.CoreUserUpdateOutput{}, err

@@ -176,14 +176,14 @@ func TestAPIAuthSignUp(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			aa := interactor.NewAPIAuth(
+			itr := interactor.NewAPIAuth(
 				tt.fields.authRPC(t),
 				tt.fields.userRPC(t),
 				tt.fields.authCache,
 				tt.fields.codeCache,
 				tt.fields.sessionCache,
 			)
-			got, err := aa.SignUp(tt.args.ctx, tt.args.input)
+			got, err := itr.SignUp(tt.args.ctx, tt.args.input)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("APIAuth.SignUp() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -284,14 +284,14 @@ func TestAPIAuthSignIn(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			aa := interactor.NewAPIAuth(
+			itr := interactor.NewAPIAuth(
 				tt.fields.authRPC(t),
 				tt.fields.userRPC,
 				tt.fields.authCache,
 				tt.fields.codeCache,
 				tt.fields.sessionCache,
 			)
-			_, err := aa.SignIn(tt.args.ctx, tt.args.input)
+			_, err := itr.SignIn(tt.args.ctx, tt.args.input)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("APIAuth.SignIn() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -412,14 +412,14 @@ func TestAPIAuthSignOut(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			aa := interactor.NewAPIAuth(
+			itr := interactor.NewAPIAuth(
 				tt.fields.authRPC,
 				tt.fields.userRPC,
 				tt.fields.authCache,
 				tt.fields.codeCache,
 				tt.fields.sessionCache,
 			)
-			got, err := aa.SignOut(tt.args.ctx, tt.args.input)
+			got, err := itr.SignOut(tt.args.ctx, tt.args.input)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("APIAuth.SignOut() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -533,14 +533,14 @@ func TestAPIAuthVerify(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			aa := interactor.NewAPIAuth(
+			itr := interactor.NewAPIAuth(
 				tt.fields.authRPC,
 				tt.fields.userRPC,
 				tt.fields.authCache,
 				tt.fields.codeCache,
 				tt.fields.sessionCache,
 			)
-			got, err := aa.Verify(tt.args.ctx, tt.args.input)
+			got, err := itr.Verify(tt.args.ctx, tt.args.input)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("APIAuth.Verify() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -641,14 +641,14 @@ func TestAPIAuthRefresh(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			aa := interactor.NewAPIAuth(
+			itr := interactor.NewAPIAuth(
 				tt.fields.authRPC,
 				tt.fields.userRPC,
 				tt.fields.authCache,
 				tt.fields.codeCache,
 				tt.fields.sessionCache,
 			)
-			_, err := aa.Refresh(tt.args.ctx, tt.args.input)
+			_, err := itr.Refresh(tt.args.ctx, tt.args.input)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("APIAuth.Refresh() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -717,14 +717,14 @@ func TestAPIAuthGenerateCode(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			aa := interactor.NewAPIAuth(
+			itr := interactor.NewAPIAuth(
 				tt.fields.authRPC,
 				tt.fields.userRPC,
 				tt.fields.authCache,
 				tt.fields.codeCache,
 				tt.fields.sessionCache,
 			)
-			got, err := aa.GenerateCode(tt.args.ctx, tt.args.input)
+			got, err := itr.GenerateCode(tt.args.ctx, tt.args.input)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("APIAuth.GenerateCode() error = %v, wantErr %v", err, tt.wantErr)
 				return

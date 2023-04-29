@@ -121,11 +121,11 @@ func TestAPIArticleShare(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			aa := interactor.NewAPIArticle(
+			itr := interactor.NewAPIArticle(
 				tt.fields.authCache,
 				tt.fields.articleRPC(t),
 			)
-			got, err := aa.Share(tt.args.ctx, tt.args.input)
+			got, err := itr.Share(tt.args.ctx, tt.args.input)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("APIArticle.Share() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -281,11 +281,11 @@ func TestAPIArticleList(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			aa := interactor.NewAPIArticle(
+			itr := interactor.NewAPIArticle(
 				tt.fields.authCache,
 				tt.fields.articleRPC(t),
 			)
-			got, err := aa.List(tt.args.ctx, tt.args.input)
+			got, err := itr.List(tt.args.ctx, tt.args.input)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("APIArticle.List() error = %v, wantErr %v", err, tt.wantErr)
 				return

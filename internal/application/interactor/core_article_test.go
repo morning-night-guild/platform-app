@@ -102,8 +102,8 @@ func TestCoreArticleShare(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			ca := interactor.NewCoreArticle(tt.fields.articleRepository(t))
-			got, err := ca.Share(tt.args.ctx, tt.args.input)
+			itr := interactor.NewCoreArticle(tt.fields.articleRepository(t))
+			got, err := itr.Share(tt.args.ctx, tt.args.input)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("CoreArticle.Share() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -199,8 +199,8 @@ func TestCoreArticleList(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			ca := interactor.NewCoreArticle(tt.fields.articleRepository(t))
-			got, err := ca.List(tt.args.ctx, tt.args.input)
+			itr := interactor.NewCoreArticle(tt.fields.articleRepository(t))
+			got, err := itr.List(tt.args.ctx, tt.args.input)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("CoreArticle.List() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -325,8 +325,8 @@ func TestCoreArticleDelete(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			ca := interactor.NewCoreArticle(tt.fields.articleRepository(t))
-			got, err := ca.Delete(tt.args.ctx, tt.args.input)
+			itr := interactor.NewCoreArticle(tt.fields.articleRepository(t))
+			got, err := itr.Delete(tt.args.ctx, tt.args.input)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("CoreArticle.Delete() error = %v, wantErr %v", err, tt.wantErr)
 				return
