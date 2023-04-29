@@ -47,7 +47,7 @@ func NewAuth(
 	}
 }
 
-func (at *Auth) SignUp(ctx context.Context, uid user.ID, email auth.EMail, password auth.Password) error {
+func (ext *Auth) SignUp(ctx context.Context, uid user.ID, email auth.EMail, password auth.Password) error {
 	params := (&firebase.UserToCreate{}).
 		UID(uid.String()).
 		Email(email.String()).
@@ -55,7 +55,7 @@ func (at *Auth) SignUp(ctx context.Context, uid user.ID, email auth.EMail, passw
 		Password(password.String()).
 		Disabled(false)
 
-	if _, err := at.firebaseAuth.CreateUser(ctx, params); err != nil {
+	if _, err := ext.firebaseAuth.CreateUser(ctx, params); err != nil {
 		log.GetLogCtx(ctx).Warn("failed to sign up user", log.ErrorField(err))
 
 		return err
@@ -78,9 +78,9 @@ type SignInResponse struct {
 }
 
 //nolint:funlen
-func (at *Auth) SignIn(ctx context.Context, email auth.EMail, password auth.Password) (model.User, error) {
+func (ext *Auth) SignIn(ctx context.Context, email auth.EMail, password auth.Password) (model.User, error) {
 	// https://firebase.google.com/docs/reference/rest/auth#section-sign-in-email-password
-	url := fmt.Sprintf("%s/v1/accounts:signInWithPassword?key=%s", at.endpoint, at.apiKey)
+	url := fmt.Sprintf("%s/v1/accounts:signInWithPassword?key=%s", ext.endpoint, ext.apiKey)
 
 	req := SignInRequest{
 		Email:             email.String(),
@@ -98,7 +98,7 @@ func (at *Auth) SignIn(ctx context.Context, email auth.EMail, password auth.Pass
 		return model.User{}, errors.NewValidationError(msg)
 	}
 
-	res, err := at.httpClient.Post(url, "application/json", &buf) //nolint:noctx
+	res, err := ext.httpClient.Post(url, "application/json", &buf) //nolint:noctx
 	if err != nil {
 		log.GetLogCtx(ctx).Warn("failed to post "+url, log.ErrorField(err))
 
