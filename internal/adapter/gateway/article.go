@@ -29,12 +29,12 @@ func NewArticle(rdb *RDB) *Article {
 }
 
 // Save 記事を保存するメソッド.
-func (art *Article) Save(ctx context.Context, item model.Article) error {
+func (gtw *Article) Save(ctx context.Context, item model.Article) error {
 	id := item.ID.Value()
 
 	now := time.Now().UTC()
 
-	err := art.rdb.Article.Create().
+	err := gtw.rdb.Article.Create().
 		SetID(id).
 		SetTitle(item.Title.String()).
 		SetURL(item.URL.String()).
@@ -46,8 +46,8 @@ func (art *Article) Save(ctx context.Context, item model.Article) error {
 		DoNothing().
 		Exec(ctx)
 
-	if err != nil && art.rdb.IsDuplicatedError(ctx, err) {
-		if ea, err := art.rdb.Article.Query().Where(entarticle.URLEQ(item.URL.String())).First(ctx); err == nil {
+	if err != nil && gtw.rdb.IsDuplicatedError(ctx, err) {
+		if ea, err := gtw.rdb.Article.Query().Where(entarticle.URLEQ(item.URL.String())).First(ctx); err == nil {
 			id = ea.ID
 		} else {
 			return errors.Wrap(err, "failed to save")
@@ -62,19 +62,19 @@ func (art *Article) Save(ctx context.Context, item model.Article) error {
 
 	bulk := make([]*ent.ArticleTagCreate, item.TagList.Len())
 	for i, tag := range item.TagList {
-		bulk[i] = art.rdb.ArticleTag.Create().
+		bulk[i] = gtw.rdb.ArticleTag.Create().
 			SetTag(tag.String()).
 			SetArticleID(id)
 	}
 
-	if err = art.rdb.ArticleTag.CreateBulk(bulk...).
+	if err = gtw.rdb.ArticleTag.CreateBulk(bulk...).
 		OnConflict().
 		DoNothing().
 		Exec(ctx); err == nil {
 		return nil
 	}
 
-	if art.rdb.IsDuplicatedError(ctx, err) {
+	if gtw.rdb.IsDuplicatedError(ctx, err) {
 		return nil
 	}
 
@@ -82,13 +82,13 @@ func (art *Article) Save(ctx context.Context, item model.Article) error {
 }
 
 // FindAll 記事を取得するメソッド.
-func (art *Article) FindAll(
+func (gtw *Article) FindAll(
 	ctx context.Context,
 	index value.Index,
 	size value.Size,
 ) ([]model.Article, error) {
 	// ent articles
-	eas, err := art.rdb.Article.Query().
+	eas, err := gtw.rdb.Article.Query().
 		WithTags().
 		Order(ent.Desc(entarticle.FieldCreatedAt)).
 		Offset(index.Int()).
@@ -120,8 +120,8 @@ func (art *Article) FindAll(
 }
 
 // Find ID指定で記事を取得するメソッド.
-func (art *Article) Find(ctx context.Context, id article.ID) (model.Article, error) {
-	ea, err := art.rdb.Article.Query().
+func (gtw *Article) Find(ctx context.Context, id article.ID) (model.Article, error) {
+	ea, err := gtw.rdb.Article.Query().
 		Where(entarticle.IDEQ(id.Value())).
 		WithTags().
 		First(ctx)
@@ -148,8 +148,8 @@ func (art *Article) Find(ctx context.Context, id article.ID) (model.Article, err
 	), nil
 }
 
-func (art *Article) Delete(ctx context.Context, id article.ID) error {
-	if err := art.rdb.Article.DeleteOneID(id.Value()).Exec(ctx); err != nil {
+func (gtw *Article) Delete(ctx context.Context, id article.ID) error {
+	if err := gtw.rdb.Article.DeleteOneID(id.Value()).Exec(ctx); err != nil {
 		if ent.IsNotFound(err) {
 			return nil
 		}
