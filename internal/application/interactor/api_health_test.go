@@ -73,8 +73,8 @@ func TestAPIHealthCheck(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			ah := interactor.NewAPIHealth(tt.fields.healthRPC(t))
-			got, err := ah.Check(tt.args.ctx, tt.args.input)
+			itr := interactor.NewAPIHealth(tt.fields.healthRPC(t))
+			got, err := itr.Check(tt.args.ctx, tt.args.input)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("APIHealth.Check() error = %v, wantErr %v", err, tt.wantErr)
 				return

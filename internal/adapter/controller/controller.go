@@ -39,7 +39,7 @@ func New() *Controller {
 }
 
 // HandleConnectError 発生したエラーを対応するconnectのcode込みのエラーに変換する関数.
-func (ctl *Controller) HandleConnectError(ctx context.Context, err error) error {
+func (ctrl *Controller) HandleConnectError(ctx context.Context, err error) error {
 	logger := log.GetLogCtx(ctx)
 
 	switch {

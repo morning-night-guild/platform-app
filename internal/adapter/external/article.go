@@ -31,7 +31,7 @@ func NewArticle(
 	}
 }
 
-func (aa *Article) Share(
+func (ext *Article) Share(
 	ctx context.Context,
 	url article.URL,
 	title article.Title,
@@ -45,7 +45,7 @@ func (aa *Article) Share(
 		Thumbnail:   thumbnail.String(),
 	})
 
-	res, err := aa.connect.Share(ctx, req)
+	res, err := ext.connect.Share(ctx, req)
 	if err != nil {
 		log.GetLogCtx(ctx).Warn("failed to share article", log.ErrorField(err))
 
@@ -64,7 +64,7 @@ func (aa *Article) Share(
 	return article, nil
 }
 
-func (aa *Article) List(
+func (ext *Article) List(
 	ctx context.Context,
 	index value.Index,
 	size value.Size,
@@ -74,7 +74,7 @@ func (aa *Article) List(
 		MaxPageSize: uint32(size),
 	})
 
-	res, err := aa.connect.List(ctx, req)
+	res, err := ext.connect.List(ctx, req)
 	if err != nil {
 		log.GetLogCtx(ctx).Warn("failed to list articles", log.ErrorField(err))
 
@@ -97,7 +97,7 @@ func (aa *Article) List(
 	return articles, nil
 }
 
-func (aa *Article) Delete(
+func (ext *Article) Delete(
 	ctx context.Context,
 	articleID article.ID,
 ) error {
@@ -105,7 +105,7 @@ func (aa *Article) Delete(
 		ArticleId: articleID.String(),
 	})
 
-	if _, err := aa.connect.Delete(ctx, req); err != nil {
+	if _, err := ext.connect.Delete(ctx, req); err != nil {
 		log.GetLogCtx(ctx).Sugar().Warnf("failed to delete articles. articleID=%s", articleID.String(), log.ErrorField(err))
 
 		return err

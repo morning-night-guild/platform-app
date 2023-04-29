@@ -29,11 +29,11 @@ func NewAPIArticle(
 	}
 }
 
-func (aa *APIArticle) Share(
+func (itr *APIArticle) Share(
 	ctx context.Context,
 	input usecase.APIArticleShareInput,
 ) (usecase.APIArticleShareOutput, error) {
-	article, err := aa.articleRPC.Share(ctx, input.URL, input.Title, input.Description, input.Thumbnail)
+	article, err := itr.articleRPC.Share(ctx, input.URL, input.Title, input.Description, input.Thumbnail)
 	if err != nil {
 		return usecase.APIArticleShareOutput{}, err
 	}
@@ -43,11 +43,11 @@ func (aa *APIArticle) Share(
 	}, nil
 }
 
-func (aa *APIArticle) List(
+func (itr *APIArticle) List(
 	ctx context.Context,
 	input usecase.APIArticleListInput,
 ) (usecase.APIArticleListOutput, error) {
-	auth, err := aa.authCache.Get(ctx, input.UserID.String())
+	auth, err := itr.authCache.Get(ctx, input.UserID.String())
 	if err != nil {
 		log.GetLogCtx(ctx).Warn("failed to get auth cache", log.ErrorField(err))
 
@@ -58,7 +58,7 @@ func (aa *APIArticle) List(
 		return usecase.APIArticleListOutput{}, errors.NewUnauthorizedError("auth token is expired")
 	}
 
-	articles, err := aa.articleRPC.List(ctx, input.Index, input.Size)
+	articles, err := itr.articleRPC.List(ctx, input.Index, input.Size)
 	if err != nil {
 		return usecase.APIArticleListOutput{}, err
 	}
@@ -68,11 +68,11 @@ func (aa *APIArticle) List(
 	}, nil
 }
 
-func (aa *APIArticle) Delete(
+func (itr *APIArticle) Delete(
 	ctx context.Context,
 	input usecase.APIArticleDeleteInput,
 ) (usecase.APIArticleDeleteOutput, error) {
-	if err := aa.articleRPC.Delete(ctx, input.ArticleID); err != nil {
+	if err := itr.articleRPC.Delete(ctx, input.ArticleID); err != nil {
 		return usecase.APIArticleDeleteOutput{}, err
 	}
 

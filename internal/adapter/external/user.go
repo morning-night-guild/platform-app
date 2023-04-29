@@ -30,10 +30,10 @@ func NewUser(
 	}
 }
 
-func (usr *User) Create(ctx context.Context) (model.User, error) {
+func (ext *User) Create(ctx context.Context) (model.User, error) {
 	req := NewRequest(ctx, &userv1.CreateRequest{})
 
-	res, err := usr.connect.Create(ctx, req)
+	res, err := ext.connect.Create(ctx, req)
 	if err != nil {
 		log.GetLogCtx(ctx).Warn("failed to create user core", log.ErrorField(err))
 
@@ -45,12 +45,12 @@ func (usr *User) Create(ctx context.Context) (model.User, error) {
 	}, nil
 }
 
-func (usr *User) Update(ctx context.Context, uid user.ID) (model.User, error) {
+func (ext *User) Update(ctx context.Context, uid user.ID) (model.User, error) {
 	req := NewRequest(ctx, &userv1.UpdateRequest{
 		UserId: uid.String(),
 	})
 
-	res, err := usr.connect.Update(ctx, req)
+	res, err := ext.connect.Update(ctx, req)
 	if err != nil {
 		log.GetLogCtx(ctx).Warn("failed to update user core", log.ErrorField(err))
 

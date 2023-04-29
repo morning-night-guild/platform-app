@@ -21,11 +21,11 @@ func NewAPIHealth(
 	}
 }
 
-func (ah *APIHealth) Check(
+func (itr *APIHealth) Check(
 	ctx context.Context,
 	_ usecase.APIHealthCheckInput,
 ) (usecase.APIHealthCheckOutput, error) {
-	if err := ah.healthRPC.Check(ctx); err != nil {
+	if err := itr.healthRPC.Check(ctx); err != nil {
 		return usecase.APIHealthCheckOutput{}, err
 	}
 

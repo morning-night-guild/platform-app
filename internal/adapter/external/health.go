@@ -27,10 +27,10 @@ func NewHealth(
 	}
 }
 
-func (ch *Health) Check(ctx context.Context) error {
+func (ext *Health) Check(ctx context.Context) error {
 	req := NewRequest(ctx, &healthv1.CheckRequest{})
 
-	if _, err := ch.connect.Check(ctx, req); err != nil {
+	if _, err := ext.connect.Check(ctx, req); err != nil {
 		log.GetLogCtx(ctx).Warn("failed to check health core", log.ErrorField(err))
 
 		return err

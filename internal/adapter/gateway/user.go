@@ -25,7 +25,7 @@ func NewUser(rdb *RDB) *User {
 	}
 }
 
-func (usr *User) Save(
+func (gtw *User) Save(
 	ctx context.Context,
 	item model.User,
 ) error {
@@ -33,7 +33,7 @@ func (usr *User) Save(
 
 	now := time.Now().UTC()
 
-	if err := usr.rdb.User.Create().
+	if err := gtw.rdb.User.Create().
 		SetID(id).
 		SetCreatedAt(now).
 		SetUpdatedAt(now).
@@ -51,11 +51,11 @@ func (usr *User) Save(
 	return nil
 }
 
-func (usr *User) Find(
+func (gtw *User) Find(
 	ctx context.Context,
 	id user.ID,
 ) (model.User, error) {
-	item, err := usr.rdb.User.Get(ctx, id.Value())
+	item, err := gtw.rdb.User.Get(ctx, id.Value())
 	if err != nil {
 		return model.User{}, errors.NewNotFoundError("failed to find user", err)
 	}
