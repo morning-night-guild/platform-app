@@ -40,8 +40,8 @@ func TestHealthCheck(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			h := controller.NewHealth()
-			got, err := h.Check(tt.args.ctx, tt.args.req)
+			ctrl := controller.NewHealth()
+			got, err := ctrl.Check(tt.args.ctx, tt.args.req)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Health.Check() error = %v, wantErr %v", err, tt.wantErr)
 

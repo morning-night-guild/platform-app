@@ -15,44 +15,44 @@ var _ articlev1connect.ArticleServiceHandler = (*Article)(nil)
 
 // Article.
 type Article struct {
-	ctl     *Controller
+	ctrl    *Controller
 	usecase usecase.CoreArticle
 }
 
 // NewArticle 記事のコントローラを新規作成する関数.
 func NewArticle(
-	ctl *Controller,
+	ctrl *Controller,
 	usecase usecase.CoreArticle,
 ) *Article {
 	return &Article{
-		ctl:     ctl,
+		ctrl:    ctrl,
 		usecase: usecase,
 	}
 }
 
 // Share 記事を共有するコントローラメソッド.
-func (a *Article) Share(
+func (ctrl *Article) Share(
 	ctx context.Context,
 	req *connect.Request[articlev1.ShareRequest],
 ) (*connect.Response[articlev1.ShareResponse], error) {
 	url, err := article.NewURL(req.Msg.Url)
 	if err != nil {
-		return nil, a.ctl.HandleConnectError(ctx, err)
+		return nil, ctrl.ctrl.HandleConnectError(ctx, err)
 	}
 
 	title, err := article.NewTitle(req.Msg.Title)
 	if err != nil {
-		return nil, a.ctl.HandleConnectError(ctx, err)
+		return nil, ctrl.ctrl.HandleConnectError(ctx, err)
 	}
 
 	description, err := article.NewDescription(req.Msg.Description)
 	if err != nil {
-		return nil, a.ctl.HandleConnectError(ctx, err)
+		return nil, ctrl.ctrl.HandleConnectError(ctx, err)
 	}
 
 	thumbnail, err := article.NewThumbnail(req.Msg.Thumbnail)
 	if err != nil {
-		return nil, a.ctl.HandleConnectError(ctx, err)
+		return nil, ctrl.ctrl.HandleConnectError(ctx, err)
 	}
 
 	input := usecase.CoreArticleShareInput{
@@ -62,9 +62,9 @@ func (a *Article) Share(
 		Thumbnail:   thumbnail,
 	}
 
-	output, err := a.usecase.Share(ctx, input)
+	output, err := ctrl.usecase.Share(ctx, input)
 	if err != nil {
-		return nil, a.ctl.HandleConnectError(ctx, err)
+		return nil, ctrl.ctrl.HandleConnectError(ctx, err)
 	}
 
 	return connect.NewResponse(&articlev1.ShareResponse{
@@ -80,7 +80,7 @@ func (a *Article) Share(
 }
 
 // List 記事を取得するコントローラメソッド.
-func (a *Article) List(
+func (ctrl *Article) List(
 	ctx context.Context,
 	req *connect.Request[articlev1.ListRequest],
 ) (*connect.Response[articlev1.ListResponse], error) {
@@ -90,7 +90,7 @@ func (a *Article) List(
 
 	size, err := value.NewSize(int(req.Msg.MaxPageSize))
 	if err != nil {
-		return nil, a.ctl.HandleConnectError(ctx, err)
+		return nil, ctrl.ctrl.HandleConnectError(ctx, err)
 	}
 
 	input := usecase.CoreArticleListInput{
@@ -98,9 +98,9 @@ func (a *Article) List(
 		Size:  size,
 	}
 
-	output, err := a.usecase.List(ctx, input)
+	output, err := ctrl.usecase.List(ctx, input)
 	if err != nil {
-		return nil, a.ctl.HandleConnectError(ctx, err)
+		return nil, ctrl.ctrl.HandleConnectError(ctx, err)
 	}
 
 	result := make([]*articlev1.Article, len(output.Articles))
@@ -128,21 +128,21 @@ func (a *Article) List(
 }
 
 // Delete 記事を削除するコントローラメソッド.
-func (a *Article) Delete(
+func (ctrl *Article) Delete(
 	ctx context.Context,
 	req *connect.Request[articlev1.DeleteRequest],
 ) (*connect.Response[articlev1.DeleteResponse], error) {
 	articleID, err := article.NewID(req.Msg.ArticleId)
 	if err != nil {
-		return nil, a.ctl.HandleConnectError(ctx, err)
+		return nil, ctrl.ctrl.HandleConnectError(ctx, err)
 	}
 
 	input := usecase.CoreArticleDeleteInput{
 		ArticleID: articleID,
 	}
 
-	if _, err = a.usecase.Delete(ctx, input); err != nil {
-		return nil, a.ctl.HandleConnectError(ctx, err)
+	if _, err = ctrl.usecase.Delete(ctx, input); err != nil {
+		return nil, ctrl.ctrl.HandleConnectError(ctx, err)
 	}
 
 	return connect.NewResponse(&articlev1.DeleteResponse{}), nil

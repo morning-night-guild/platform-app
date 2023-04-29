@@ -204,8 +204,8 @@ func TestArticleShare(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			a := controller.NewArticle(controller.New(), tt.fields.usecase(t))
-			got, err := a.Share(tt.args.ctx, tt.args.req)
+			ctrl := controller.NewArticle(controller.New(), tt.fields.usecase(t))
+			got, err := ctrl.Share(tt.args.ctx, tt.args.req)
 			if err != nil && err != tt.wantErr {
 				t.Errorf("Article.Share() error = %v, wantErr %v", err, tt.wantErr)
 

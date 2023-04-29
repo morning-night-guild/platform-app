@@ -87,11 +87,11 @@ func TestUserCreate(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			usr := controller.NewUser(
+			ctrl := controller.NewUser(
 				controller.New(),
 				tt.fields.usecase(t),
 			)
-			got, err := usr.Create(tt.args.ctx, tt.args.req)
+			got, err := ctrl.Create(tt.args.ctx, tt.args.req)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("User.Create() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -180,11 +180,11 @@ func TestUserUpdate(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			usr := controller.NewUser(
+			ctrl := controller.NewUser(
 				controller.New(),
 				tt.fields.usecase(t),
 			)
-			got, err := usr.Update(tt.args.ctx, tt.args.req)
+			got, err := ctrl.Update(tt.args.ctx, tt.args.req)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("User.Update() error = %v, wantErr %v", err, tt.wantErr)
 				return

@@ -14,30 +14,30 @@ var _ userv1connect.UserServiceHandler = (*User)(nil)
 
 // User.
 type User struct {
-	ctl     *Controller
+	ctrl    *Controller
 	usecase usecase.CoreUser
 }
 
 // NewUser ユーザーコントローラを新規作成する関数.
 func NewUser(
-	ctl *Controller,
+	ctrl *Controller,
 	usecase usecase.CoreUser,
 ) *User {
 	return &User{
-		ctl:     ctl,
+		ctrl:    ctrl,
 		usecase: usecase,
 	}
 }
 
-func (usr *User) Create(
+func (ctrl *User) Create(
 	ctx context.Context,
 	_ *connect.Request[userv1.CreateRequest],
 ) (*connect.Response[userv1.CreateResponse], error) {
 	input := usecase.CoreUserCreateInput{}
 
-	output, err := usr.usecase.Create(ctx, input)
+	output, err := ctrl.usecase.Create(ctx, input)
 	if err != nil {
-		return nil, usr.ctl.HandleConnectError(ctx, err)
+		return nil, ctrl.ctrl.HandleConnectError(ctx, err)
 	}
 
 	res := &userv1.CreateResponse{
@@ -49,22 +49,22 @@ func (usr *User) Create(
 	return connect.NewResponse(res), nil
 }
 
-func (usr *User) Update(
+func (ctrl *User) Update(
 	ctx context.Context,
 	req *connect.Request[userv1.UpdateRequest],
 ) (*connect.Response[userv1.UpdateResponse], error) {
 	uid, err := user.NewID(req.Msg.UserId)
 	if err != nil {
-		return nil, usr.ctl.HandleConnectError(ctx, err)
+		return nil, ctrl.ctrl.HandleConnectError(ctx, err)
 	}
 
 	input := usecase.CoreUserUpdateInput{
 		UserID: uid,
 	}
 
-	output, err := usr.usecase.Update(ctx, input)
+	output, err := ctrl.usecase.Update(ctx, input)
 	if err != nil {
-		return nil, usr.ctl.HandleConnectError(ctx, err)
+		return nil, ctrl.ctrl.HandleConnectError(ctx, err)
 	}
 
 	res := &userv1.UpdateResponse{
