@@ -61,8 +61,8 @@ func TestControllerHandleConnectError(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			ctl := controller.New()
-			err := ctl.HandleConnectError(tt.args.ctx, tt.args.err)
+			ctrl := controller.New()
+			err := ctrl.HandleConnectError(tt.args.ctx, tt.args.err)
 			if connectErr := new(connect.Error); errors.As(err, &connectErr) {
 				code := connect.CodeOf(connectErr)
 				if code != tt.wantCode {

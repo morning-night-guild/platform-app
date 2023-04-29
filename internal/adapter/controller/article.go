@@ -15,18 +15,18 @@ var _ articlev1connect.ArticleServiceHandler = (*Article)(nil)
 
 // Article.
 type Article struct {
-	ctrl    *Controller
-	usecase usecase.CoreArticle
+	controller *Controller
+	usecase    usecase.CoreArticle
 }
 
 // NewArticle 記事のコントローラを新規作成する関数.
 func NewArticle(
-	ctrl *Controller,
+	controller *Controller,
 	usecase usecase.CoreArticle,
 ) *Article {
 	return &Article{
-		ctrl:    ctrl,
-		usecase: usecase,
+		controller: controller,
+		usecase:    usecase,
 	}
 }
 
@@ -37,22 +37,22 @@ func (ctrl *Article) Share(
 ) (*connect.Response[articlev1.ShareResponse], error) {
 	url, err := article.NewURL(req.Msg.Url)
 	if err != nil {
-		return nil, ctrl.ctrl.HandleConnectError(ctx, err)
+		return nil, ctrl.controller.HandleConnectError(ctx, err)
 	}
 
 	title, err := article.NewTitle(req.Msg.Title)
 	if err != nil {
-		return nil, ctrl.ctrl.HandleConnectError(ctx, err)
+		return nil, ctrl.controller.HandleConnectError(ctx, err)
 	}
 
 	description, err := article.NewDescription(req.Msg.Description)
 	if err != nil {
-		return nil, ctrl.ctrl.HandleConnectError(ctx, err)
+		return nil, ctrl.controller.HandleConnectError(ctx, err)
 	}
 
 	thumbnail, err := article.NewThumbnail(req.Msg.Thumbnail)
 	if err != nil {
-		return nil, ctrl.ctrl.HandleConnectError(ctx, err)
+		return nil, ctrl.controller.HandleConnectError(ctx, err)
 	}
 
 	input := usecase.CoreArticleShareInput{
@@ -64,7 +64,7 @@ func (ctrl *Article) Share(
 
 	output, err := ctrl.usecase.Share(ctx, input)
 	if err != nil {
-		return nil, ctrl.ctrl.HandleConnectError(ctx, err)
+		return nil, ctrl.controller.HandleConnectError(ctx, err)
 	}
 
 	return connect.NewResponse(&articlev1.ShareResponse{
@@ -90,7 +90,7 @@ func (ctrl *Article) List(
 
 	size, err := value.NewSize(int(req.Msg.MaxPageSize))
 	if err != nil {
-		return nil, ctrl.ctrl.HandleConnectError(ctx, err)
+		return nil, ctrl.controller.HandleConnectError(ctx, err)
 	}
 
 	input := usecase.CoreArticleListInput{
@@ -100,7 +100,7 @@ func (ctrl *Article) List(
 
 	output, err := ctrl.usecase.List(ctx, input)
 	if err != nil {
-		return nil, ctrl.ctrl.HandleConnectError(ctx, err)
+		return nil, ctrl.controller.HandleConnectError(ctx, err)
 	}
 
 	result := make([]*articlev1.Article, len(output.Articles))
@@ -134,7 +134,7 @@ func (ctrl *Article) Delete(
 ) (*connect.Response[articlev1.DeleteResponse], error) {
 	articleID, err := article.NewID(req.Msg.ArticleId)
 	if err != nil {
-		return nil, ctrl.ctrl.HandleConnectError(ctx, err)
+		return nil, ctrl.controller.HandleConnectError(ctx, err)
 	}
 
 	input := usecase.CoreArticleDeleteInput{
@@ -142,7 +142,7 @@ func (ctrl *Article) Delete(
 	}
 
 	if _, err = ctrl.usecase.Delete(ctx, input); err != nil {
-		return nil, ctrl.ctrl.HandleConnectError(ctx, err)
+		return nil, ctrl.controller.HandleConnectError(ctx, err)
 	}
 
 	return connect.NewResponse(&articlev1.DeleteResponse{}), nil

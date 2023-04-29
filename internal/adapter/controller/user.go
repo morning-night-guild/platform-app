@@ -14,18 +14,18 @@ var _ userv1connect.UserServiceHandler = (*User)(nil)
 
 // User.
 type User struct {
-	ctrl    *Controller
-	usecase usecase.CoreUser
+	controller *Controller
+	usecase    usecase.CoreUser
 }
 
 // NewUser ユーザーコントローラを新規作成する関数.
 func NewUser(
-	ctrl *Controller,
+	controller *Controller,
 	usecase usecase.CoreUser,
 ) *User {
 	return &User{
-		ctrl:    ctrl,
-		usecase: usecase,
+		controller: controller,
+		usecase:    usecase,
 	}
 }
 
@@ -37,7 +37,7 @@ func (ctrl *User) Create(
 
 	output, err := ctrl.usecase.Create(ctx, input)
 	if err != nil {
-		return nil, ctrl.ctrl.HandleConnectError(ctx, err)
+		return nil, ctrl.controller.HandleConnectError(ctx, err)
 	}
 
 	res := &userv1.CreateResponse{
@@ -55,7 +55,7 @@ func (ctrl *User) Update(
 ) (*connect.Response[userv1.UpdateResponse], error) {
 	uid, err := user.NewID(req.Msg.UserId)
 	if err != nil {
-		return nil, ctrl.ctrl.HandleConnectError(ctx, err)
+		return nil, ctrl.controller.HandleConnectError(ctx, err)
 	}
 
 	input := usecase.CoreUserUpdateInput{
@@ -64,7 +64,7 @@ func (ctrl *User) Update(
 
 	output, err := ctrl.usecase.Update(ctx, input)
 	if err != nil {
-		return nil, ctrl.ctrl.HandleConnectError(ctx, err)
+		return nil, ctrl.controller.HandleConnectError(ctx, err)
 	}
 
 	res := &userv1.UpdateResponse{
