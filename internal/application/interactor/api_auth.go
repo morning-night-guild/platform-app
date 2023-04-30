@@ -2,6 +2,7 @@ package interactor
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/morning-night-guild/platform-app/internal/application/usecase"
 	"github.com/morning-night-guild/platform-app/internal/domain/cache"
@@ -16,6 +17,7 @@ var _ usecase.APIAuth = (*APIAuth)(nil)
 type APIAuth struct {
 	authRPC      rpc.Auth
 	userRPC      rpc.User
+	userCache    cache.Cache[model.User]
 	authCache    cache.Cache[model.Auth]
 	codeCache    cache.Cache[model.Code]
 	sessionCache cache.Cache[model.Session]
@@ -24,12 +26,14 @@ type APIAuth struct {
 func NewAPIAuth(
 	authRPC rpc.Auth,
 	userRPC rpc.User,
+	userCache cache.Cache[model.User],
 	authCache cache.Cache[model.Auth],
 	codeCache cache.Cache[model.Code],
 	sessionCache cache.Cache[model.Session],
 ) *APIAuth {
 	return &APIAuth{
 		authRPC:      authRPC,
+		userCache:    userCache,
 		userRPC:      userRPC,
 		authCache:    authCache,
 		codeCache:    codeCache,
@@ -68,7 +72,12 @@ func (itr *APIAuth) SignIn(
 
 	session := model.IssueSession(user.UserID, input.PublicKey)
 
-	sCmd, err := itr.sessionCache.CreateTxSetCmd(ctx, session.SessionID.String(), session, model.DefaultSessionExpiresIn)
+	uCmd, err := itr.userCache.CreateTxSetCmd(ctx, session.SessionID.String(), user, model.DefaultAuthExpiresIn)
+	if err != nil {
+		return usecase.APIAuthSignInOutput{}, err
+	}
+
+	sCmd, err := itr.sessionCache.CreateTxSetCmd(ctx, session.Key(), session, model.DefaultSessionExpiresIn)
 	if err != nil {
 		return usecase.APIAuthSignInOutput{}, err
 	}
@@ -80,7 +89,7 @@ func (itr *APIAuth) SignIn(
 		return usecase.APIAuthSignInOutput{}, err
 	}
 
-	if err := itr.sessionCache.Tx(ctx, []cache.TxSetCmd{sCmd, aCmd}, []cache.TxDelCmd{}); err != nil {
+	if err := itr.sessionCache.Tx(ctx, []cache.TxSetCmd{uCmd, sCmd, aCmd}, []cache.TxDelCmd{}); err != nil {
 		return usecase.APIAuthSignInOutput{}, err
 	}
 
@@ -95,15 +104,70 @@ func (itr *APIAuth) SignOut(
 	ctx context.Context,
 	input usecase.APIAuthSignOutInput,
 ) (usecase.APIAuthSignOutOutput, error) {
-	if err := itr.sessionCache.Del(ctx, input.SessionID.String()); err != nil {
-		log.GetLogCtx(ctx).Warn("failed to delete session cache", log.ErrorField(err))
+	key := fmt.Sprintf(model.SessionKeyFormat, input.UserID.String(), input.SessionID.String())
+
+	sessionDelCmd, err := itr.sessionCache.CreateTxDelCmd(ctx, key)
+	if err != nil {
+		log.GetLogCtx(ctx).Warn("failed to create session cache delete command", log.ErrorField(err))
 	}
 
-	if err := itr.authCache.Del(ctx, input.UserID.String()); err != nil {
-		log.GetLogCtx(ctx).Warn("failed to delete auth cache", log.ErrorField(err))
+	userDelCmd, err := itr.userCache.CreateTxDelCmd(ctx, input.SessionID.String())
+	if err != nil {
+		log.GetLogCtx(ctx).Warn("failed to create user cache delete command", log.ErrorField(err))
+	}
+
+	authDelCmd, err := itr.authCache.CreateTxDelCmd(ctx, input.UserID.String())
+	if err != nil {
+		log.GetLogCtx(ctx).Warn("failed to create auth cache delete command", log.ErrorField(err))
+	}
+
+	delCmds := []cache.TxDelCmd{sessionDelCmd, userDelCmd, authDelCmd}
+
+	if err := itr.sessionCache.Tx(ctx, []cache.TxSetCmd{}, delCmds); err != nil {
+		log.GetLogCtx(ctx).Warn("failed to execute transaction", log.ErrorField(err))
 	}
 
 	return usecase.APIAuthSignOutOutput{}, nil
+}
+
+func (itr *APIAuth) SignOutAll(
+	ctx context.Context,
+	input usecase.APIAuthSignOutAllInput,
+) (usecase.APIAuthSignOutAllOutput, error) {
+	keys, err := itr.sessionCache.Keys(ctx, input.UserID.String())
+	if err != nil {
+		log.GetLogCtx(ctx).Warn("failed to get session cache keys", log.ErrorField(err))
+	}
+
+	const length = 2
+
+	delCmds := make([]cache.TxDelCmd, 0, len(keys)+length)
+
+	for _, key := range keys {
+		cmd, err := itr.sessionCache.CreateTxDelCmd(ctx, key)
+		if err != nil {
+			log.GetLogCtx(ctx).Warn("failed to create session cache delete command", log.ErrorField(err))
+
+			continue
+		}
+
+		delCmds = append(delCmds, cmd)
+	}
+
+	// auth : session = 1 : N の設計前提
+	// auth : session = 1 : 1 にした方がよいのかもしれない
+	authDelCmd, err := itr.authCache.CreateTxDelCmd(ctx, input.UserID.String())
+	if err != nil {
+		log.GetLogCtx(ctx).Warn("failed to create auth cache delete command", log.ErrorField(err))
+	} else {
+		delCmds = append(delCmds, authDelCmd)
+	}
+
+	if err := itr.sessionCache.Tx(ctx, []cache.TxSetCmd{}, delCmds); err != nil {
+		log.GetLogCtx(ctx).Warn("failed to delete session cache", log.ErrorField(err))
+	}
+
+	return usecase.APIAuthSignOutAllOutput{}, nil
 }
 
 func (itr *APIAuth) Verify(
@@ -124,29 +188,48 @@ func (itr *APIAuth) Verify(
 	return usecase.APIAuthVerifyOutput{}, nil
 }
 
-func (itr *APIAuth) Refresh(
+func (itr *APIAuth) Refresh( //nolint:funlen,cyclop
 	ctx context.Context,
 	input usecase.APIAuthRefreshInput,
 ) (usecase.APIAuthRefreshOutput, error) {
 	code, err := itr.codeCache.Get(ctx, input.SessionID.String())
 	if err != nil {
+		log.GetLogCtx(ctx).Warn("failed to get code cache", log.ErrorField(err))
+
 		return usecase.APIAuthRefreshOutput{}, errors.NewNotFoundError("code is not found", err)
 	}
 
 	if code.CodeID != input.CodeID {
+		log.GetLogCtx(ctx).Warn("code id is invalid")
+
 		return usecase.APIAuthRefreshOutput{}, errors.NewValidationError("CodeID is invalid")
 	}
 
 	if code.IsExpired() {
+		log.GetLogCtx(ctx).Warn("code is expired")
+
 		return usecase.APIAuthRefreshOutput{}, errors.NewValidationError("Code is expired")
 	}
 
-	session, err := itr.sessionCache.Get(ctx, input.SessionID.String())
+	user, err := itr.userCache.Get(ctx, input.SessionID.String())
 	if err != nil {
+		log.GetLogCtx(ctx).Warn("failed to get user cache", log.ErrorField(err))
+
+		return usecase.APIAuthRefreshOutput{}, errors.NewNotFoundError("user is not found", err)
+	}
+
+	key := fmt.Sprintf(model.SessionKeyFormat, user.UserID.String(), input.SessionID.String())
+
+	session, err := itr.sessionCache.Get(ctx, key)
+	if err != nil {
+		log.GetLogCtx(ctx).Warn("failed to get session cache", log.ErrorField(err))
+
 		return usecase.APIAuthRefreshOutput{}, err
 	}
 
 	if session.IsExpired() {
+		log.GetLogCtx(ctx).Warn("session is expired")
+
 		return usecase.APIAuthRefreshOutput{}, errors.NewValidationError("Session is expired")
 	}
 
@@ -158,6 +241,8 @@ func (itr *APIAuth) Refresh(
 
 	cCmd, err := itr.codeCache.CreateTxDelCmd(ctx, input.SessionID.String())
 	if err != nil {
+		log.GetLogCtx(ctx).Warn("failed to create code cache delete command", log.ErrorField(err))
+
 		return usecase.APIAuthRefreshOutput{}, err
 	}
 
@@ -165,10 +250,14 @@ func (itr *APIAuth) Refresh(
 
 	aCmd, err := itr.authCache.CreateTxSetCmd(ctx, at.UserID.String(), at, model.DefaultAuthExpiresIn)
 	if err != nil {
+		log.GetLogCtx(ctx).Warn("failed to create auth cache set command", log.ErrorField(err))
+
 		return usecase.APIAuthRefreshOutput{}, err
 	}
 
 	if err := itr.authCache.Tx(ctx, []cache.TxSetCmd{aCmd}, []cache.TxDelCmd{cCmd}); err != nil {
+		log.GetLogCtx(ctx).Warn("failed to transaction cache", log.ErrorField(err))
+
 		return usecase.APIAuthRefreshOutput{}, err
 	}
 

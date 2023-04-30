@@ -16,6 +16,7 @@ type APIAuth interface {
 	SignUp(context.Context, APIAuthSignUpInput) (APIAuthSignUpOutput, error)
 	SignIn(context.Context, APIAuthSignInInput) (APIAuthSignInOutput, error)
 	SignOut(context.Context, APIAuthSignOutInput) (APIAuthSignOutOutput, error)
+	SignOutAll(context.Context, APIAuthSignOutAllInput) (APIAuthSignOutAllOutput, error)
 	Verify(context.Context, APIAuthVerifyInput) (APIAuthVerifyOutput, error)
 	GenerateCode(context.Context, APIAuthGenerateCodeInput) (APIAuthGenerateCodeOutput, error)
 	Refresh(context.Context, APIAuthRefreshInput) (APIAuthRefreshOutput, error)
@@ -48,6 +49,12 @@ type APIAuthSignOutInput struct {
 }
 
 type APIAuthSignOutOutput struct{}
+
+type APIAuthSignOutAllInput struct {
+	UserID user.ID
+}
+
+type APIAuthSignOutAllOutput struct{}
 
 type APIAuthVerifyInput struct {
 	UserID user.ID

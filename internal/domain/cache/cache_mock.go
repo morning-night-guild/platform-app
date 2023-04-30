@@ -13,18 +13,21 @@ var _ Cache[any] = (*CacheMock[any])(nil)
 type CacheMock[V any] struct {
 	T                    *testing.T
 	Value                V
-	GetErr               error
 	GetAssert            func(t *testing.T, key string)
-	SetErr               error
+	GetErr               error
 	SetAssert            func(t *testing.T, key string, value V, ttl time.Duration)
-	DelErr               error
+	SetErr               error
 	DelAssert            func(t *testing.T, key string)
-	CreateTxSetCmdErr    error
+	DelErr               error
 	CreateTxSetCmdAssert func(t *testing.T, key string, value V, ttl time.Duration)
-	CreateTxDelCmdErr    error
+	CreateTxSetCmdErr    error
 	CreateTxDelCmdAssert func(t *testing.T, key string)
-	TxErr                error
+	CreateTxDelCmdErr    error
 	TxAssert             func(t *testing.T, setCmds []TxSetCmd, delCmds []TxDelCmd)
+	TxErr                error
+	KeysValue            []string
+	KeysAssert           func(t *testing.T, pattern string)
+	KeysErr              error
 }
 
 func (mock *CacheMock[V]) Get(ctx context.Context, key string) (V, error) {
@@ -88,4 +91,12 @@ func (mock *CacheMock[V]) Tx(ctx context.Context, setCmds []TxSetCmd, delCmds []
 	mock.TxAssert(mock.T, setCmds, delCmds)
 
 	return mock.TxErr
+}
+
+func (mock *CacheMock[V]) Keys(ctx context.Context, pattern string) ([]string, error) {
+	mock.T.Helper()
+
+	mock.KeysAssert(mock.T, pattern)
+
+	return mock.KeysValue, mock.KeysErr
 }

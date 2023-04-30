@@ -13,7 +13,10 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-const prefix = "%s:%s"
+const (
+	format    = "%s:%s"
+	keyFormat = "%s:%s*"
+)
 
 type Factory[T any] interface {
 	KVS(string, *redis.Client) (*KVS[T], error)
@@ -29,7 +32,7 @@ type KVS[T any] struct {
 func (kvs *KVS[T]) Get(ctx context.Context, key string) (T, error) {
 	var value T
 
-	key = fmt.Sprintf(prefix, kvs.Prefix, key)
+	key = fmt.Sprintf(format, kvs.Prefix, key)
 
 	str, err := kvs.Client.Get(ctx, key).Result()
 	if err != nil {
@@ -56,7 +59,7 @@ func (kvs *KVS[T]) Set(ctx context.Context, key string, value T, ttl time.Durati
 		return fmt.Errorf("failed to marshal json: %w", err)
 	}
 
-	key = fmt.Sprintf(prefix, kvs.Prefix, key)
+	key = fmt.Sprintf(format, kvs.Prefix, key)
 
 	enc := base64.StdEncoding.EncodeToString(val)
 
@@ -68,7 +71,7 @@ func (kvs *KVS[T]) Set(ctx context.Context, key string, value T, ttl time.Durati
 }
 
 func (kvs *KVS[T]) Del(ctx context.Context, key string) error {
-	key = fmt.Sprintf(prefix, kvs.Prefix, key)
+	key = fmt.Sprintf(format, kvs.Prefix, key)
 
 	if _, err := kvs.Client.Del(ctx, key).Result(); err != nil {
 		return fmt.Errorf("failed to del cache: %w", err)
@@ -83,7 +86,7 @@ func (kvs *KVS[T]) CreateTxSetCmd(_ context.Context, key string, value T, ttl ti
 		return cache.TxSetCmd{}, fmt.Errorf("failed to marshal json: %w", err)
 	}
 
-	key = fmt.Sprintf(prefix, kvs.Prefix, key)
+	key = fmt.Sprintf(format, kvs.Prefix, key)
 
 	enc := base64.StdEncoding.EncodeToString(val)
 
@@ -95,7 +98,7 @@ func (kvs *KVS[T]) CreateTxSetCmd(_ context.Context, key string, value T, ttl ti
 }
 
 func (kvs *KVS[T]) CreateTxDelCmd(_ context.Context, key string) (cache.TxDelCmd, error) {
-	key = fmt.Sprintf(prefix, kvs.Prefix, key)
+	key = fmt.Sprintf(format, kvs.Prefix, key)
 
 	return cache.TxDelCmd{
 		Key: key,
@@ -130,4 +133,18 @@ func (kvs *KVS[T]) Tx(
 	}
 
 	return nil
+}
+
+func (kvs *KVS[T]) Keys(
+	ctx context.Context,
+	pattern string,
+) ([]string, error) {
+	ptn := fmt.Sprintf(keyFormat, kvs.Prefix, pattern)
+
+	keys, err := kvs.Client.Keys(ctx, ptn).Result()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get keys: %w", err)
+	}
+
+	return keys, nil
 }

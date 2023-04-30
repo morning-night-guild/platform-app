@@ -2,6 +2,7 @@ package model
 
 import (
 	"crypto/rsa"
+	"fmt"
 	"time"
 
 	"github.com/morning-night-guild/platform-app/internal/domain/model/auth"
@@ -9,7 +10,10 @@ import (
 	"github.com/morning-night-guild/platform-app/internal/domain/model/user"
 )
 
-const DefaultSessionExpiresIn = time.Hour * 24 * 30
+const (
+	DefaultSessionExpiresIn = time.Hour * 24 * 30
+	SessionKeyFormat        = "%s:%s"
+)
 
 type Session struct {
 	SessionID auth.SessionID `json:"sessionId"`
@@ -72,4 +76,8 @@ func (sss Session) ToToken(
 	secret auth.Secret,
 ) auth.SessionToken {
 	return auth.GenerateSessionToken(sss.SessionID, secret)
+}
+
+func (sss Session) Key() string {
+	return fmt.Sprintf(SessionKeyFormat, sss.UserID, sss.SessionID)
 }

@@ -54,6 +54,7 @@ entgo.io/ent/dialect/entsql
 entgo.io/ent/dialect/sql
 entgo.io/ent/dialect/sql/schema
 entgo.io/ent/dialect/sql/sqlgraph
+entgo.io/ent/dialect/sql/sqljson
 entgo.io/ent/entql
 entgo.io/ent/schema
 entgo.io/ent/schema/edge

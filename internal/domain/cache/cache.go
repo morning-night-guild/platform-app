@@ -12,6 +12,7 @@ type Cache[T any] interface {
 	CreateTxSetCmd(context.Context, string, T, time.Duration) (TxSetCmd, error)
 	CreateTxDelCmd(context.Context, string) (TxDelCmd, error)
 	Tx(context.Context, []TxSetCmd, []TxDelCmd) error
+	Keys(context.Context, string) ([]string, error)
 }
 
 type TxSetCmd struct {

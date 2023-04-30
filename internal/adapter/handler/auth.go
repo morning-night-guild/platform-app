@@ -194,37 +194,38 @@ func (hdl *Handler) V1AuthSignIn(w http.ResponseWriter, r *http.Request) {
 func (hdl *Handler) V1AuthSignOut(_ http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	sessionTokenCookie, err := r.Cookie(auth.SessionTokenKey)
+	tokens, err := hdl.ExtractTokens(ctx, r)
 	if err != nil {
-		log.GetLogCtx(ctx).Warn("failed to get session token cookie", log.ErrorField(err))
-
-		return
-	}
-
-	sessionToken, err := auth.ParseSessionToken(sessionTokenCookie.Value, hdl.secret)
-	if err != nil {
-		log.GetLogCtx(ctx).Warn("failed to new session token", log.ErrorField(err))
-
-		return
-	}
-
-	authTokenCookie, err := r.Cookie(auth.AuthTokenKey)
-	if err != nil {
-		log.GetLogCtx(ctx).Warn("failed to get auth token cookie", log.ErrorField(err))
-
-		return
-	}
-
-	authToken, err := auth.ParseAuthToken(authTokenCookie.Value, sessionToken.ToSecret(hdl.secret))
-	if err != nil {
-		log.GetLogCtx(ctx).Warn("failed to new auth token", log.ErrorField(err))
+		log.GetLogCtx(ctx).Warn("failed to extract tokens", log.ErrorField(err))
 
 		return
 	}
 
 	input := usecase.APIAuthSignOutInput{
-		UserID:    authToken.UserID(),
-		SessionID: sessionToken.ID(hdl.secret),
+		UserID:    tokens.AuthToken.UserID(),
+		SessionID: tokens.SessionToken.ID(hdl.secret),
+	}
+
+	if _, err := hdl.auth.SignOut(ctx, input); err != nil {
+		log.GetLogCtx(ctx).Warn("failed to sign out", log.ErrorField(err))
+
+		return
+	}
+}
+
+func (hdl *Handler) V1AuthSignOutAll(_ http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	tokens, err := hdl.ExtractTokens(ctx, r)
+	if err != nil {
+		log.GetLogCtx(ctx).Warn("failed to extract tokens", log.ErrorField(err))
+
+		return
+	}
+
+	input := usecase.APIAuthSignOutInput{
+		UserID:    tokens.AuthToken.UserID(),
+		SessionID: tokens.SessionToken.ID(hdl.secret),
 	}
 
 	if _, err := hdl.auth.SignOut(ctx, input); err != nil {
@@ -294,6 +295,9 @@ func (hdl *Handler) V1AuthSignUp(w http.ResponseWriter, r *http.Request) {
 // (GET /v1/auth/verify).
 func (hdl *Handler) V1AuthVerify(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
+
+	// 取り出すトークンの種類によってエラーレスポンスが異なるので
+	// ExtractTokens() は使わない
 
 	sessionTokenCookie, err := r.Cookie(auth.SessionTokenKey)
 	if err != nil {

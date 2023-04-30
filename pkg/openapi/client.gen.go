@@ -112,6 +112,9 @@ type ClientInterface interface {
 	// V1AuthSignOut request
 	V1AuthSignOut(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// V1AuthSignOutAll request
+	V1AuthSignOutAll(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// V1AuthSignUp request with any body
 	V1AuthSignUpWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -213,6 +216,18 @@ func (c *Client) V1AuthSignIn(ctx context.Context, body V1AuthSignInJSONRequestB
 
 func (c *Client) V1AuthSignOut(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewV1AuthSignOutRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) V1AuthSignOutAll(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewV1AuthSignOutAllRequest(c.Server)
 	if err != nil {
 		return nil, err
 	}
@@ -554,6 +569,33 @@ func NewV1AuthSignOutRequest(server string) (*http.Request, error) {
 	return req, nil
 }
 
+// NewV1AuthSignOutAllRequest generates requests for V1AuthSignOutAll
+func NewV1AuthSignOutAllRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v1/auth/signout/all")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewV1AuthSignUpRequest calls the generic V1AuthSignUp builder with application/json body
 func NewV1AuthSignUpRequest(server string, body V1AuthSignUpJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
@@ -740,6 +782,9 @@ type ClientWithResponsesInterface interface {
 	// V1AuthSignOut request
 	V1AuthSignOutWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*V1AuthSignOutResponse, error)
 
+	// V1AuthSignOutAll request
+	V1AuthSignOutAllWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*V1AuthSignOutAllResponse, error)
+
 	// V1AuthSignUp request with any body
 	V1AuthSignUpWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*V1AuthSignUpResponse, error)
 
@@ -876,6 +921,27 @@ func (r V1AuthSignOutResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r V1AuthSignOutResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type V1AuthSignOutAllResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+}
+
+// Status returns HTTPResponse.Status
+func (r V1AuthSignOutAllResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r V1AuthSignOutAllResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -1037,6 +1103,15 @@ func (c *ClientWithResponses) V1AuthSignOutWithResponse(ctx context.Context, req
 	return ParseV1AuthSignOutResponse(rsp)
 }
 
+// V1AuthSignOutAllWithResponse request returning *V1AuthSignOutAllResponse
+func (c *ClientWithResponses) V1AuthSignOutAllWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*V1AuthSignOutAllResponse, error) {
+	rsp, err := c.V1AuthSignOutAll(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseV1AuthSignOutAllResponse(rsp)
+}
+
 // V1AuthSignUpWithBodyWithResponse request with arbitrary body returning *V1AuthSignUpResponse
 func (c *ClientWithResponses) V1AuthSignUpWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*V1AuthSignUpResponse, error) {
 	rsp, err := c.V1AuthSignUpWithBody(ctx, contentType, body, reqEditors...)
@@ -1180,6 +1255,22 @@ func ParseV1AuthSignOutResponse(rsp *http.Response) (*V1AuthSignOutResponse, err
 	}
 
 	response := &V1AuthSignOutResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	return response, nil
+}
+
+// ParseV1AuthSignOutAllResponse parses an HTTP response from a V1AuthSignOutAllWithResponse call
+func ParseV1AuthSignOutAllResponse(rsp *http.Response) (*V1AuthSignOutAllResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &V1AuthSignOutAllResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}

@@ -138,3 +138,50 @@ func TestSessionIsExpired(t *testing.T) {
 		})
 	}
 }
+
+func TestSessionKey(t *testing.T) {
+	t.Parallel()
+
+	type fields struct {
+		SessionID auth.SessionID
+		UserID    user.ID
+		PublicKey rsa.PublicKey
+		IssuedAt  time.Time
+		ExpiresAt time.Time
+	}
+
+	tests := []struct {
+		name   string
+		fields fields
+		want   string
+	}{
+		{
+			name: "セッションキーを取得できる",
+			fields: fields{
+				SessionID: auth.SessionID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+				UserID:    user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+				PublicKey: rsa.PublicKey{},
+				IssuedAt:  time.Now(),
+				ExpiresAt: time.Now().Add(time.Hour * 24 * 30),
+			},
+			want: "01234567-0123-0123-0123-0123456789ab:01234567-0123-0123-0123-0123456789ab",
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			sss := model.Session{
+				SessionID: tt.fields.SessionID,
+				UserID:    tt.fields.UserID,
+				PublicKey: tt.fields.PublicKey,
+				IssuedAt:  tt.fields.IssuedAt,
+				ExpiresAt: tt.fields.ExpiresAt,
+			}
+			if got := sss.Key(); got != tt.want {
+				t.Errorf("Session.Key() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

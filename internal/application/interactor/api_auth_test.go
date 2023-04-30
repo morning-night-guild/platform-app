@@ -56,6 +56,7 @@ func TestAPIAuthSignUp(t *testing.T) {
 	type fields struct {
 		authRPC      func(t *testing.T) rpc.Auth
 		userRPC      func(t *testing.T) rpc.User
+		userCache    cache.Cache[model.User]
 		authCache    cache.Cache[model.Auth]
 		codeCache    cache.Cache[model.Code]
 		sessionCache cache.Cache[model.Session]
@@ -179,6 +180,7 @@ func TestAPIAuthSignUp(t *testing.T) {
 			itr := interactor.NewAPIAuth(
 				tt.fields.authRPC(t),
 				tt.fields.userRPC(t),
+				tt.fields.userCache,
 				tt.fields.authCache,
 				tt.fields.codeCache,
 				tt.fields.sessionCache,
@@ -201,6 +203,7 @@ func TestAPIAuthSignIn(t *testing.T) {
 	type fields struct {
 		authRPC      func(t *testing.T) rpc.Auth
 		userRPC      rpc.User
+		userCache    cache.Cache[model.User]
 		authCache    cache.Cache[model.Auth]
 		codeCache    cache.Cache[model.Code]
 		sessionCache cache.Cache[model.Session]
@@ -233,6 +236,12 @@ func TestAPIAuthSignIn(t *testing.T) {
 						UserID: user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
 					}, nil)
 					return mock
+				},
+				userCache: &cache.CacheMock[model.User]{
+					T: t,
+					CreateTxSetCmdAssert: func(t *testing.T, key string, value model.User, ttl time.Duration) {
+						t.Helper()
+					},
 				},
 				authCache: &cache.CacheMock[model.Auth]{
 					T: t,
@@ -287,6 +296,7 @@ func TestAPIAuthSignIn(t *testing.T) {
 			itr := interactor.NewAPIAuth(
 				tt.fields.authRPC(t),
 				tt.fields.userRPC,
+				tt.fields.userCache,
 				tt.fields.authCache,
 				tt.fields.codeCache,
 				tt.fields.sessionCache,
@@ -309,6 +319,7 @@ func TestAPIAuthSignOut(t *testing.T) {
 	type fields struct {
 		authRPC      rpc.Auth
 		userRPC      rpc.User
+		userCache    cache.Cache[model.User]
 		authCache    cache.Cache[model.Auth]
 		codeCache    cache.Cache[model.Code]
 		sessionCache cache.Cache[model.Session]
@@ -329,15 +340,24 @@ func TestAPIAuthSignOut(t *testing.T) {
 		{
 			name: "サインアウトできる",
 			fields: fields{
+				userCache: &cache.CacheMock[model.User]{
+					T: t,
+					CreateTxDelCmdAssert: func(t *testing.T, key string) {
+						t.Helper()
+					},
+				},
 				authCache: &cache.CacheMock[model.Auth]{
 					T: t,
-					DelAssert: func(t *testing.T, key string) {
+					CreateTxDelCmdAssert: func(t *testing.T, key string) {
 						t.Helper()
 					},
 				},
 				sessionCache: &cache.CacheMock[model.Session]{
 					T: t,
-					DelAssert: func(t *testing.T, key string) {
+					CreateTxDelCmdAssert: func(t *testing.T, key string) {
+						t.Helper()
+					},
+					TxAssert: func(t *testing.T, setCmds []cache.TxSetCmd, delCmds []cache.TxDelCmd) {
 						t.Helper()
 					},
 				},
@@ -353,18 +373,27 @@ func TestAPIAuthSignOut(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "AuthCache.Del()でエラーが発生してもサインアウトできる",
+			name: "SessionCache.CreateTxDelCmd()でエラーが発生してもサインアウトできる",
 			fields: fields{
+				userCache: &cache.CacheMock[model.User]{
+					T: t,
+					CreateTxDelCmdAssert: func(t *testing.T, key string) {
+						t.Helper()
+					},
+				},
 				authCache: &cache.CacheMock[model.Auth]{
-					T:      t,
-					DelErr: fmt.Errorf("test"),
-					DelAssert: func(t *testing.T, key string) {
+					T: t,
+					CreateTxDelCmdAssert: func(t *testing.T, key string) {
 						t.Helper()
 					},
 				},
 				sessionCache: &cache.CacheMock[model.Session]{
 					T: t,
-					DelAssert: func(t *testing.T, key string) {
+					CreateTxDelCmdAssert: func(t *testing.T, key string) {
+						t.Helper()
+					},
+					CreateTxDelCmdErr: fmt.Errorf("error"),
+					TxAssert: func(t *testing.T, setCmds []cache.TxSetCmd, delCmds []cache.TxDelCmd) {
 						t.Helper()
 					},
 				},
@@ -380,18 +409,63 @@ func TestAPIAuthSignOut(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "SessionCache.Del()でエラーが発生してもサインアウトできる",
+			name: "AuthCache.CreateTxDelCmd()でエラーが発生してもサインアウトできる",
 			fields: fields{
+				userCache: &cache.CacheMock[model.User]{
+					T: t,
+					CreateTxDelCmdAssert: func(t *testing.T, key string) {
+						t.Helper()
+					},
+				},
 				authCache: &cache.CacheMock[model.Auth]{
 					T: t,
-					DelAssert: func(t *testing.T, key string) {
+					CreateTxDelCmdAssert: func(t *testing.T, key string) {
+						t.Helper()
+					},
+					CreateTxDelCmdErr: fmt.Errorf("error"),
+				},
+				sessionCache: &cache.CacheMock[model.Session]{
+					T: t,
+					CreateTxDelCmdAssert: func(t *testing.T, key string) {
+						t.Helper()
+					},
+					TxAssert: func(t *testing.T, setCmds []cache.TxSetCmd, delCmds []cache.TxDelCmd) {
+						t.Helper()
+					},
+				},
+			},
+			args: args{
+				ctx: context.Background(),
+				input: usecase.APIAuthSignOutInput{
+					UserID:    user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+					SessionID: auth.SessionID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+				},
+			},
+			want:    usecase.APIAuthSignOutOutput{},
+			wantErr: false,
+		},
+		{
+			name: "UserCache.CreateTxDelCmd()でエラーが発生してもサインアウトできる",
+			fields: fields{
+				userCache: &cache.CacheMock[model.User]{
+					T: t,
+					CreateTxDelCmdAssert: func(t *testing.T, key string) {
+						t.Helper()
+					},
+					CreateTxDelCmdErr: fmt.Errorf("error"),
+				},
+				authCache: &cache.CacheMock[model.Auth]{
+					T: t,
+					CreateTxDelCmdAssert: func(t *testing.T, key string) {
 						t.Helper()
 					},
 				},
 				sessionCache: &cache.CacheMock[model.Session]{
-					T:      t,
-					DelErr: fmt.Errorf("test"),
-					DelAssert: func(t *testing.T, key string) {
+					T: t,
+					CreateTxDelCmdAssert: func(t *testing.T, key string) {
+						t.Helper()
+					},
+					TxAssert: func(t *testing.T, setCmds []cache.TxSetCmd, delCmds []cache.TxDelCmd) {
 						t.Helper()
 					},
 				},
@@ -415,6 +489,7 @@ func TestAPIAuthSignOut(t *testing.T) {
 			itr := interactor.NewAPIAuth(
 				tt.fields.authRPC,
 				tt.fields.userRPC,
+				tt.fields.userCache,
 				tt.fields.authCache,
 				tt.fields.codeCache,
 				tt.fields.sessionCache,
@@ -431,12 +506,99 @@ func TestAPIAuthSignOut(t *testing.T) {
 	}
 }
 
+func TestAPIAuthSignOutAll(t *testing.T) {
+	t.Parallel()
+
+	type fields struct {
+		authRPC      rpc.Auth
+		userRPC      rpc.User
+		userCache    cache.Cache[model.User]
+		authCache    cache.Cache[model.Auth]
+		codeCache    cache.Cache[model.Code]
+		sessionCache cache.Cache[model.Session]
+	}
+
+	type args struct {
+		ctx   context.Context
+		input usecase.APIAuthSignOutAllInput
+	}
+
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		want    usecase.APIAuthSignOutAllOutput
+		wantErr bool
+	}{
+		{
+			name: "サインアウトできる",
+			fields: fields{
+				authCache: &cache.CacheMock[model.Auth]{
+					T: t,
+					CreateTxDelCmdAssert: func(t *testing.T, key string) {
+						t.Helper()
+					},
+				},
+				sessionCache: &cache.CacheMock[model.Session]{
+					T: t,
+					KeysValue: []string{
+						"session:01234567-0123-0123-0123-0123456789ab:01234567-0123-0123-0123-0123456789ab",
+						"session:01234567-0123-0123-0123-0123456789ab:01234567-0123-0123-0123-0123456789ac",
+						"session:01234567-0123-0123-0123-0123456789ab:01234567-0123-0123-0123-0123456789ad",
+					},
+					KeysAssert: func(t *testing.T, pattern string) {
+						t.Helper()
+					},
+					CreateTxDelCmdAssert: func(t *testing.T, key string) {
+						t.Helper()
+					},
+					TxAssert: func(t *testing.T, setCmds []cache.TxSetCmd, delCmds []cache.TxDelCmd) {
+						t.Helper()
+					},
+				},
+			},
+			args: args{
+				ctx: context.Background(),
+				input: usecase.APIAuthSignOutAllInput{
+					UserID: user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+				},
+			},
+			want:    usecase.APIAuthSignOutAllOutput{},
+			wantErr: false,
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			itr := interactor.NewAPIAuth(
+				tt.fields.authRPC,
+				tt.fields.userRPC,
+				tt.fields.userCache,
+				tt.fields.authCache,
+				tt.fields.codeCache,
+				tt.fields.sessionCache,
+			)
+			got, err := itr.SignOutAll(tt.args.ctx, tt.args.input)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("APIAuth.SignOutAll() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("APIAuth.SignOutAll() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
 func TestAPIAuthVerify(t *testing.T) {
 	t.Parallel()
 
 	type fields struct {
 		authRPC      rpc.Auth
 		userRPC      rpc.User
+		userCache    cache.Cache[model.User]
 		authCache    cache.Cache[model.Auth]
 		codeCache    cache.Cache[model.Code]
 		sessionCache cache.Cache[model.Session]
@@ -536,6 +698,7 @@ func TestAPIAuthVerify(t *testing.T) {
 			itr := interactor.NewAPIAuth(
 				tt.fields.authRPC,
 				tt.fields.userRPC,
+				tt.fields.userCache,
 				tt.fields.authCache,
 				tt.fields.codeCache,
 				tt.fields.sessionCache,
@@ -558,6 +721,7 @@ func TestAPIAuthRefresh(t *testing.T) {
 	type fields struct {
 		authRPC      rpc.Auth
 		userRPC      rpc.User
+		userCache    cache.Cache[model.User]
 		authCache    cache.Cache[model.Auth]
 		codeCache    cache.Cache[model.Code]
 		sessionCache cache.Cache[model.Session]
@@ -594,6 +758,15 @@ func TestAPIAuthRefresh(t *testing.T) {
 						t.Helper()
 					},
 					CreateTxDelCmdAssert: func(t *testing.T, key string) {
+						t.Helper()
+					},
+				},
+				userCache: &cache.CacheMock[model.User]{
+					T: t,
+					Value: model.User{
+						UserID: user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+					},
+					GetAssert: func(t *testing.T, key string) {
 						t.Helper()
 					},
 				},
@@ -644,6 +817,7 @@ func TestAPIAuthRefresh(t *testing.T) {
 			itr := interactor.NewAPIAuth(
 				tt.fields.authRPC,
 				tt.fields.userRPC,
+				tt.fields.userCache,
 				tt.fields.authCache,
 				tt.fields.codeCache,
 				tt.fields.sessionCache,
@@ -666,6 +840,7 @@ func TestAPIAuthGenerateCode(t *testing.T) {
 	type fields struct {
 		authRPC      rpc.Auth
 		userRPC      rpc.User
+		userCache    cache.Cache[model.User]
 		authCache    cache.Cache[model.Auth]
 		codeCache    cache.Cache[model.Code]
 		sessionCache cache.Cache[model.Session]
@@ -720,6 +895,7 @@ func TestAPIAuthGenerateCode(t *testing.T) {
 			itr := interactor.NewAPIAuth(
 				tt.fields.authRPC,
 				tt.fields.userRPC,
+				tt.fields.userCache,
 				tt.fields.authCache,
 				tt.fields.codeCache,
 				tt.fields.sessionCache,
