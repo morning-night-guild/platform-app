@@ -59,7 +59,7 @@ func (atu *ArticleTagUpdate) ClearArticle() *ArticleTagUpdate {
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (atu *ArticleTagUpdate) Save(ctx context.Context) (int, error) {
-	return withHooks[int, ArticleTagMutation](ctx, atu.sqlSave, atu.mutation, atu.hooks)
+	return withHooks(ctx, atu.sqlSave, atu.mutation, atu.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -199,7 +199,7 @@ func (atuo *ArticleTagUpdateOne) Select(field string, fields ...string) *Article
 
 // Save executes the query and returns the updated ArticleTag entity.
 func (atuo *ArticleTagUpdateOne) Save(ctx context.Context) (*ArticleTag, error) {
-	return withHooks[*ArticleTag, ArticleTagMutation](ctx, atuo.sqlSave, atuo.mutation, atuo.hooks)
+	return withHooks(ctx, atuo.sqlSave, atuo.mutation, atuo.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.

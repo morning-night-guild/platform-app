@@ -63,7 +63,7 @@ func (atc *ArticleTagCreate) Mutation() *ArticleTagMutation {
 // Save creates the ArticleTag in the database.
 func (atc *ArticleTagCreate) Save(ctx context.Context) (*ArticleTag, error) {
 	atc.defaults()
-	return withHooks[*ArticleTag, ArticleTagMutation](ctx, atc.sqlSave, atc.mutation, atc.hooks)
+	return withHooks(ctx, atc.sqlSave, atc.mutation, atc.hooks)
 }
 
 // SaveX calls Save and panics if Save returns an error.
