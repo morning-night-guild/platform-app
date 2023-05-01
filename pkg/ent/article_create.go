@@ -114,7 +114,7 @@ func (ac *ArticleCreate) Mutation() *ArticleMutation {
 // Save creates the Article in the database.
 func (ac *ArticleCreate) Save(ctx context.Context) (*Article, error) {
 	ac.defaults()
-	return withHooks[*Article, ArticleMutation](ctx, ac.sqlSave, ac.mutation, ac.hooks)
+	return withHooks(ctx, ac.sqlSave, ac.mutation, ac.hooks)
 }
 
 // SaveX calls Save and panics if Save returns an error.
