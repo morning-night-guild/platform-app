@@ -167,10 +167,7 @@ func (i *inspect) columns(ctx context.Context, s *schema.Schema) error {
 	if err := rows.Close(); err != nil {
 		return err
 	}
-	if err := i.enumValues(ctx, s); err != nil {
-		return err
-	}
-	return nil
+	return i.enumValues(ctx, s)
 }
 
 // addColumn scans the current row and adds a new column from it to the table.
@@ -833,7 +830,7 @@ type (
 	// build or drop the index concurrently without blocking the current table.
 	// https://www.postgresql.org/docs/current/sql-createindex.html#SQL-CREATEINDEX-CONCURRENTLY
 	Concurrently struct {
-		schema.Attr
+		schema.Clause
 	}
 
 	// NoInherit attribute defines the NO INHERIT flag for CHECK constraint.

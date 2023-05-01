@@ -3,7 +3,7 @@ module github.com/morning-night-guild/platform-app
 go 1.20
 
 require (
-	entgo.io/ent v0.12.2
+	entgo.io/ent v0.12.3
 	firebase.google.com/go/v4 v4.11.0
 	github.com/bufbuild/connect-go v1.7.0
 	github.com/bufbuild/connect-grpchealth-go v1.0.0
@@ -27,7 +27,7 @@ require (
 )
 
 require (
-	ariga.io/atlas v0.10.0 // indirect
+	ariga.io/atlas v0.10.2-0.20230427182402-87a07dfb83bf // indirect
 	cloud.google.com/go v0.110.0 // indirect
 	cloud.google.com/go/compute v1.19.0 // indirect
 	cloud.google.com/go/compute/metadata v0.2.3 // indirect
@@ -56,7 +56,7 @@ require (
 	go.uber.org/atomic v1.10.0 // indirect
 	go.uber.org/multierr v1.9.0 // indirect
 	golang.org/x/crypto v0.1.0 // indirect
-	golang.org/x/mod v0.8.0 // indirect
+	golang.org/x/mod v0.10.0 // indirect
 	golang.org/x/oauth2 v0.7.0 // indirect
 	golang.org/x/sync v0.1.0 // indirect
 	golang.org/x/sys v0.7.0 // indirect

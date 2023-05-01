@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"regexp"
 	"strings"
 	"unicode"
 	"unicode/utf8"
@@ -83,17 +84,20 @@ func newLex(input string) (*lex, error) {
 		}
 		parts := strings.SplitN(input, "\n", 2)
 		if len(parts) == 1 {
-			return nil, fmt.Errorf("no input found after delimiter %q", d)
+			return nil, l.error(l.pos, "no input found after delimiter %q", d)
 		}
 		l.input = parts[1]
 	}
 	return l, nil
 }
 
+// Dollar-quoted string as defined by the PostgreSQL scanner.
+var reDollarQuote = regexp.MustCompile(`^\$([A-Za-zÈ-ÿ_][\wÈ-ÿ]*)*\$`)
+
 func (l *lex) stmt() (*Stmt, error) {
 	var (
-		depth int
-		text  string
+		depth, openingPos int
+		text              string
 	)
 	l.skipSpaces()
 Scan:
@@ -102,7 +106,7 @@ Scan:
 		case r == eos:
 			switch {
 			case depth > 0:
-				return nil, errors.New("unclosed parentheses")
+				return nil, l.error(openingPos, "unclosed '('")
 			case l.pos > 0:
 				text = l.input
 				break Scan
@@ -110,10 +114,13 @@ Scan:
 				return nil, io.EOF
 			}
 		case r == '(':
+			if depth == 0 {
+				openingPos = l.pos
+			}
 			depth++
 		case r == ')':
 			if depth == 0 {
-				return nil, fmt.Errorf("unexpected ')' at position %d", l.pos)
+				return nil, l.error(l.pos, "unexpected ')'")
 			}
 			depth--
 		case r == '\'', r == '"', r == '`':
@@ -132,6 +139,10 @@ Scan:
 			l.addPos(len(l.delim) - l.width)
 			text = l.input[:l.pos]
 			break Scan
+		case r == '$' && reDollarQuote.MatchString(l.input[l.pos-1:]):
+			if err := l.skipDollarQuote(); err != nil {
+				return nil, err
+			}
 		case r == '#':
 			l.comment("#", "\n")
 		case r == '-' && l.next() == '-':
@@ -166,13 +177,35 @@ func (l *lex) addPos(p int) {
 }
 
 func (l *lex) skipQuote(quote rune) error {
+	pos := l.pos
 	for {
 		switch r := l.next(); {
 		case r == eos:
-			return fmt.Errorf("unclosed quote %q", quote)
+			return l.error(pos, "unclosed quote %q", quote)
 		case r == '\\':
 			l.next()
 		case r == quote:
+			return nil
+		}
+	}
+}
+
+func (l *lex) skipDollarQuote() error {
+	m := reDollarQuote.FindString(l.input[l.pos-1:])
+	if m == "" {
+		return l.error(l.pos, "unexpected dollar quote")
+	}
+	l.addPos(len(m) - 1)
+	for {
+		switch r := l.next(); {
+		case r == eos:
+			// Fail only if a delimiter was not set.
+			if l.delim == "" {
+				return l.error(l.pos, "unclosed dollar-quoted string")
+			}
+			return nil
+		case r == '$' && strings.HasPrefix(l.input[l.pos-1:], m):
+			l.addPos(len(m) - 1)
 			return nil
 		}
 	}
@@ -251,4 +284,19 @@ func (l *lex) setDelim(d string) error {
 	// Unescape delimiters. e.g. "\\n" => "\n".
 	l.delim = strings.NewReplacer(`\n`, "\n", `\r`, "\r", `\t`, "\t").Replace(d)
 	return nil
+}
+
+func (l *lex) error(pos int, format string, args ...any) error {
+	format = "%d:%d: " + format
+	var (
+		s    = l.input[:pos]
+		col  = strings.LastIndex(s, "\n")
+		line = 1 + strings.Count(s, "\n")
+	)
+	if line == 1 {
+		col = pos
+	} else {
+		col = pos - col - 1
+	}
+	return fmt.Errorf(format, append([]any{line, col}, args...)...)
 }
