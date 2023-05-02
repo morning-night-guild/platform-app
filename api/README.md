@@ -194,6 +194,29 @@ To perform this operation, you must be authenticated by means of one of the foll
 authTokenCookie, sessionTokenCookie
 </aside>
 
+## v1AuthSignOutAll
+
+<a id="opIdv1AuthSignOutAll"></a>
+
+`GET /v1/auth/signout/all`
+
+*サインアウトオール*
+
+該当ユーザーのすべてのセッションにてサインアウトする
+
+<h3 id="v1authsignoutall-responses">Responses</h3>
+
+|Status|Meaning|Description|Schema|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|OK|None|
+|401|[Unauthorized](https://tools.ietf.org/html/rfc7235#section-3.1)|Unauthorized|None|
+|500|[Internal Server Error](https://tools.ietf.org/html/rfc7231#section-6.6.1)|Internal Server Error|None|
+
+<aside class="warning">
+To perform this operation, you must be authenticated by means of one of the following methods:
+authTokenCookie, sessionTokenCookie
+</aside>
+
 <h1 id="morning-night-guild-app-api-article">article</h1>
 
 記事
