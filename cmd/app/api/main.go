@@ -60,6 +60,11 @@ func main() {
 		panic(err)
 	}
 
+	userCache, err := redis.New[model.User]().KVS("user", rds)
+	if err != nil {
+		panic(err)
+	}
+
 	authCache, err := redis.New[model.Auth]().KVS("auth", rds)
 	if err != nil {
 		panic(err)
@@ -78,6 +83,7 @@ func main() {
 	authUsecase := interactor.NewAPIAuth(
 		authRPC,
 		userRPC,
+		userCache,
 		authCache,
 		codeCache,
 		sessionCache,

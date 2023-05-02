@@ -147,6 +147,23 @@ paths:
           description: Unauthorized
         '500':
           description: Internal Server Error
+  /v1/auth/signout/all:
+    get:
+      tags:
+        - auth
+      summary: サインアウトオール
+      description: 該当ユーザーのすべてのセッションにてサインアウトする
+      operationId: v1AuthSignOutAll
+      security:
+        - authTokenCookie: []
+        - sessionTokenCookie: []      
+      responses:
+        '200':
+          description: OK
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal Server Error
   /v1/articles:
     get:
       tags:

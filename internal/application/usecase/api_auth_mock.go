@@ -94,6 +94,21 @@ func (mr *MockAPIAuthMockRecorder) SignOut(arg0, arg1 interface{}) *gomock.Call 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SignOut", reflect.TypeOf((*MockAPIAuth)(nil).SignOut), arg0, arg1)
 }
 
+// SignOutAll mocks base method.
+func (m *MockAPIAuth) SignOutAll(arg0 context.Context, arg1 APIAuthSignOutAllInput) (APIAuthSignOutAllOutput, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SignOutAll", arg0, arg1)
+	ret0, _ := ret[0].(APIAuthSignOutAllOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SignOutAll indicates an expected call of SignOutAll.
+func (mr *MockAPIAuthMockRecorder) SignOutAll(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SignOutAll", reflect.TypeOf((*MockAPIAuth)(nil).SignOutAll), arg0, arg1)
+}
+
 // SignUp mocks base method.
 func (m *MockAPIAuth) SignUp(arg0 context.Context, arg1 APIAuthSignUpInput) (APIAuthSignUpOutput, error) {
 	m.ctrl.T.Helper()

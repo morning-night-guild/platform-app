@@ -33,6 +33,9 @@ type ServerInterface interface {
 	// サインアウト
 	// (GET /v1/auth/signout)
 	V1AuthSignOut(w http.ResponseWriter, r *http.Request)
+	// サインアウトオール
+	// (GET /v1/auth/signout/all)
+	V1AuthSignOutAll(w http.ResponseWriter, r *http.Request)
 	// サインアップ
 	// (POST /v1/auth/signup)
 	V1AuthSignUp(w http.ResponseWriter, r *http.Request)
@@ -242,6 +245,25 @@ func (siw *ServerInterfaceWrapper) V1AuthSignOut(w http.ResponseWriter, r *http.
 	handler.ServeHTTP(w, r.WithContext(ctx))
 }
 
+// V1AuthSignOutAll operation middleware
+func (siw *ServerInterfaceWrapper) V1AuthSignOutAll(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, AuthTokenCookieScopes, []string{""})
+
+	ctx = context.WithValue(ctx, SessionTokenCookieScopes, []string{""})
+
+	var handler http.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.V1AuthSignOutAll(w, r)
+	})
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r.WithContext(ctx))
+}
+
 // V1AuthSignUp operation middleware
 func (siw *ServerInterfaceWrapper) V1AuthSignUp(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
@@ -438,6 +460,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/v1/auth/signout", wrapper.V1AuthSignOut)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/v1/auth/signout/all", wrapper.V1AuthSignOutAll)
 	})
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/v1/auth/signup", wrapper.V1AuthSignUp)

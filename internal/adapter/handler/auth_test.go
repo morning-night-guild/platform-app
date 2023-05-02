@@ -633,6 +633,222 @@ func TestHandlerV1AuthSignOut(t *testing.T) {
 	}
 }
 
+func TestHandlerV1AuthSignOutAll(t *testing.T) {
+	t.Parallel()
+
+	type fields struct {
+		auth    func(*testing.T) usecase.APIAuth
+		article usecase.APIArticle
+		health  usecase.APIHealth
+	}
+
+	type args struct {
+		r       *http.Request
+		cookies []*http.Cookie
+	}
+
+	token := GenerateToken(t)
+
+	tests := []struct {
+		name   string
+		fields fields
+		args   args
+		status int
+	}{
+		{
+			name: "サインアウトできる",
+			fields: fields{
+				auth: func(t *testing.T) usecase.APIAuth {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := usecase.NewMockAPIAuth(ctrl)
+					mock.EXPECT().SignOut(gomock.Any(), usecase.APIAuthSignOutInput{
+						UserID:    token.UserID,
+						SessionID: token.SessionToken.ID(auth.Secret("secret")),
+					}).Return(usecase.APIAuthSignOutOutput{}, nil)
+					return mock
+				},
+			},
+			args: args{
+				r: &http.Request{
+					Method: http.MethodGet,
+					Header: http.Header{},
+				},
+				cookies: []*http.Cookie{
+					{
+						Name:  auth.AuthTokenKey,
+						Value: token.AuthTokenString,
+					},
+					{
+						Name:  auth.SessionTokenKey,
+						Value: token.SessionTokenString,
+					},
+				},
+			},
+			status: http.StatusOK,
+		},
+		{
+			name: "AuthCookieがなくてもサインアウトできる",
+			fields: fields{
+				auth: func(t *testing.T) usecase.APIAuth {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := usecase.NewMockAPIAuth(ctrl)
+					return mock
+				},
+			},
+			args: args{
+				r: &http.Request{
+					Method: http.MethodGet,
+					Header: http.Header{},
+				},
+				cookies: []*http.Cookie{
+					{
+						Name:  auth.SessionTokenKey,
+						Value: token.SessionTokenString,
+					},
+				},
+			},
+			status: http.StatusOK,
+		},
+		{
+			name: "AuthCookieが不正な値でもサインアウトできる",
+			fields: fields{
+				auth: func(t *testing.T) usecase.APIAuth {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := usecase.NewMockAPIAuth(ctrl)
+					return mock
+				},
+			},
+			args: args{
+				r: &http.Request{
+					Method: http.MethodGet,
+					Header: http.Header{},
+				},
+				cookies: []*http.Cookie{
+					{
+						Name:  auth.SessionTokenKey,
+						Value: token.SessionTokenString,
+					},
+					{
+						Name:  auth.AuthTokenKey,
+						Value: "token",
+					},
+				},
+			},
+			status: http.StatusOK,
+		},
+		{
+			name: "SessionCookieがなくてもサインアウトできる",
+			fields: fields{
+				auth: func(t *testing.T) usecase.APIAuth {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := usecase.NewMockAPIAuth(ctrl)
+					return mock
+				},
+			},
+			args: args{
+				r: &http.Request{
+					Method: http.MethodGet,
+					Header: http.Header{},
+				},
+				cookies: []*http.Cookie{
+					{
+						Name:  auth.AuthTokenKey,
+						Value: token.AuthTokenString,
+					},
+				},
+			},
+			status: http.StatusOK,
+		},
+		{
+			name: "SessionCookieが不正な値でもサインアウトできる",
+			fields: fields{
+				auth: func(t *testing.T) usecase.APIAuth {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := usecase.NewMockAPIAuth(ctrl)
+					return mock
+				},
+			},
+			args: args{
+				r: &http.Request{
+					Method: http.MethodGet,
+					Header: http.Header{},
+				},
+				cookies: []*http.Cookie{
+					{
+						Name:  auth.SessionTokenKey,
+						Value: "token",
+					},
+					{
+						Name:  auth.AuthTokenKey,
+						Value: token.AuthTokenString,
+					},
+				},
+			},
+			status: http.StatusOK,
+		},
+		{
+			name: "usecaseでエラーが発生してもサインアウトできる",
+			fields: fields{
+				auth: func(t *testing.T) usecase.APIAuth {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := usecase.NewMockAPIAuth(ctrl)
+					mock.EXPECT().SignOut(gomock.Any(), usecase.APIAuthSignOutInput{
+						UserID:    token.UserID,
+						SessionID: token.SessionToken.ID(auth.Secret("secret")),
+					}).Return(usecase.APIAuthSignOutOutput{}, fmt.Errorf("error"))
+					return mock
+				},
+			},
+			args: args{
+				r: &http.Request{
+					Method: http.MethodGet,
+					Header: http.Header{},
+				},
+				cookies: []*http.Cookie{
+					{
+						Name:  auth.AuthTokenKey,
+						Value: token.AuthTokenString,
+					},
+					{
+						Name:  auth.SessionTokenKey,
+						Value: token.SessionTokenString,
+					},
+				},
+			},
+			status: http.StatusOK,
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			hdl := handler.New(
+				"key",
+				auth.Secret("secret"),
+				Cookie(t),
+				tt.fields.auth(t),
+				tt.fields.article,
+				tt.fields.health,
+			)
+			got := httptest.NewRecorder()
+			for _, cookie := range tt.args.cookies {
+				tt.args.r.AddCookie(cookie)
+			}
+			hdl.V1AuthSignOutAll(got, tt.args.r)
+			if got.Code != tt.status {
+				t.Errorf("got %v, want %v", got.Code, tt.status)
+			}
+		})
+	}
+}
+
 func TestHandlerV1AuthSignUp(t *testing.T) {
 	t.Parallel()
 

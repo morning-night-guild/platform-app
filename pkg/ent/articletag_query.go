@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"math"
 
+	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
@@ -24,6 +25,7 @@ type ArticleTagQuery struct {
 	inters      []Interceptor
 	predicates  []predicate.ArticleTag
 	withArticle *ArticleQuery
+	modifiers   []func(*sql.Selector)
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -383,6 +385,9 @@ func (atq *ArticleTagQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*
 		node.Edges.loadedTypes = loadedTypes
 		return node.assignValues(columns, values)
 	}
+	if len(atq.modifiers) > 0 {
+		_spec.Modifiers = atq.modifiers
+	}
 	for i := range hooks {
 		hooks[i](ctx, _spec)
 	}
@@ -433,6 +438,9 @@ func (atq *ArticleTagQuery) loadArticle(ctx context.Context, query *ArticleQuery
 
 func (atq *ArticleTagQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := atq.querySpec()
+	if len(atq.modifiers) > 0 {
+		_spec.Modifiers = atq.modifiers
+	}
 	_spec.Node.Columns = atq.ctx.Fields
 	if len(atq.ctx.Fields) > 0 {
 		_spec.Unique = atq.ctx.Unique != nil && *atq.ctx.Unique
@@ -498,6 +506,9 @@ func (atq *ArticleTagQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	if atq.ctx.Unique != nil && *atq.ctx.Unique {
 		selector.Distinct()
 	}
+	for _, m := range atq.modifiers {
+		m(selector)
+	}
 	for _, p := range atq.predicates {
 		p(selector)
 	}
@@ -513,6 +524,32 @@ func (atq *ArticleTagQuery) sqlQuery(ctx context.Context) *sql.Selector {
 		selector.Limit(*limit)
 	}
 	return selector
+}
+
+// ForUpdate locks the selected rows against concurrent updates, and prevent them from being
+// updated, deleted or "selected ... for update" by other sessions, until the transaction is
+// either committed or rolled-back.
+func (atq *ArticleTagQuery) ForUpdate(opts ...sql.LockOption) *ArticleTagQuery {
+	if atq.driver.Dialect() == dialect.Postgres {
+		atq.Unique(false)
+	}
+	atq.modifiers = append(atq.modifiers, func(s *sql.Selector) {
+		s.ForUpdate(opts...)
+	})
+	return atq
+}
+
+// ForShare behaves similarly to ForUpdate, except that it acquires a shared mode lock
+// on any rows that are read. Other sessions can read the rows, but cannot modify them
+// until your transaction commits.
+func (atq *ArticleTagQuery) ForShare(opts ...sql.LockOption) *ArticleTagQuery {
+	if atq.driver.Dialect() == dialect.Postgres {
+		atq.Unique(false)
+	}
+	atq.modifiers = append(atq.modifiers, func(s *sql.Selector) {
+		s.ForShare(opts...)
+	})
+	return atq
 }
 
 // ArticleTagGroupBy is the group-by builder for ArticleTag entities.

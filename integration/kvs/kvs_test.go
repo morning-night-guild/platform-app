@@ -2,7 +2,9 @@ package kvs_test
 
 import (
 	"context"
+	"fmt"
 	"reflect"
+	"sort"
 	"testing"
 	"time"
 
@@ -193,6 +195,80 @@ func TestKVS(t *testing.T) {
 
 		if !reflect.DeepEqual(got2, kv2) {
 			t.Errorf("got = %v, want %v", got2, kv2)
+		}
+	})
+
+	t.Run("キー一覧が取得できる", func(t *testing.T) {
+		t.Parallel()
+
+		rds, err := redis.NewRedis(url)
+		if err != nil {
+			t.Fatal("failed to connect to redis")
+		}
+
+		kvs, err := redis.New[KV]().KVS("test", rds)
+		if err != nil {
+			t.Fatal("failed to create kvs")
+		}
+
+		ctx := context.Background()
+
+		ptn := "%s:%s"
+
+		prf := uuid.New().String()
+
+		key1 := fmt.Sprintf(ptn, prf, uuid.New())
+
+		key2 := fmt.Sprintf(ptn, prf, uuid.New())
+
+		key3 := fmt.Sprintf(ptn, prf, uuid.New())
+
+		if err := kvs.Set(ctx, key1, KV{
+			Key:   key1,
+			Value: uuid.New().String(),
+		}, time.Hour); err != nil {
+			t.Errorf("failed to set: %v", err)
+		}
+
+		if err := kvs.Set(ctx, key2, KV{
+			Key:   key2,
+			Value: uuid.New().String(),
+		}, time.Hour); err != nil {
+			t.Errorf("failed to set: %v", err)
+		}
+
+		if err := kvs.Set(ctx, key3, KV{
+			Key:   key3,
+			Value: uuid.New().String(),
+		}, time.Hour); err != nil {
+			t.Errorf("failed to set: %v", err)
+		}
+
+		got, err := kvs.Keys(ctx, prf)
+		if err != nil {
+			t.Fatalf("failed to get keys: %v", err)
+		}
+
+		want := []string{
+			fmt.Sprintf("test:%s", key1),
+			fmt.Sprintf("test:%s", key2),
+			fmt.Sprintf("test:%s", key3),
+		}
+
+		if len(got) != len(want) {
+			t.Errorf("got = %v, want = %v", got, want)
+		}
+
+		sort.Slice(got, func(i, j int) bool {
+			return got[i] < got[j]
+		})
+
+		sort.Slice(want, func(i, j int) bool {
+			return want[i] < want[j]
+		})
+
+		if !reflect.DeepEqual(got, want) {
+			t.Errorf("got = %v, want = %v", got, want)
 		}
 	})
 }
