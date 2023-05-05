@@ -24,7 +24,7 @@ func NewUnauthorizedError(
 
 	return UnauthorizedError{
 		msg: msg,
-		err: errs[0],
+		err: errors.Join(errs...),
 	}
 }
 

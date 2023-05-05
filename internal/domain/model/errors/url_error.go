@@ -24,7 +24,7 @@ func NewURLError(
 
 	return URLError{
 		msg: msg,
-		err: errs[0],
+		err: errors.Join(errs...),
 	}
 }
 
