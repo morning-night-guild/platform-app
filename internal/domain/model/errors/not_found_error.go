@@ -29,12 +29,12 @@ func NewNotFoundError(
 }
 
 // Error エラーメソッド.
-func (nfe NotFoundError) Error() string {
-	if nfe.err != nil {
-		return fmt.Errorf("%s: %w", nfe.msg, nfe.err).Error()
+func (err NotFoundError) Error() string {
+	if err.err != nil {
+		return fmt.Errorf("%s: %w", err.msg, err.err).Error()
 	}
 
-	return nfe.msg
+	return err.msg
 }
 
 // AsNotFoundError NotFoundError型に変換できるかどうかを判定する.

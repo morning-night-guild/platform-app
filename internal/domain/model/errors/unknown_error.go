@@ -29,12 +29,12 @@ func NewUnknownError(
 }
 
 // Error エラーメソッド.
-func (ue UnknownError) Error() string {
-	if ue.err != nil {
-		return fmt.Errorf("%s: %w", ue.msg, ue.err).Error()
+func (err UnknownError) Error() string {
+	if err.err != nil {
+		return fmt.Errorf("%s: %w", err.msg, err.err).Error()
 	}
 
-	return ue.msg
+	return err.msg
 }
 
 // AsUnknownError UnknownError型に変換できるかどうかを判定する.

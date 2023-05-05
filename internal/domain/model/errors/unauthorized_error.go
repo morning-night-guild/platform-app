@@ -29,12 +29,12 @@ func NewUnauthorizedError(
 }
 
 // Error エラーメソッド.
-func (ue UnauthorizedError) Error() string {
-	if ue.err != nil {
-		return fmt.Errorf("%s: %w", ue.msg, ue.err).Error()
+func (err UnauthorizedError) Error() string {
+	if err.err != nil {
+		return fmt.Errorf("%s: %w", err.msg, err.err).Error()
 	}
 
-	return ue.msg
+	return err.msg
 }
 
 // AsUnauthorizedError UnauthorizedError型に変換できるかどうかを判定する.

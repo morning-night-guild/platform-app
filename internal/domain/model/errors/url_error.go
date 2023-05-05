@@ -29,12 +29,12 @@ func NewURLError(
 }
 
 // Error エラーメソッド.
-func (ue URLError) Error() string {
-	if ue.err != nil {
-		return fmt.Errorf("%s: %w", ue.msg, ue.err).Error()
+func (err URLError) Error() string {
+	if err.err != nil {
+		return fmt.Errorf("%s: %w", err.msg, err.err).Error()
 	}
 
-	return ue.msg
+	return err.msg
 }
 
 // AsURLError URLError型に変換できるかどうかを判定する.
