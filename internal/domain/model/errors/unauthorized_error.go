@@ -37,6 +37,11 @@ func (err UnauthorizedError) Error() string {
 	return err.msg
 }
 
+// Unwrap アンラップ.
+func (err UnauthorizedError) Unwrap() error {
+	return err.err
+}
+
 // AsUnauthorizedError UnauthorizedError型に変換できるかどうかを判定する.
 func AsUnauthorizedError(err error) bool {
 	var target UnauthorizedError

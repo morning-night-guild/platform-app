@@ -37,6 +37,11 @@ func (err URLError) Error() string {
 	return err.msg
 }
 
+// Unwrap アンラップ.
+func (err URLError) Unwrap() error {
+	return err.err
+}
+
 // AsURLError URLError型に変換できるかどうかを判定する.
 func AsURLError(err error) bool {
 	var target URLError

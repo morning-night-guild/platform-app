@@ -37,6 +37,11 @@ func (err UnknownError) Error() string {
 	return err.msg
 }
 
+// Unwrap アンラップ.
+func (err UnknownError) Unwrap() error {
+	return err.err
+}
+
 // AsUnknownError UnknownError型に変換できるかどうかを判定する.
 func AsUnknownError(err error) bool {
 	var target UnknownError

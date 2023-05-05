@@ -37,6 +37,11 @@ func (err ValidationError) Error() string {
 	return err.msg
 }
 
+// Unwrap アンラップ.
+func (err ValidationError) Unwrap() error {
+	return err.err
+}
+
 // AsValidationError ValidationError型に変換できるかどうかを判定する.
 func AsValidationError(err error) bool {
 	var target ValidationError

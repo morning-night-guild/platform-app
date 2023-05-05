@@ -37,6 +37,11 @@ func (err NotFoundError) Error() string {
 	return err.msg
 }
 
+// Unwrap アンラップ.
+func (err NotFoundError) Unwrap() error {
+	return err.err
+}
+
 // AsNotFoundError NotFoundError型に変換できるかどうかを判定する.
 func AsNotFoundError(err error) bool {
 	var target NotFoundError
