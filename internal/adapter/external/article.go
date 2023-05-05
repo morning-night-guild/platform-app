@@ -20,14 +20,16 @@ type ArticleFactory interface {
 var _ rpc.Article = (*Article)(nil)
 
 type Article struct {
-	connect articlev1connect.ArticleServiceClient
+	connect  articlev1connect.ArticleServiceClient
+	external *External
 }
 
 func NewArticle(
 	connect articlev1connect.ArticleServiceClient,
 ) *Article {
 	return &Article{
-		connect: connect,
+		connect:  connect,
+		external: New(),
 	}
 }
 
@@ -49,7 +51,7 @@ func (ext *Article) Share(
 	if err != nil {
 		log.GetLogCtx(ctx).Warn("failed to share article", log.ErrorField(err))
 
-		return model.Article{}, err
+		return model.Article{}, ext.external.HandleError(ctx, err)
 	}
 
 	article := model.ReconstructArticle(
@@ -78,7 +80,7 @@ func (ext *Article) List(
 	if err != nil {
 		log.GetLogCtx(ctx).Warn("failed to list articles", log.ErrorField(err))
 
-		return nil, err
+		return nil, ext.external.HandleError(ctx, err)
 	}
 
 	articles := make([]model.Article, len(res.Msg.Articles))
@@ -108,7 +110,7 @@ func (ext *Article) Delete(
 	if _, err := ext.connect.Delete(ctx, req); err != nil {
 		log.GetLogCtx(ctx).Sugar().Warnf("failed to delete articles. articleID=%s", articleID.String(), log.ErrorField(err))
 
-		return err
+		return ext.external.HandleError(ctx, err)
 	}
 
 	return nil
