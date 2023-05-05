@@ -32,9 +32,9 @@ func New() *External {
 	return &External{}
 }
 
-func (ext *External) HandleError(ctx context.Context, err error) error {
+func (ext *External) HandleError(_ context.Context, err error) error {
 	code := connect.CodeOf(err)
-	switch code {
+	switch code { //nolint:exhaustive
 	case connect.CodeInvalidArgument:
 		return errors.NewValidationError(code.String(), err)
 	case connect.CodeNotFound:
