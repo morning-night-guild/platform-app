@@ -24,17 +24,22 @@ func NewURLError(
 
 	return URLError{
 		msg: msg,
-		err: errs[0],
+		err: errors.Join(errs...),
 	}
 }
 
 // Error エラーメソッド.
-func (ue URLError) Error() string {
-	if ue.err != nil {
-		return fmt.Errorf("%s: %w", ue.msg, ue.err).Error()
+func (err URLError) Error() string {
+	if err.err != nil {
+		return fmt.Errorf("%s: %w", err.msg, err.err).Error()
 	}
 
-	return ue.msg
+	return err.msg
+}
+
+// Unwrap アンラップ.
+func (err URLError) Unwrap() error {
+	return err.err
 }
 
 // AsURLError URLError型に変換できるかどうかを判定する.

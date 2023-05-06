@@ -24,17 +24,22 @@ func NewNotFoundError(
 
 	return NotFoundError{
 		msg: msg,
-		err: errs[0],
+		err: errors.Join(errs...),
 	}
 }
 
 // Error エラーメソッド.
-func (nfe NotFoundError) Error() string {
-	if nfe.err != nil {
-		return fmt.Errorf("%s: %w", nfe.msg, nfe.err).Error()
+func (err NotFoundError) Error() string {
+	if err.err != nil {
+		return fmt.Errorf("%s: %w", err.msg, err.err).Error()
 	}
 
-	return nfe.msg
+	return err.msg
+}
+
+// Unwrap アンラップ.
+func (err NotFoundError) Unwrap() error {
+	return err.err
 }
 
 // AsNotFoundError NotFoundError型に変換できるかどうかを判定する.

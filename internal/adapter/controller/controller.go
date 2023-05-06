@@ -10,11 +10,6 @@ import (
 )
 
 var (
-	errInternal = fmt.Errorf("internal server")
-	ErrInternal = connect.NewError(
-		connect.CodeInternal,
-		errInternal,
-	)
 	errInvalidArgument = fmt.Errorf("bad request")
 	ErrInvalidArgument = connect.NewError(
 		connect.CodeInvalidArgument,
@@ -29,6 +24,11 @@ var (
 	ErrNotFound = connect.NewError(
 		connect.CodeNotFound,
 		errNotFound,
+	)
+	errInternal = fmt.Errorf("internal server")
+	ErrInternal = connect.NewError(
+		connect.CodeInternal,
+		errInternal,
 	)
 )
 

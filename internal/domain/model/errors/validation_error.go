@@ -24,17 +24,22 @@ func NewValidationError(
 
 	return ValidationError{
 		msg: msg,
-		err: errs[0],
+		err: errors.Join(errs...),
 	}
 }
 
 // Error エラーメソッド.
-func (ve ValidationError) Error() string {
-	if ve.err != nil {
-		return fmt.Errorf("%s: %w", ve.msg, ve.err).Error()
+func (err ValidationError) Error() string {
+	if err.err != nil {
+		return fmt.Errorf("%s: %w", err.msg, err.err).Error()
 	}
 
-	return ve.msg
+	return err.msg
+}
+
+// Unwrap アンラップ.
+func (err ValidationError) Unwrap() error {
+	return err.err
 }
 
 // AsValidationError ValidationError型に変換できるかどうかを判定する.

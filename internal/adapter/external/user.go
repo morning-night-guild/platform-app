@@ -19,14 +19,16 @@ type UserFactory interface {
 var _ rpc.User = (*User)(nil)
 
 type User struct {
-	connect userv1connect.UserServiceClient
+	connect  userv1connect.UserServiceClient
+	external *External
 }
 
 func NewUser(
 	connect userv1connect.UserServiceClient,
 ) *User {
 	return &User{
-		connect: connect,
+		connect:  connect,
+		external: New(),
 	}
 }
 
@@ -37,7 +39,7 @@ func (ext *User) Create(ctx context.Context) (model.User, error) {
 	if err != nil {
 		log.GetLogCtx(ctx).Warn("failed to create user core", log.ErrorField(err))
 
-		return model.User{}, err
+		return model.User{}, ext.external.HandleError(ctx, err)
 	}
 
 	return model.User{
@@ -54,7 +56,7 @@ func (ext *User) Update(ctx context.Context, uid user.ID) (model.User, error) {
 	if err != nil {
 		log.GetLogCtx(ctx).Warn("failed to update user core", log.ErrorField(err))
 
-		return model.User{}, err
+		return model.User{}, ext.external.HandleError(ctx, err)
 	}
 
 	return model.User{

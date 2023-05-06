@@ -24,17 +24,22 @@ func NewUnknownError(
 
 	return UnknownError{
 		msg: msg,
-		err: errs[0],
+		err: errors.Join(errs...),
 	}
 }
 
 // Error エラーメソッド.
-func (ue UnknownError) Error() string {
-	if ue.err != nil {
-		return fmt.Errorf("%s: %w", ue.msg, ue.err).Error()
+func (err UnknownError) Error() string {
+	if err.err != nil {
+		return fmt.Errorf("%s: %w", err.msg, err.err).Error()
 	}
 
-	return ue.msg
+	return err.msg
+}
+
+// Unwrap アンラップ.
+func (err UnknownError) Unwrap() error {
+	return err.err
 }
 
 // AsUnknownError UnknownError型に変換できるかどうかを判定する.
