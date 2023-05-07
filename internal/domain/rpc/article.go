@@ -12,6 +12,6 @@ import (
 
 type Article interface {
 	Share(context.Context, article.URL, article.Title, article.Description, article.Thumbnail) (model.Article, error)
-	List(context.Context, value.Index, value.Size) ([]model.Article, error)
+	List(context.Context, value.Index, value.Size, ...value.Filter) ([]model.Article, error)
 	Delete(context.Context, article.ID) error
 }

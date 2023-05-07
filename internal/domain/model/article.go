@@ -3,7 +3,10 @@ package model
 import (
 	"github.com/google/uuid"
 	"github.com/morning-night-guild/platform-app/internal/domain/model/article"
+	"github.com/morning-night-guild/platform-app/internal/domain/value"
 )
+
+const DefaultArticleSize = value.Size(20)
 
 // Article 記事モデル.
 type Article struct {

@@ -26,6 +26,14 @@ const aid = "01234567-0123-0123-0123-0123456789ab"
 func TestHandlerV1ListArticles(t *testing.T) {
 	t.Parallel()
 
+	toIntPointer := func(v int) *int {
+		return &v
+	}
+
+	toStringPointer := func(v string) *string {
+		return &v
+	}
+
 	type fields struct {
 		cookie  handler.Cookie
 		auth    usecase.APIAuth
@@ -83,7 +91,48 @@ func TestHandlerV1ListArticles(t *testing.T) {
 				},
 				params: openapi.V1ArticleListParams{
 					PageToken:   &next,
-					MaxPageSize: 5,
+					MaxPageSize: toIntPointer(5),
+				},
+			},
+			status: http.StatusOK,
+		},
+		{
+			name: "タイトルで部分一致検索して記事が一覧できる",
+			fields: fields{
+				article: func(t *testing.T) usecase.APIArticle {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := usecase.NewMockAPIArticle(ctrl)
+					mock.EXPECT().List(gomock.Any(), usecase.APIArticleListInput{
+						UserID: token.UserID,
+						Index:  value.Index(0),
+						Size:   value.Size(5),
+						Filter: []value.Filter{value.NewFilter("title", "title")},
+					}).Return(usecase.APIArticleListOutput{
+						Articles: []model.Article{},
+					}, nil)
+					return mock
+				},
+			},
+			args: args{
+				r: &http.Request{
+					Method: http.MethodGet,
+					Header: http.Header{},
+				},
+				cookies: []*http.Cookie{
+					{
+						Name:  auth.AuthTokenKey,
+						Value: token.AuthTokenString,
+					},
+					{
+						Name:  auth.SessionTokenKey,
+						Value: token.SessionTokenString,
+					},
+				},
+				params: openapi.V1ArticleListParams{
+					PageToken:   &next,
+					MaxPageSize: toIntPointer(5),
+					Title:       toStringPointer("title"),
 				},
 			},
 			status: http.StatusOK,
@@ -115,7 +164,7 @@ func TestHandlerV1ListArticles(t *testing.T) {
 				},
 				params: openapi.V1ArticleListParams{
 					PageToken:   &next,
-					MaxPageSize: -5,
+					MaxPageSize: toIntPointer(-5),
 				},
 			},
 			status: http.StatusBadRequest,
@@ -152,7 +201,7 @@ func TestHandlerV1ListArticles(t *testing.T) {
 				},
 				params: openapi.V1ArticleListParams{
 					PageToken:   &next,
-					MaxPageSize: 5,
+					MaxPageSize: toIntPointer(5),
 				},
 			},
 			status: http.StatusInternalServerError,

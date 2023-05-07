@@ -58,7 +58,7 @@ func (itr *APIArticle) List(
 		return usecase.APIArticleListOutput{}, errors.NewUnauthorizedError("auth token is expired")
 	}
 
-	articles, err := itr.articleRPC.List(ctx, input.Index, input.Size)
+	articles, err := itr.articleRPC.List(ctx, input.Index, input.Size, input.Filter...)
 	if err != nil {
 		return usecase.APIArticleListOutput{}, err
 	}

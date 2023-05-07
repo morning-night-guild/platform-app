@@ -193,6 +193,53 @@ func TestCoreArticleList(t *testing.T) {
 			},
 			wantErr: false,
 		},
+		{
+			name: "タイトル部分一致で記事一覧を取得できる",
+			fields: fields{
+				articleRepository: func(t *testing.T) repository.Article {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := repository.NewMockArticle(ctrl)
+					mock.EXPECT().FindAll(
+						gomock.Any(),
+						value.Index(0),
+						value.Size(1),
+						[]value.Filter{value.NewFilter("title", "title")},
+					).Return([]model.Article{
+						{
+							ID:          article.ID(id),
+							Title:       article.Title("title"),
+							URL:         article.URL("https://example.com"),
+							Description: article.Description("description"),
+							Thumbnail:   article.Thumbnail("https://example.com"),
+							TagList:     article.TagList{},
+						},
+					}, nil)
+					return mock
+				},
+			},
+			args: args{
+				ctx: context.Background(),
+				input: usecase.CoreArticleListInput{
+					Index:  value.Index(0),
+					Size:   value.Size(1),
+					Filter: []value.Filter{value.NewFilter("title", "title")},
+				},
+			},
+			want: usecase.CoreArticleListOutput{
+				Articles: []model.Article{
+					{
+						ID:          article.ID(id),
+						Title:       article.Title("title"),
+						URL:         article.URL("https://example.com"),
+						Description: article.Description("description"),
+						Thumbnail:   article.Thumbnail("https://example.com"),
+						TagList:     article.TagList{},
+					},
+				},
+			},
+			wantErr: false,
+		},
 	}
 
 	for _, tt := range tests {

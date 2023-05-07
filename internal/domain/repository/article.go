@@ -12,7 +12,7 @@ import (
 
 type Article interface {
 	Save(context.Context, model.Article) error
-	FindAll(context.Context, value.Index, value.Size) ([]model.Article, error)
+	FindAll(context.Context, value.Index, value.Size, ...value.Filter) ([]model.Article, error)
 	Find(context.Context, article.ID) (model.Article, error)
 	Delete(context.Context, article.ID) error
 }

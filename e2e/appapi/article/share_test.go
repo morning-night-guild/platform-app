@@ -32,9 +32,9 @@ func TestAppAPIE2EArticleShare(t *testing.T) {
 
 		res, err := client.Client.V1ArticleShare(context.Background(), openapi.V1ArticleShareRequestSchema{
 			Url:         fmt.Sprintf("https://example.com/%s", title),
-			Title:       helper.ToStringPointer(title),
-			Description: helper.ToStringPointer("description"),
-			Thumbnail:   helper.ToStringPointer("https://example.com/thumbnail.jpg"),
+			Title:       helper.ToStringPointer(t, title),
+			Description: helper.ToStringPointer(t, "description"),
+			Thumbnail:   helper.ToStringPointer(t, "https://example.com/thumbnail.jpg"),
 		})
 		if err != nil {
 			t.Fatalf("failed to share article: %s", err)
@@ -63,8 +63,8 @@ func TestAppAPIE2EArticleShare(t *testing.T) {
 		res, err := client.Client.V1ArticleShare(context.Background(), openapi.V1ArticleShareRequestSchema{
 			Url:         fmt.Sprintf("https://example.com/%s", title),
 			Title:       nil,
-			Description: helper.ToStringPointer("description"),
-			Thumbnail:   helper.ToStringPointer("https://example.com/thumbnail.jpg"),
+			Description: helper.ToStringPointer(t, "description"),
+			Thumbnail:   helper.ToStringPointer(t, "https://example.com/thumbnail.jpg"),
 		})
 		if err != nil {
 			t.Fatalf("failed to share article: %s", err)
@@ -92,9 +92,9 @@ func TestAppAPIE2EArticleShare(t *testing.T) {
 
 		res, err := client.Client.V1ArticleShare(context.Background(), openapi.V1ArticleShareRequestSchema{
 			Url:         fmt.Sprintf("https://example.com/%s", title),
-			Title:       helper.ToStringPointer(title),
+			Title:       helper.ToStringPointer(t, title),
 			Description: nil,
-			Thumbnail:   helper.ToStringPointer("https://example.com/thumbnail.jpg"),
+			Thumbnail:   helper.ToStringPointer(t, "https://example.com/thumbnail.jpg"),
 		})
 		if err != nil {
 			t.Fatalf("failed to share article: %s", err)
@@ -122,8 +122,8 @@ func TestAppAPIE2EArticleShare(t *testing.T) {
 
 		res, err := client.Client.V1ArticleShare(context.Background(), openapi.V1ArticleShareRequestSchema{
 			Url:         fmt.Sprintf("https://example.com/%s", title),
-			Title:       helper.ToStringPointer(title),
-			Description: helper.ToStringPointer("description"),
+			Title:       helper.ToStringPointer(t, title),
+			Description: helper.ToStringPointer(t, "description"),
 			Thumbnail:   nil,
 		})
 		if err != nil {
@@ -144,9 +144,9 @@ func TestAppAPIE2EArticleShare(t *testing.T) {
 
 		res, err := client.Client.V1ArticleShare(context.Background(), openapi.V1ArticleShareRequestSchema{
 			Url:         "",
-			Title:       helper.ToStringPointer("title"),
-			Description: helper.ToStringPointer("description"),
-			Thumbnail:   helper.ToStringPointer("https://example.com/thumbnail.jpg"),
+			Title:       helper.ToStringPointer(t, "title"),
+			Description: helper.ToStringPointer(t, "description"),
+			Thumbnail:   helper.ToStringPointer(t, "https://example.com/thumbnail.jpg"),
 		})
 		if err != nil {
 			t.Fatalf("failed to share article: %s", err)
@@ -168,9 +168,9 @@ func TestAppAPIE2EArticleShare(t *testing.T) {
 
 		res, err := client.Client.V1ArticleShare(context.Background(), openapi.V1ArticleShareRequestSchema{
 			Url:         fmt.Sprintf("https://example.com/%s", title),
-			Title:       helper.ToStringPointer("title"),
-			Description: helper.ToStringPointer("description"),
-			Thumbnail:   helper.ToStringPointer("https://example.com/thumbnail.jpg"),
+			Title:       helper.ToStringPointer(t, "title"),
+			Description: helper.ToStringPointer(t, "description"),
+			Thumbnail:   helper.ToStringPointer(t, "https://example.com/thumbnail.jpg"),
 		})
 		if err != nil {
 			t.Fatalf("failed to share article: %s", err)

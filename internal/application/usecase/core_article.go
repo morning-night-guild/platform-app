@@ -32,8 +32,9 @@ type CoreArticleShareOutput struct {
 
 // CoreArticleListInput.
 type CoreArticleListInput struct {
-	Index value.Index
-	Size  value.Size
+	Index  value.Index
+	Size   value.Size
+	Filter []value.Filter
 }
 
 // CoreArticleListOutput.

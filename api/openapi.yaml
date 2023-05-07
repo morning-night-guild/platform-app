@@ -175,6 +175,16 @@ paths:
         - authTokenCookie: []
         - sessionTokenCookie: []    
       parameters:
+        - name: maxPageSize
+          in: query
+          description: ページサイズ
+          required: false
+          explode: true
+          schema:
+            type: integer
+            default: 20
+            minimum: 1
+            maximum: 20
         - name: pageToken
           in: query
           description: トークン
@@ -182,15 +192,13 @@ paths:
           explode: true
           schema:
             type: string
-        - name: maxPageSize
+        - name: title
           in: query
-          description: ページサイズ
-          required: true
+          description: タイトルによる部分一致検索
+          required: false
           explode: true
           schema:
-            type: integer
-            minimum: 1
-            maximum: 20
+            type: string
       responses:
         '200':
           description: 成功
