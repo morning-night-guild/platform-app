@@ -111,7 +111,7 @@ func TestAppAPIE2EArticleList(t *testing.T) {
 		}
 
 		if !reflect.DeepEqual(len(*article.Articles), 1) {
-			t.Errorf("Articles length = %v, want %v", len(*article.Articles), size)
+			t.Errorf("Articles length = %v, want %v", len(*article.Articles), 1)
 		}
 
 		if reflect.DeepEqual((*article.Articles)[0].Title, fmt.Sprintf("title-%s", ids[0].String())) {
