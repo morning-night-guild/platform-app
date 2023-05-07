@@ -236,6 +236,10 @@ func TestArticleShare(t *testing.T) {
 func TestArticleList(t *testing.T) {
 	t.Parallel()
 
+	toPointer := func(s string) *string {
+		return &s
+	}
+
 	type fields struct {
 		usecase func(*testing.T) usecase.CoreArticle
 	}
@@ -384,7 +388,7 @@ func TestArticleList(t *testing.T) {
 					Msg: &articlev1.ListRequest{
 						PageToken:   "",
 						MaxPageSize: 3,
-						Title:       "title",
+						Title:       toPointer("title"),
 					},
 				},
 			},

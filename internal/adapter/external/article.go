@@ -79,9 +79,9 @@ func (ext *Article) List(
 
 	if len(filter) > 0 {
 		for _, f := range filter {
-			switch f.Name {
-			case "title":
-				req.Msg.Title = f.Value
+			val := f.Value
+			if f.Name == "title" {
+				req.Msg.Title = &val
 			}
 		}
 	}

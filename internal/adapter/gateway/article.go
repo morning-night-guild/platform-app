@@ -96,8 +96,7 @@ func (gtw *Article) FindAll(
 
 	if len(filter) > 0 {
 		for _, f := range filter {
-			switch f.Name {
-			case "title":
+			if f.Name == "title" {
 				query = query.Where(entarticle.TitleContains(f.Value))
 			}
 		}

@@ -98,9 +98,9 @@ func (ctrl *Article) List(
 		Size:  size,
 	}
 
-	if req.Msg.Title != "" {
+	if req.Msg.Title != nil {
 		input.Filter = []value.Filter{
-			value.NewFilter("title", req.Msg.Title),
+			value.NewFilter("title", *req.Msg.Title),
 		}
 	}
 

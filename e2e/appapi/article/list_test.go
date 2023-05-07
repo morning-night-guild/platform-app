@@ -89,7 +89,7 @@ func TestAppAPIE2EArticleList(t *testing.T) {
 		res, err := client.Client.V1ArticleList(context.Background(), &openapi.V1ArticleListParams{
 			PageToken:   nil,
 			MaxPageSize: helper.ToIntPointer(t, int(size)),
-			Title:       helper.ToStringPointer(t, string(ids[0].String())),
+			Title:       helper.ToStringPointer(t, ids[0].String()),
 		})
 		if err != nil {
 			t.Fatalf("failed to list article: %s", err)

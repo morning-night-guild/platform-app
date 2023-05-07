@@ -39,6 +39,7 @@ func (hdl *Handler) V1ArticleList(w http.ResponseWriter, r *http.Request, params
 	token := value.NewNextToken(pageToken)
 
 	size := model.DefaultArticleSize
+
 	if params.MaxPageSize != nil {
 		s, err := value.NewSize(*params.MaxPageSize)
 		if err != nil {

@@ -1,8 +1,10 @@
-package value
+package value_test
 
 import (
 	"reflect"
 	"testing"
+
+	"github.com/morning-night-guild/platform-app/internal/domain/value"
 )
 
 func TestNewFilter(t *testing.T) {
@@ -16,7 +18,7 @@ func TestNewFilter(t *testing.T) {
 	tests := []struct {
 		name string
 		args args
-		want Filter
+		want value.Filter
 	}{
 		{
 			name: "Filterを生成できる",
@@ -24,7 +26,7 @@ func TestNewFilter(t *testing.T) {
 				name:  "name",
 				value: "value",
 			},
-			want: Filter{
+			want: value.Filter{
 				Name:  "name",
 				Value: "value",
 			},
@@ -35,7 +37,7 @@ func TestNewFilter(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			if got := NewFilter(tt.args.name, tt.args.value); !reflect.DeepEqual(got, tt.want) {
+			if got := value.NewFilter(tt.args.name, tt.args.value); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("NewFilter() = %v, want %v", got, tt.want)
 			}
 		})

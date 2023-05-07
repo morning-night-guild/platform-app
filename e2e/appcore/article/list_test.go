@@ -54,6 +54,10 @@ func TestAppCoreE2EArticleList(t *testing.T) {
 	t.Run("タイトル部分一致で検索して記事を一覧できる", func(t *testing.T) {
 		t.Parallel()
 
+		toPointer := func(s string) *string {
+			return &s
+		}
+
 		db := helper.NewDatabase(t, helper.GetDSN(t))
 
 		ids := helper.NewIDs(t, int(articleCount))
@@ -68,7 +72,7 @@ func TestAppCoreE2EArticleList(t *testing.T) {
 
 		req := &articlev1.ListRequest{
 			MaxPageSize: articleCount,
-			Title:       ids[0].String(),
+			Title:       toPointer(ids[0].String()),
 		}
 
 		res, err := client.Article.List(context.Background(), connect.NewRequest(req))
