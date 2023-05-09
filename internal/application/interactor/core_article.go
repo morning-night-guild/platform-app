@@ -47,7 +47,7 @@ func (itr *CoreArticle) List(
 	ctx context.Context,
 	input usecase.CoreArticleListInput,
 ) (usecase.CoreArticleListOutput, error) {
-	articles, err := itr.articleRepository.FindAll(ctx, input.Index, input.Size)
+	articles, err := itr.articleRepository.FindAll(ctx, input.Index, input.Size, input.Filter...)
 	if err != nil {
 		return usecase.CoreArticleListOutput{}, err
 	}

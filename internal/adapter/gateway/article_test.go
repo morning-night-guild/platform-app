@@ -405,6 +405,60 @@ func TestArticleList(t *testing.T) {
 			t.Errorf("FindAll() = %v, want %v", got, articles)
 		}
 	})
+
+	t.Run("記事をタイトルで検索して一覧できる", func(t *testing.T) {
+		t.Parallel()
+
+		rdb, err := gateway.NewRDBClientMock(t).Of(uuid.NewString())
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		articleGateway := gateway.NewArticle(rdb)
+
+		ctx := context.Background()
+
+		item1 := model.CreateArticle(
+			article.URL("https://example.com/1"),
+			article.Title("target title"),
+			article.Description("description"),
+			article.Thumbnail("https://example.com/1"),
+			article.TagList([]article.Tag{
+				article.Tag("tag1"),
+				article.Tag("tag2"),
+			}),
+		)
+
+		if err := articleGateway.Save(ctx, item1); err != nil {
+			t.Fatal(err)
+		}
+
+		item2 := model.CreateArticle(
+			article.URL("https://example.com/2"),
+			article.Title("title2"),
+			article.Description("description"),
+			article.Thumbnail("https://example.com/2"),
+			article.TagList([]article.Tag{
+				article.Tag("tag1"),
+				article.Tag("tag2"),
+			}),
+		)
+
+		if err := articleGateway.Save(ctx, item2); err != nil {
+			t.Fatal(err)
+		}
+
+		got, err := articleGateway.FindAll(ctx, value.Index(0), value.Size(2), value.NewFilter("title", "target"))
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		articles := []model.Article{item1}
+
+		if !reflect.DeepEqual(got, articles) {
+			t.Errorf("FindAll() = %v, want %v", got, articles)
+		}
+	})
 }
 
 func TestArticleFind(t *testing.T) {

@@ -72,6 +72,14 @@ func (siw *ServerInterfaceWrapper) V1ArticleList(w http.ResponseWriter, r *http.
 	// Parameter object where we will unmarshal all parameters from the context
 	var params V1ArticleListParams
 
+	// ------------- Optional query parameter "maxPageSize" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "maxPageSize", r.URL.Query(), &params.MaxPageSize)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "maxPageSize", Err: err})
+		return
+	}
+
 	// ------------- Optional query parameter "pageToken" -------------
 
 	err = runtime.BindQueryParameter("form", true, false, "pageToken", r.URL.Query(), &params.PageToken)
@@ -80,18 +88,11 @@ func (siw *ServerInterfaceWrapper) V1ArticleList(w http.ResponseWriter, r *http.
 		return
 	}
 
-	// ------------- Required query parameter "maxPageSize" -------------
+	// ------------- Optional query parameter "title" -------------
 
-	if paramValue := r.URL.Query().Get("maxPageSize"); paramValue != "" {
-
-	} else {
-		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "maxPageSize"})
-		return
-	}
-
-	err = runtime.BindQueryParameter("form", true, true, "maxPageSize", r.URL.Query(), &params.MaxPageSize)
+	err = runtime.BindQueryParameter("form", true, false, "title", r.URL.Query(), &params.Title)
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "maxPageSize", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "title", Err: err})
 		return
 	}
 

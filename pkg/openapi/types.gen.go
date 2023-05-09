@@ -91,11 +91,14 @@ type V1AuthVerifyUnauthorizedResponseSchema struct {
 
 // V1ArticleListParams defines parameters for V1ArticleList.
 type V1ArticleListParams struct {
+	// MaxPageSize ページサイズ
+	MaxPageSize *int `form:"maxPageSize,omitempty" json:"maxPageSize,omitempty"`
+
 	// PageToken トークン
 	PageToken *string `form:"pageToken,omitempty" json:"pageToken,omitempty"`
 
-	// MaxPageSize ページサイズ
-	MaxPageSize int `form:"maxPageSize" json:"maxPageSize"`
+	// Title タイトルによる部分一致検索
+	Title *string `form:"title,omitempty" json:"title,omitempty"`
 }
 
 // V1AuthRefreshParams defines parameters for V1AuthRefresh.

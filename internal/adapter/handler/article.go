@@ -20,22 +20,6 @@ import (
 func (hdl *Handler) V1ArticleList(w http.ResponseWriter, r *http.Request, params openapi.V1ArticleListParams) {
 	ctx := r.Context()
 
-	pageToken := ""
-	if params.PageToken != nil {
-		pageToken = *params.PageToken
-	}
-
-	token := value.NewNextToken(pageToken)
-
-	size, err := value.NewSize(params.MaxPageSize)
-	if err != nil {
-		log.GetLogCtx(ctx).Warn("failed to list articles", log.ErrorField(err))
-
-		w.WriteHeader(http.StatusBadRequest)
-
-		return
-	}
-
 	uid, err := hdl.ExtractUserID(ctx, r)
 	if err != nil {
 		log.GetLogCtx(ctx).Warn("failed to extract user id", log.ErrorField(err))
@@ -45,13 +29,41 @@ func (hdl *Handler) V1ArticleList(w http.ResponseWriter, r *http.Request, params
 		return
 	}
 
+	ctx = model.SetUIDCtx(ctx, uid)
+
+	pageToken := ""
+	if params.PageToken != nil {
+		pageToken = *params.PageToken
+	}
+
+	token := value.NewNextToken(pageToken)
+
+	size := model.DefaultArticleSize
+
+	if params.MaxPageSize != nil {
+		s, err := value.NewSize(*params.MaxPageSize)
+		if err != nil {
+			log.GetLogCtx(ctx).Warn("failed to list articles", log.ErrorField(err))
+
+			w.WriteHeader(http.StatusBadRequest)
+
+			return
+		}
+
+		size = s
+	}
+
 	input := usecase.APIArticleListInput{
 		UserID: uid,
 		Index:  token.ToIndex(),
 		Size:   size,
 	}
 
-	ctx = model.SetUIDCtx(ctx, uid)
+	if params.Title != nil {
+		input.Filter = []value.Filter{
+			value.NewFilter("title", *params.Title),
+		}
+	}
 
 	output, err := hdl.article.List(ctx, input)
 	if err != nil {

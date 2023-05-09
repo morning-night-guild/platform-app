@@ -236,6 +236,10 @@ func TestArticleShare(t *testing.T) {
 func TestArticleList(t *testing.T) {
 	t.Parallel()
 
+	toPointer := func(s string) *string {
+		return &s
+	}
+
 	type fields struct {
 		usecase func(*testing.T) usecase.CoreArticle
 	}
@@ -334,6 +338,57 @@ func TestArticleList(t *testing.T) {
 					Msg: &articlev1.ListRequest{
 						PageToken:   "",
 						MaxPageSize: 3,
+					},
+				},
+			},
+			want: connect.NewResponse(&articlev1.ListResponse{
+				Articles: []*articlev1.Article{
+					{
+						ArticleId:   id.String(),
+						Title:       "title",
+						Url:         "https://example.com",
+						Description: "description",
+						Thumbnail:   "https://example.com",
+						Tags:        []string{},
+					},
+				},
+				NextPageToken: "",
+			}),
+			wantErr: false,
+		},
+		{
+			name: "タイトルの部分一致検索で記事の一覧が取得できる",
+			fields: fields{
+				usecase: func(t *testing.T) usecase.CoreArticle {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := usecase.NewMockCoreArticle(ctrl)
+					mock.EXPECT().List(gomock.Any(), usecase.CoreArticleListInput{
+						Index:  value.Index(0),
+						Size:   value.Size(3),
+						Filter: []value.Filter{value.NewFilter("title", "title")},
+					}).Return(usecase.CoreArticleListOutput{
+						Articles: []model.Article{
+							{
+								ID:          article.ID(id),
+								URL:         article.URL("https://example.com"),
+								Title:       article.Title("title"),
+								Description: article.Description("description"),
+								Thumbnail:   article.Thumbnail("https://example.com"),
+								TagList:     []article.Tag{},
+							},
+						},
+					}, nil)
+					return mock
+				},
+			},
+			args: args{
+				ctx: context.Background(),
+				req: &connect.Request[articlev1.ListRequest]{
+					Msg: &articlev1.ListRequest{
+						PageToken:   "",
+						MaxPageSize: 3,
+						Title:       toPointer("title"),
 					},
 				},
 			},

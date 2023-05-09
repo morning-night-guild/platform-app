@@ -98,6 +98,12 @@ func (ctrl *Article) List(
 		Size:  size,
 	}
 
+	if req.Msg.Title != nil {
+		input.Filter = []value.Filter{
+			value.NewFilter("title", *req.Msg.Title),
+		}
+	}
+
 	output, err := ctrl.usecase.List(ctx, input)
 	if err != nil {
 		return nil, ctrl.controller.HandleConnectError(ctx, err)

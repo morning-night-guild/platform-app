@@ -42,6 +42,7 @@ message ShareResponse {
 message ListRequest {
   string page_token = 1;
   uint32 max_page_size = 2;
+  optional string title = 3;
 }
 
 // 一覧レスポンス

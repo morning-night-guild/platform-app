@@ -86,14 +86,23 @@ func (gtw *Article) FindAll(
 	ctx context.Context,
 	index value.Index,
 	size value.Size,
+	filter ...value.Filter,
 ) ([]model.Article, error) {
-	// ent articles
-	eas, err := gtw.rdb.Article.Query().
+	query := gtw.rdb.Article.Query().
 		WithTags().
 		Order(ent.Desc(entarticle.FieldCreatedAt)).
 		Offset(index.Int()).
-		Limit(size.Int()).
-		All(ctx)
+		Limit(size.Int())
+
+	if len(filter) > 0 {
+		for _, f := range filter {
+			if f.Name == "title" {
+				query = query.Where(entarticle.TitleContains(f.Value))
+			}
+		}
+	}
+
+	eas, err := query.All(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to article query")
 	}

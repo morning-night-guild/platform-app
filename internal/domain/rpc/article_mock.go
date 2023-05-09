@@ -52,18 +52,23 @@ func (mr *MockArticleMockRecorder) Delete(arg0, arg1 interface{}) *gomock.Call {
 }
 
 // List mocks base method.
-func (m *MockArticle) List(arg0 context.Context, arg1 value.Index, arg2 value.Size) ([]model.Article, error) {
+func (m *MockArticle) List(arg0 context.Context, arg1 value.Index, arg2 value.Size, arg3 ...value.Filter) ([]model.Article, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "List", arg0, arg1, arg2)
+	varargs := []interface{}{arg0, arg1, arg2}
+	for _, a := range arg3 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "List", varargs...)
 	ret0, _ := ret[0].([]model.Article)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // List indicates an expected call of List.
-func (mr *MockArticleMockRecorder) List(arg0, arg1, arg2 interface{}) *gomock.Call {
+func (mr *MockArticleMockRecorder) List(arg0, arg1, arg2 interface{}, arg3 ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*MockArticle)(nil).List), arg0, arg1, arg2)
+	varargs := append([]interface{}{arg0, arg1, arg2}, arg3...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*MockArticle)(nil).List), varargs...)
 }
 
 // Share mocks base method.

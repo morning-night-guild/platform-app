@@ -70,11 +70,21 @@ func (ext *Article) List(
 	ctx context.Context,
 	index value.Index,
 	size value.Size,
+	filter ...value.Filter,
 ) ([]model.Article, error) {
 	req := NewRequest(ctx, &articlev1.ListRequest{
 		PageToken:   string(value.CreateNextTokenFromIndex(index)),
 		MaxPageSize: uint32(size),
 	})
+
+	if len(filter) > 0 {
+		for _, f := range filter {
+			val := f.Value
+			if f.Name == "title" {
+				req.Msg.Title = &val
+			}
+		}
+	}
 
 	res, err := ext.connect.List(ctx, req)
 	if err != nil {

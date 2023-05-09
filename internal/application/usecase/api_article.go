@@ -36,6 +36,7 @@ type APIArticleListInput struct {
 	UserID user.ID
 	Index  value.Index
 	Size   value.Size
+	Filter []value.Filter
 }
 
 // APIArticleListOutput.
