@@ -235,8 +235,9 @@ authTokenCookie, sessionTokenCookie
 
 |Name|In|Type|Required|Description|
 |---|---|---|---|---|
+|maxPageSize|query|integer|false|ページサイズ|
 |pageToken|query|string|false|トークン|
-|maxPageSize|query|integer|true|ページサイズ|
+|title|query|string|false|タイトルによる部分一致検索|
 
 > Example responses
 

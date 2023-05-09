@@ -95,6 +95,7 @@
 | ----- | ---- | ----- | ----------- |
 | page_token | [string](#string) |  |  |
 | max_page_size | [uint32](#uint32) |  |  |
+| title | [string](#string) | optional |  |
 
 
 
