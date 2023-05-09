@@ -7,7 +7,7 @@ on:
 jobs:
   mod:
     runs-on: ubuntu-22.04
-    if: "startsWith( github.head_ref , 'renovate')"
+    if: startsWith( github.head_ref , 'renovate')
     steps:
       - name: Generate token
         id: generate-token
