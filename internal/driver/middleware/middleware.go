@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/morning-night-guild/platform-app/pkg/log"
@@ -28,17 +29,36 @@ func (middle *Middleware) Handle(next http.Handler) http.Handler {
 
 		logger := log.GetLogCtx(ctx)
 
-		next.ServeHTTP(w, r.WithContext(ctx))
+		rw := newResponseWriter(w)
+
+		next.ServeHTTP(rw, r.WithContext(ctx))
 
 		logger.Info(
-			"access log",
+			"access-log",
 			zap.String("method", r.Method),
 			zap.String("path", r.RequestURI),
 			zap.String("addr", r.RemoteAddr),
-			zap.String("ua", r.Header["User-Agent"][0]),
-			// zap.String("code", status.Code(err).String()),
+			zap.String("user-agent", r.Header["User-Agent"][0]),
+			zap.String("status-code", strconv.Itoa(rw.StatusCode)),
 			zap.String("elapsed", time.Since(now).String()),
-			zap.Int64("elapsed(ns)", time.Since(now).Nanoseconds()),
+			zap.Int64("elapsed(ms)", time.Since(now).Milliseconds()),
 		)
 	})
+}
+
+type responseWriter struct {
+	http.ResponseWriter
+	StatusCode int
+}
+
+func newResponseWriter(w http.ResponseWriter) *responseWriter {
+	return &responseWriter{
+		ResponseWriter: w,
+		StatusCode:     http.StatusOK,
+	}
+}
+
+func (rw *responseWriter) WriteHeader(code int) {
+	rw.StatusCode = code
+	rw.ResponseWriter.WriteHeader(code)
 }
