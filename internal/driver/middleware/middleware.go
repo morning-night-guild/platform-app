@@ -37,6 +37,7 @@ func (middle *Middleware) Handle(next http.Handler) http.Handler {
 			"access-log",
 			zap.String("method", r.Method),
 			zap.String("path", r.RequestURI),
+			zap.String("protocol", r.Proto),
 			zap.String("addr", r.RemoteAddr),
 			zap.String("user-agent", r.Header["User-Agent"][0]),
 			zap.String("status-code", strconv.Itoa(rw.StatusCode)),
