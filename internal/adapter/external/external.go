@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/bufbuild/connect-go"
-	"github.com/morning-night-guild/platform-app/internal/domain/model"
 	"github.com/morning-night-guild/platform-app/internal/domain/model/errors"
+	"github.com/morning-night-guild/platform-app/internal/domain/model/user"
 	"github.com/morning-night-guild/platform-app/pkg/trace"
 )
 
@@ -21,7 +21,7 @@ func NewRequest[T any](ctx context.Context, msg *T) *connect.Request[T] {
 
 	req.Header().Set(HeaderTID, trace.GetTIDCtx(ctx))
 
-	req.Header().Set(HeaderUID, model.GetUIDCtx(ctx).String())
+	req.Header().Set(HeaderUID, user.GetUIDCtx(ctx).String())
 
 	return req
 }

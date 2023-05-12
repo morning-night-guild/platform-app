@@ -156,3 +156,20 @@ func (ext *Auth) SignIn(ctx context.Context, email auth.EMail, password auth.Pas
 		UserID: uid,
 	}, nil
 }
+
+func (ext *Auth) UpdatePassword(
+	ctx context.Context,
+	userID user.ID,
+	password auth.Password,
+) error {
+	params := (&firebase.UserToUpdate{}).
+		Password(password.String())
+
+	if _, err := ext.firebaseAuth.UpdateUser(ctx, userID.String(), params); err != nil {
+		log.GetLogCtx(ctx).Warn("failed to update user", log.ErrorField(err))
+
+		return err
+	}
+
+	return nil
+}

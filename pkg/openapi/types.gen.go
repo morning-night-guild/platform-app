@@ -57,6 +57,24 @@ type V1ArticleShareRequestSchema struct {
 	Url string `json:"url"`
 }
 
+// V1AuthChangePasswordRequestSchema defines model for V1AuthChangePasswordRequestSchema.
+type V1AuthChangePasswordRequestSchema struct {
+	// Email メールアドレス
+	Email openapi_types.Email `json:"email"`
+
+	// ExpiresIn トークン有効期限(秒)
+	ExpiresIn *int `json:"expiresIn,omitempty"`
+
+	// NewPassword 新パスワード
+	NewPassword string `json:"newPassword"`
+
+	// OldPassword 旧パスワード
+	OldPassword string `json:"oldPassword"`
+
+	// PublicKey 公開鍵
+	PublicKey string `json:"publicKey"`
+}
+
 // V1AuthSignInRequestSchema defines model for V1AuthSignInRequestSchema.
 type V1AuthSignInRequestSchema struct {
 	// Email メールアドレス
@@ -113,6 +131,9 @@ type V1AuthRefreshParams struct {
 
 // V1ArticleShareJSONRequestBody defines body for V1ArticleShare for application/json ContentType.
 type V1ArticleShareJSONRequestBody = V1ArticleShareRequestSchema
+
+// V1AuthChangePasswordJSONRequestBody defines body for V1AuthChangePassword for application/json ContentType.
+type V1AuthChangePasswordJSONRequestBody = V1AuthChangePasswordRequestSchema
 
 // V1AuthSignInJSONRequestBody defines body for V1AuthSignIn for application/json ContentType.
 type V1AuthSignInJSONRequestBody = V1AuthSignInRequestSchema

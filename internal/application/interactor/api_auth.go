@@ -154,8 +154,6 @@ func (itr *APIAuth) SignOutAll(
 		delCmds = append(delCmds, cmd)
 	}
 
-	// auth : session = 1 : N の設計前提
-	// auth : session = 1 : 1 にした方がよいのかもしれない
 	authDelCmd, err := itr.authCache.CreateTxDelCmd(ctx, input.UserID.String())
 	if err != nil {
 		log.GetLogCtx(ctx).Warn("failed to create auth cache delete command", log.ErrorField(err))
@@ -264,6 +262,40 @@ func (itr *APIAuth) Refresh( //nolint:funlen,cyclop
 	return usecase.APIAuthRefreshOutput{
 		AuthToken: at.ToToken(session.SessionID.ToSecret()),
 	}, nil
+}
+
+func (itr *APIAuth) ChangePassword(
+	ctx context.Context,
+	input usecase.APIAuthChangePasswordInput,
+) (usecase.APIAuthChangePasswordOutput, error) {
+	if _, err := itr.authRPC.SignIn(ctx, input.EMail, input.OldPassword); err != nil {
+		log.GetLogCtx(ctx).Warn("failed to sign in with old password", log.ErrorField(err))
+
+		return usecase.APIAuthChangePasswordOutput{}, errors.NewUnauthorizedError("failed to sign in", err)
+	}
+
+	if _, err := itr.SignOutAll(ctx, usecase.APIAuthSignOutAllInput{
+		UserID: input.UserID,
+	}); err != nil {
+		log.GetLogCtx(ctx).Warn("failed to sign out all", log.ErrorField(err))
+
+		return usecase.APIAuthChangePasswordOutput{}, errors.NewUnknownError("failed to sign out all", err)
+	}
+
+	output, err := itr.SignIn(ctx, usecase.APIAuthSignInInput{
+		Secret:    input.Secret,
+		EMail:     input.EMail,
+		Password:  input.NewPassword,
+		PublicKey: input.PublicKey,
+		ExpiresIn: input.ExpiresIn,
+	})
+	if err != nil {
+		log.GetLogCtx(ctx).Warn("failed to sign in with new password", log.ErrorField(err))
+
+		return usecase.APIAuthChangePasswordOutput{}, errors.NewUnauthorizedError("failed to sign in", err)
+	}
+
+	return usecase.APIAuthChangePasswordOutput(output), nil
 }
 
 func (itr *APIAuth) GenerateCode(

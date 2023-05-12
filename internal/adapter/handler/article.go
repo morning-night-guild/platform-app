@@ -10,6 +10,7 @@ import (
 	"github.com/morning-night-guild/platform-app/internal/application/usecase"
 	"github.com/morning-night-guild/platform-app/internal/domain/model"
 	"github.com/morning-night-guild/platform-app/internal/domain/model/article"
+	"github.com/morning-night-guild/platform-app/internal/domain/model/user"
 	"github.com/morning-night-guild/platform-app/internal/domain/value"
 	"github.com/morning-night-guild/platform-app/pkg/log"
 	"github.com/morning-night-guild/platform-app/pkg/openapi"
@@ -29,7 +30,7 @@ func (hdl *Handler) V1ArticleList(w http.ResponseWriter, r *http.Request, params
 		return
 	}
 
-	ctx = model.SetUIDCtx(ctx, uid)
+	ctx = user.SetUIDCtx(ctx, uid)
 
 	pageToken := ""
 	if params.PageToken != nil {
