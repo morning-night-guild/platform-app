@@ -40,15 +40,15 @@ func New() connect.UnaryInterceptorFunc {
 			res, err := next(ctx, req)
 
 			logger.Info(
-				"access log",
+				"access-log",
 				zap.String("uid", uid),
 				zap.String("path", req.Spec().Procedure),
 				zap.String("protocol", req.Peer().Protocol),
 				zap.String("addr", req.Peer().Addr),
-				zap.String("ua", req.Header().Get("User-Agent")),
-				zap.String("code", status.Code(err).String()),
+				zap.String("user-agent", req.Header().Get("User-Agent")),
+				zap.String("status-code", status.Code(err).String()),
 				zap.String("elapsed", time.Since(now).String()),
-				zap.Int64("elapsed(ns)", time.Since(now).Nanoseconds()),
+				zap.Int64("elapsed(ms)", time.Since(now).Milliseconds()),
 			)
 
 			return res, err
