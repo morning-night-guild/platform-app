@@ -421,11 +421,11 @@ components:
         oldPassword:
           type: string
           description: 旧パスワード
-          example: OldOldOld
+          example: OldPassword
         newPassword:
           type: string
           description: 新パスワード
-          example: NewNewNew
+          example: NewPassword
         publicKey:
           type: string
           description: 公開鍵

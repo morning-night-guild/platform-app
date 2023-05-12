@@ -911,3 +911,149 @@ func TestAPIAuthGenerateCode(t *testing.T) {
 		})
 	}
 }
+
+func TestAPIAuthChangePassword(t *testing.T) {
+	t.Parallel()
+
+	type fields struct {
+		authRPC      func(t *testing.T) rpc.Auth
+		userRPC      rpc.User
+		userCache    cache.Cache[model.User]
+		authCache    cache.Cache[model.Auth]
+		codeCache    cache.Cache[model.Code]
+		sessionCache cache.Cache[model.Session]
+	}
+
+	type args struct {
+		ctx   context.Context
+		input usecase.APIAuthChangePasswordInput
+	}
+
+	now := time.Now()
+
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		want    usecase.APIAuthChangePasswordOutput
+		wantErr bool
+	}{
+		{
+			name: "パスワードを変更できる",
+			fields: fields{
+				authRPC: func(t *testing.T) rpc.Auth {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := rpc.NewMockAuth(ctrl)
+					mock.EXPECT().SignIn(
+						gomock.Any(),
+						auth.EMail("test@example.com"),
+						gomock.Any(),
+					).Return(model.User{
+						UserID: user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+					}, nil).Times(2)
+					mock.EXPECT().ChangePassword(
+						gomock.Any(),
+						user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+						auth.Password("NewPassword"),
+					).Return(nil)
+					return mock
+				},
+				userCache: &cache.CacheMock[model.User]{
+					T: t,
+					CreateTxSetCmdAssert: func(t *testing.T, key string, value model.User, ttl time.Duration) {
+						t.Helper()
+					},
+				},
+				authCache: &cache.CacheMock[model.Auth]{
+					T: t,
+					CreateTxSetCmdAssert: func(t *testing.T, key string, value model.Auth, ttl time.Duration) {
+						t.Helper()
+						if !reflect.DeepEqual(ttl, model.DefaultAuthExpiresIn) {
+							t.Errorf("ttl = %v, want %v", ttl, model.DefaultAuthExpiresIn)
+						}
+					},
+					CreateTxDelCmdAssert: func(t *testing.T, key string) {
+						t.Helper()
+					},
+				},
+				sessionCache: &cache.CacheMock[model.Session]{
+					T: t,
+					CreateTxSetCmdAssert: func(t *testing.T, key string, value model.Session, ttl time.Duration) {
+						t.Helper()
+						if !reflect.DeepEqual(ttl, model.DefaultSessionExpiresIn) {
+							t.Errorf("ttl = %v, want %v", ttl, model.DefaultSessionExpiresIn)
+						}
+					},
+					TxAssert: func(t *testing.T, setCmds []cache.TxSetCmd, delCmds []cache.TxDelCmd) {
+						t.Helper()
+					},
+					KeysValue: []string{
+						"session:01234567-0123-0123-0123-0123456789ab:01234567-0123-0123-0123-0123456789ab",
+						"session:01234567-0123-0123-0123-0123456789ab:01234567-0123-0123-0123-0123456789ac",
+						"session:01234567-0123-0123-0123-0123456789ab:01234567-0123-0123-0123-0123456789ad",
+					},
+					KeysAssert: func(t *testing.T, pattern string) {
+						t.Helper()
+					},
+					CreateTxDelCmdAssert: func(t *testing.T, key string) {
+						t.Helper()
+					},
+				},
+			},
+			args: args{
+				ctx: context.Background(),
+				input: usecase.APIAuthChangePasswordInput{
+					Secret:      auth.Secret("secret"),
+					UserID:      user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+					EMail:       auth.EMail("test@example.com"),
+					OldPassword: auth.Password("OldPassword"),
+					NewPassword: auth.Password("NewPassword"),
+					PublicKey:   rsa.PublicKey{},
+					ExpiresIn:   auth.DefaultExpiresIn,
+				},
+			},
+			want: usecase.APIAuthChangePasswordOutput{
+				Auth: model.Auth{
+					AuthID:    user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+					UserID:    user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+					IssuedAt:  now,
+					ExpiresAt: now,
+				},
+				AuthToken: auth.GenerateAuthToken(
+					user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+					auth.SessionID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")).ToSecret(),
+					auth.DefaultExpiresIn,
+				),
+				SessionToken: auth.GenerateSessionToken(
+					auth.SessionID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+					auth.Secret("secret"),
+				),
+			},
+			wantErr: false,
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			itr := interactor.NewAPIAuth(
+				tt.fields.authRPC(t),
+				tt.fields.userRPC,
+				tt.fields.userCache,
+				tt.fields.authCache,
+				tt.fields.codeCache,
+				tt.fields.sessionCache,
+			)
+			_, err := itr.ChangePassword(tt.args.ctx, tt.args.input)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("APIAuth.ChangePassword() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			// if !reflect.DeepEqual(got, tt.want) {
+			// 	t.Errorf("APIAuth.ChangePassword() = %v, want %v", got, tt.want)
+			// }
+		})
+	}
+}

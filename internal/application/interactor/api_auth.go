@@ -95,7 +95,7 @@ func (itr *APIAuth) SignIn(
 
 	return usecase.APIAuthSignInOutput{
 		Auth:         at,
-		AuthToken:    at.ToToken(session.SessionID.ToSecret()), // secret を model.Auth{} にトークンに変換するときに secret が不要になる
+		AuthToken:    at.ToToken(session.SessionID.ToSecret()),
 		SessionToken: session.ToToken(input.Secret),
 	}, nil
 }
@@ -272,6 +272,12 @@ func (itr *APIAuth) ChangePassword(
 		log.GetLogCtx(ctx).Warn("failed to sign in with old password", log.ErrorField(err))
 
 		return usecase.APIAuthChangePasswordOutput{}, errors.NewUnauthorizedError("failed to sign in", err)
+	}
+
+	if err := itr.authRPC.ChangePassword(ctx, input.UserID, input.NewPassword); err != nil {
+		log.GetLogCtx(ctx).Warn("failed to change password", log.ErrorField(err))
+
+		return usecase.APIAuthChangePasswordOutput{}, errors.NewUnknownError("failed to change password", err)
 	}
 
 	if _, err := itr.SignOutAll(ctx, usecase.APIAuthSignOutAllInput{
