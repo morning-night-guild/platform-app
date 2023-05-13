@@ -164,6 +164,32 @@ paths:
           description: Unauthorized
         '500':
           description: Internal Server Error
+  /v1/auth/password:
+    put:
+      tags:
+        - auth
+      summary: パスワード変更
+      description: パスワードを変更する。認証トークンとセッショントークンは新たに発行される。（これまで発行されているトークンは無効化される）
+      operationId: v1AuthChangePassword
+      security:
+        - authTokenCookie: []
+        - sessionTokenCookie: []
+      requestBody:
+        required: true
+        description: パスワード更新リクエストボディ
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/V1AuthChangePasswordRequestSchema'
+      responses:
+        '200':
+          description: OK
+        '400':
+          description: Bad Request
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal Server Error
   /v1/articles:
     get:
       tags:
@@ -384,6 +410,37 @@ components:
           example: 00000000-0000-0000-0000-000000000000
       required:
         - code
+    V1AuthChangePasswordRequestSchema:
+      type: object
+      properties:
+        email:
+          type: string
+          description: メールアドレス
+          format: email
+          example: morning.night.guild@example.com
+        oldPassword:
+          type: string
+          description: 旧パスワード
+          example: OldPassword
+        newPassword:
+          type: string
+          description: 新パスワード
+          example: NewPassword
+        publicKey:
+          type: string
+          description: 公開鍵
+          format: base64
+        expiresIn:
+          type: integer
+          description: トークン有効期限(秒)
+          default: 3600
+          minimum: 0
+          maximum: 3600
+      required:
+        - email
+        - oldPassword
+        - newPassword
+        - publicKey
     V1ArticleListResponseSchema:
       type: object
       properties:

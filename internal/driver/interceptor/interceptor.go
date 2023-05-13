@@ -6,7 +6,6 @@ import (
 
 	"github.com/bufbuild/connect-go"
 	"github.com/morning-night-guild/platform-app/internal/adapter/external"
-	"github.com/morning-night-guild/platform-app/internal/domain/model"
 	"github.com/morning-night-guild/platform-app/internal/domain/model/user"
 	"github.com/morning-night-guild/platform-app/pkg/log"
 	"github.com/morning-night-guild/platform-app/pkg/trace"
@@ -33,7 +32,7 @@ func New() connect.UnaryInterceptorFunc {
 
 			userID, _ := user.NewID(uid)
 
-			ctx = model.SetUIDCtx(ctx, userID)
+			ctx = user.SetUIDCtx(ctx, userID)
 
 			logger := log.GetLogCtx(ctx)
 

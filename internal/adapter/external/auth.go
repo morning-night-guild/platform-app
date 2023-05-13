@@ -118,7 +118,7 @@ func (ext *Auth) SignIn(ctx context.Context, email auth.EMail, password auth.Pas
 
 		log.GetLogCtx(ctx).Warn(msg)
 
-		if res.StatusCode == http.StatusUnauthorized {
+		if res.StatusCode == http.StatusBadRequest || res.StatusCode == http.StatusUnauthorized {
 			return model.User{}, errors.NewUnauthorizedError("invalid email or password")
 		}
 
@@ -155,4 +155,21 @@ func (ext *Auth) SignIn(ctx context.Context, email auth.EMail, password auth.Pas
 	return model.User{
 		UserID: uid,
 	}, nil
+}
+
+func (ext *Auth) ChangePassword(
+	ctx context.Context,
+	userID user.ID,
+	password auth.Password,
+) error {
+	params := (&firebase.UserToUpdate{}).
+		Password(password.String())
+
+	if _, err := ext.firebaseAuth.UpdateUser(ctx, userID.String(), params); err != nil {
+		log.GetLogCtx(ctx).Warn("failed to update user", log.ErrorField(err))
+
+		return fmt.Errorf("failed to update user: %w", err)
+	}
+
+	return nil
 }

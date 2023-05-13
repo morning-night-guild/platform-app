@@ -101,6 +101,11 @@ type ClientInterface interface {
 	// V1ArticleDelete request
 	V1ArticleDelete(ctx context.Context, articleId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// V1AuthChangePassword request with any body
+	V1AuthChangePasswordWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	V1AuthChangePassword(ctx context.Context, body V1AuthChangePasswordJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// V1AuthRefresh request
 	V1AuthRefresh(ctx context.Context, params *V1AuthRefreshParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -168,6 +173,30 @@ func (c *Client) V1ArticleShare(ctx context.Context, body V1ArticleShareJSONRequ
 
 func (c *Client) V1ArticleDelete(ctx context.Context, articleId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewV1ArticleDeleteRequest(c.Server, articleId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) V1AuthChangePasswordWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewV1AuthChangePasswordRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) V1AuthChangePassword(ctx context.Context, body V1AuthChangePasswordJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewV1AuthChangePasswordRequest(c.Server, body)
 	if err != nil {
 		return nil, err
 	}
@@ -447,6 +476,46 @@ func NewV1ArticleDeleteRequest(server string, articleId openapi_types.UUID) (*ht
 	if err != nil {
 		return nil, err
 	}
+
+	return req, nil
+}
+
+// NewV1AuthChangePasswordRequest calls the generic V1AuthChangePassword builder with application/json body
+func NewV1AuthChangePasswordRequest(server string, body V1AuthChangePasswordJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewV1AuthChangePasswordRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewV1AuthChangePasswordRequestWithBody generates requests for V1AuthChangePassword with any type of body
+func NewV1AuthChangePasswordRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v1/auth/password")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PUT", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
 
 	return req, nil
 }
@@ -791,6 +860,11 @@ type ClientWithResponsesInterface interface {
 	// V1ArticleDelete request
 	V1ArticleDeleteWithResponse(ctx context.Context, articleId openapi_types.UUID, reqEditors ...RequestEditorFn) (*V1ArticleDeleteResponse, error)
 
+	// V1AuthChangePassword request with any body
+	V1AuthChangePasswordWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*V1AuthChangePasswordResponse, error)
+
+	V1AuthChangePasswordWithResponse(ctx context.Context, body V1AuthChangePasswordJSONRequestBody, reqEditors ...RequestEditorFn) (*V1AuthChangePasswordResponse, error)
+
 	// V1AuthRefresh request
 	V1AuthRefreshWithResponse(ctx context.Context, params *V1AuthRefreshParams, reqEditors ...RequestEditorFn) (*V1AuthRefreshResponse, error)
 
@@ -878,6 +952,27 @@ func (r V1ArticleDeleteResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r V1ArticleDeleteResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type V1AuthChangePasswordResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+}
+
+// Status returns HTTPResponse.Status
+func (r V1AuthChangePasswordResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r V1AuthChangePasswordResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -1088,6 +1183,23 @@ func (c *ClientWithResponses) V1ArticleDeleteWithResponse(ctx context.Context, a
 	return ParseV1ArticleDeleteResponse(rsp)
 }
 
+// V1AuthChangePasswordWithBodyWithResponse request with arbitrary body returning *V1AuthChangePasswordResponse
+func (c *ClientWithResponses) V1AuthChangePasswordWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*V1AuthChangePasswordResponse, error) {
+	rsp, err := c.V1AuthChangePasswordWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseV1AuthChangePasswordResponse(rsp)
+}
+
+func (c *ClientWithResponses) V1AuthChangePasswordWithResponse(ctx context.Context, body V1AuthChangePasswordJSONRequestBody, reqEditors ...RequestEditorFn) (*V1AuthChangePasswordResponse, error) {
+	rsp, err := c.V1AuthChangePassword(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseV1AuthChangePasswordResponse(rsp)
+}
+
 // V1AuthRefreshWithResponse request returning *V1AuthRefreshResponse
 func (c *ClientWithResponses) V1AuthRefreshWithResponse(ctx context.Context, params *V1AuthRefreshParams, reqEditors ...RequestEditorFn) (*V1AuthRefreshResponse, error) {
 	rsp, err := c.V1AuthRefresh(ctx, params, reqEditors...)
@@ -1227,6 +1339,22 @@ func ParseV1ArticleDeleteResponse(rsp *http.Response) (*V1ArticleDeleteResponse,
 	}
 
 	response := &V1ArticleDeleteResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	return response, nil
+}
+
+// ParseV1AuthChangePasswordResponse parses an HTTP response from a V1AuthChangePasswordWithResponse call
+func ParseV1AuthChangePasswordResponse(rsp *http.Response) (*V1AuthChangePasswordResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &V1AuthChangePasswordResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}

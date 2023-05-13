@@ -34,6 +34,21 @@ func (m *MockAPIAuth) EXPECT() *MockAPIAuthMockRecorder {
 	return m.recorder
 }
 
+// ChangePassword mocks base method.
+func (m *MockAPIAuth) ChangePassword(arg0 context.Context, arg1 APIAuthChangePasswordInput) (APIAuthChangePasswordOutput, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ChangePassword", arg0, arg1)
+	ret0, _ := ret[0].(APIAuthChangePasswordOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ChangePassword indicates an expected call of ChangePassword.
+func (mr *MockAPIAuthMockRecorder) ChangePassword(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ChangePassword", reflect.TypeOf((*MockAPIAuth)(nil).ChangePassword), arg0, arg1)
+}
+
 // GenerateCode mocks base method.
 func (m *MockAPIAuth) GenerateCode(arg0 context.Context, arg1 APIAuthGenerateCodeInput) (APIAuthGenerateCodeOutput, error) {
 	m.ctrl.T.Helper()

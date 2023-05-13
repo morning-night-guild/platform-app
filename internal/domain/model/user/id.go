@@ -1,6 +1,10 @@
 package user
 
-import "github.com/google/uuid"
+import (
+	"context"
+
+	"github.com/google/uuid"
+)
 
 type ID uuid.UUID
 
@@ -31,4 +35,23 @@ func (uid ID) Value() uuid.UUID {
 // String IDを文字列型として提供するメソッド.
 func (uid ID) String() string {
 	return uid.Value().String()
+}
+
+type key struct{}
+
+// SetUIDCtx IDをContextに設定するメソッド.
+func SetUIDCtx(ctx context.Context, id ID) context.Context {
+	return context.WithValue(ctx, key{}, id)
+}
+
+// GetUIDCtx IDをContextから取得するメソッド.
+func GetUIDCtx(ctx context.Context) ID {
+	v := ctx.Value(key{})
+
+	uid, ok := v.(ID)
+	if !ok {
+		return GenerateZeroID()
+	}
+
+	return uid
 }

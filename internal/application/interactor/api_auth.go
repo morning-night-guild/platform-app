@@ -3,6 +3,7 @@ package interactor
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/morning-night-guild/platform-app/internal/application/usecase"
 	"github.com/morning-night-guild/platform-app/internal/domain/cache"
@@ -72,7 +73,7 @@ func (itr *APIAuth) SignIn(
 
 	session := model.IssueSession(user.UserID, input.PublicKey)
 
-	uCmd, err := itr.userCache.CreateTxSetCmd(ctx, session.SessionID.String(), user, model.DefaultAuthExpiresIn)
+	uCmd, err := itr.userCache.CreateTxSetCmd(ctx, session.SessionID.String(), user, model.DefaultSessionExpiresIn)
 	if err != nil {
 		return usecase.APIAuthSignInOutput{}, err
 	}
@@ -95,7 +96,7 @@ func (itr *APIAuth) SignIn(
 
 	return usecase.APIAuthSignInOutput{
 		Auth:         at,
-		AuthToken:    at.ToToken(session.SessionID.ToSecret()), // secret を model.Auth{} にトークンに変換するときに secret が不要になる
+		AuthToken:    at.ToToken(session.SessionID.ToSecret()),
 		SessionToken: session.ToToken(input.Secret),
 	}, nil
 }
@@ -139,12 +140,16 @@ func (itr *APIAuth) SignOutAll(
 		log.GetLogCtx(ctx).Warn("failed to get session cache keys", log.ErrorField(err))
 	}
 
+	// session:{uuid} の形式でキーは取得される
+
 	const length = 2
 
 	delCmds := make([]cache.TxDelCmd, 0, len(keys)+length)
 
 	for _, key := range keys {
-		cmd, err := itr.sessionCache.CreateTxDelCmd(ctx, key)
+		// NOTE: ここでキーの形式を変更しているのはよくないので修正する
+		// session:{uuid} の形式から session: の部分を取り出す -> cmd作成のときに session: が付与されるため
+		cmd, err := itr.sessionCache.CreateTxDelCmd(ctx, strings.ReplaceAll(key, "session:", ""))
 		if err != nil {
 			log.GetLogCtx(ctx).Warn("failed to create session cache delete command", log.ErrorField(err))
 
@@ -154,8 +159,6 @@ func (itr *APIAuth) SignOutAll(
 		delCmds = append(delCmds, cmd)
 	}
 
-	// auth : session = 1 : N の設計前提
-	// auth : session = 1 : 1 にした方がよいのかもしれない
 	authDelCmd, err := itr.authCache.CreateTxDelCmd(ctx, input.UserID.String())
 	if err != nil {
 		log.GetLogCtx(ctx).Warn("failed to create auth cache delete command", log.ErrorField(err))
@@ -164,7 +167,7 @@ func (itr *APIAuth) SignOutAll(
 	}
 
 	if err := itr.sessionCache.Tx(ctx, []cache.TxSetCmd{}, delCmds); err != nil {
-		log.GetLogCtx(ctx).Warn("failed to delete session cache", log.ErrorField(err))
+		log.GetLogCtx(ctx).Warn("failed to transaction", log.ErrorField(err))
 	}
 
 	return usecase.APIAuthSignOutAllOutput{}, nil
@@ -174,6 +177,21 @@ func (itr *APIAuth) Verify(
 	ctx context.Context,
 	input usecase.APIAuthVerifyInput,
 ) (usecase.APIAuthVerifyOutput, error) {
+	key := fmt.Sprintf(model.SessionKeyFormat, input.UserID.String(), input.SessionID.String())
+
+	session, err := itr.sessionCache.Get(ctx, key)
+	if err != nil {
+		log.GetLogCtx(ctx).Warn("failed to get session cache", log.ErrorField(err))
+
+		return usecase.APIAuthVerifyOutput{}, errors.NewUnauthorizedError("not found auth", err)
+	}
+
+	if session.IsExpired() {
+		log.GetLogCtx(ctx).Warn("session is expired")
+
+		return usecase.APIAuthVerifyOutput{}, errors.NewUnauthorizedError("session is expired")
+	}
+
 	auth, err := itr.authCache.Get(ctx, input.UserID.String())
 	if err != nil {
 		log.GetLogCtx(ctx).Warn("failed to get auth cache", log.ErrorField(err))
@@ -182,6 +200,8 @@ func (itr *APIAuth) Verify(
 	}
 
 	if auth.IsExpired() {
+		log.GetLogCtx(ctx).Warn("auth is expired")
+
 		return usecase.APIAuthVerifyOutput{}, errors.NewUnauthorizedError("auth is expired")
 	}
 
@@ -264,6 +284,46 @@ func (itr *APIAuth) Refresh( //nolint:funlen,cyclop
 	return usecase.APIAuthRefreshOutput{
 		AuthToken: at.ToToken(session.SessionID.ToSecret()),
 	}, nil
+}
+
+func (itr *APIAuth) ChangePassword(
+	ctx context.Context,
+	input usecase.APIAuthChangePasswordInput,
+) (usecase.APIAuthChangePasswordOutput, error) {
+	if _, err := itr.authRPC.SignIn(ctx, input.EMail, input.OldPassword); err != nil {
+		log.GetLogCtx(ctx).Warn("failed to sign in with old password", log.ErrorField(err))
+
+		return usecase.APIAuthChangePasswordOutput{}, errors.NewUnauthorizedError("failed to sign in", err)
+	}
+
+	if err := itr.authRPC.ChangePassword(ctx, input.UserID, input.NewPassword); err != nil {
+		log.GetLogCtx(ctx).Warn("failed to change password", log.ErrorField(err))
+
+		return usecase.APIAuthChangePasswordOutput{}, errors.NewUnknownError("failed to change password", err)
+	}
+
+	if _, err := itr.SignOutAll(ctx, usecase.APIAuthSignOutAllInput{
+		UserID: input.UserID,
+	}); err != nil {
+		log.GetLogCtx(ctx).Warn("failed to sign out all", log.ErrorField(err))
+
+		return usecase.APIAuthChangePasswordOutput{}, errors.NewUnknownError("failed to sign out all", err)
+	}
+
+	output, err := itr.SignIn(ctx, usecase.APIAuthSignInInput{
+		Secret:    input.Secret,
+		EMail:     input.EMail,
+		Password:  input.NewPassword,
+		PublicKey: input.PublicKey,
+		ExpiresIn: input.ExpiresIn,
+	})
+	if err != nil {
+		log.GetLogCtx(ctx).Warn("failed to sign in with new password", log.ErrorField(err))
+
+		return usecase.APIAuthChangePasswordOutput{}, errors.NewUnauthorizedError("failed to sign in", err)
+	}
+
+	return usecase.APIAuthChangePasswordOutput(output), nil
 }
 
 func (itr *APIAuth) GenerateCode(

@@ -24,6 +24,9 @@ type ServerInterface interface {
 	// 記事削除
 	// (DELETE /v1/articles/{articleId})
 	V1ArticleDelete(w http.ResponseWriter, r *http.Request, articleId openapi_types.UUID)
+	// パスワード変更
+	// (PUT /v1/auth/password)
+	V1AuthChangePassword(w http.ResponseWriter, r *http.Request)
 	// リフレッシュ
 	// (GET /v1/auth/refresh)
 	V1AuthRefresh(w http.ResponseWriter, r *http.Request, params V1AuthRefreshParams)
@@ -143,6 +146,25 @@ func (siw *ServerInterfaceWrapper) V1ArticleDelete(w http.ResponseWriter, r *htt
 
 	var handler http.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.V1ArticleDelete(w, r, articleId)
+	})
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r.WithContext(ctx))
+}
+
+// V1AuthChangePassword operation middleware
+func (siw *ServerInterfaceWrapper) V1AuthChangePassword(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, AuthTokenCookieScopes, []string{""})
+
+	ctx = context.WithValue(ctx, SessionTokenCookieScopes, []string{""})
+
+	var handler http.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.V1AuthChangePassword(w, r)
 	})
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -452,6 +474,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Delete(options.BaseURL+"/v1/articles/{articleId}", wrapper.V1ArticleDelete)
+	})
+	r.Group(func(r chi.Router) {
+		r.Put(options.BaseURL+"/v1/auth/password", wrapper.V1AuthChangePassword)
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/v1/auth/refresh", wrapper.V1AuthRefresh)

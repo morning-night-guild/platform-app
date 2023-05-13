@@ -213,6 +213,8 @@ func (hdl *Handler) V1AuthSignOut(_ http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// サインアウトオール
+// (GET /v1/auth/signout/all).
 func (hdl *Handler) V1AuthSignOutAll(_ http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
@@ -223,12 +225,11 @@ func (hdl *Handler) V1AuthSignOutAll(_ http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	input := usecase.APIAuthSignOutInput{
-		UserID:    tokens.AuthToken.UserID(),
-		SessionID: tokens.SessionToken.ID(hdl.secret),
+	input := usecase.APIAuthSignOutAllInput{
+		UserID: tokens.AuthToken.UserID(),
 	}
 
-	if _, err := hdl.auth.SignOut(ctx, input); err != nil {
+	if _, err := hdl.auth.SignOutAll(ctx, input); err != nil {
 		log.GetLogCtx(ctx).Warn("failed to sign out", log.ErrorField(err))
 
 		return
@@ -336,7 +337,8 @@ func (hdl *Handler) V1AuthVerify(w http.ResponseWriter, r *http.Request) {
 	}
 
 	input := usecase.APIAuthVerifyInput{
-		UserID: authToken.UserID(),
+		UserID:    authToken.UserID(),
+		SessionID: sessionToken.ID(hdl.secret),
 	}
 
 	if _, err := hdl.auth.Verify(ctx, input); err != nil {
@@ -381,4 +383,129 @@ func (hdl *Handler) unauthorize(
 
 		return
 	}
+}
+
+// パスワード変更
+// (PUT /v1/auth/password).
+func (hdl *Handler) V1AuthChangePassword( //nolint:cyclop
+	w http.ResponseWriter,
+	r *http.Request,
+) {
+	ctx := r.Context()
+
+	tokens, err := hdl.ExtractTokens(ctx, r)
+	if err != nil {
+		log.GetLogCtx(ctx).Warn("failed to extract tokens", log.ErrorField(err))
+
+		w.WriteHeader(http.StatusUnauthorized)
+
+		return
+	}
+
+	var req openapi.V1AuthChangePasswordRequestSchema
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		log.GetLogCtx(ctx).Warn("failed to decode request body", log.ErrorField(err))
+
+		w.WriteHeader(http.StatusBadRequest)
+
+		return
+	}
+
+	key, err := auth.DecodePublicKey(req.PublicKey)
+	if err != nil {
+		log.GetLogCtx(ctx).Warn("failed to decode public key", log.ErrorField(err))
+
+		w.WriteHeader(http.StatusBadRequest)
+
+		return
+	}
+
+	email, err := auth.NewEMail(string(req.Email))
+	if err != nil {
+		log.GetLogCtx(ctx).Warn("failed to new email", log.ErrorField(err))
+
+		w.WriteHeader(http.StatusBadRequest)
+
+		return
+	}
+
+	oldPassword, err := auth.NewPassword(req.OldPassword)
+	if err != nil {
+		log.GetLogCtx(ctx).Warn("failed to new old password", log.ErrorField(err))
+
+		w.WriteHeader(http.StatusBadRequest)
+
+		return
+	}
+
+	newPassword, err := auth.NewPassword(req.NewPassword)
+	if err != nil {
+		log.GetLogCtx(ctx).Warn("failed to new password", log.ErrorField(err))
+
+		w.WriteHeader(http.StatusBadRequest)
+
+		return
+	}
+
+	if oldPassword.Equal(newPassword) {
+		log.GetLogCtx(ctx).Warn("old password and new password are equal")
+
+		w.WriteHeader(http.StatusBadRequest)
+
+		return
+	}
+
+	expiresIn := auth.DefaultExpiresIn
+	if req.ExpiresIn != nil {
+		expiresIn, err = auth.NewExpiresIn(*req.ExpiresIn)
+		if err != nil {
+			log.GetLogCtx(ctx).Warn("failed to new expires in", log.ErrorField(err))
+
+			w.WriteHeader(http.StatusBadRequest)
+
+			return
+		}
+	}
+
+	input := usecase.APIAuthChangePasswordInput{
+		UserID:      tokens.AuthToken.UserID(),
+		Secret:      hdl.secret,
+		PublicKey:   key,
+		ExpiresIn:   expiresIn,
+		EMail:       email,
+		OldPassword: oldPassword,
+		NewPassword: newPassword,
+	}
+
+	output, err := hdl.auth.ChangePassword(ctx, input)
+	if err != nil {
+		log.GetLogCtx(ctx).Warn("failed to change password", log.ErrorField(err))
+
+		hdl.HandleErrorStatus(w, err)
+
+		return
+	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     auth.AuthTokenKey,
+		Value:    output.AuthToken.String(),
+		Path:     path,
+		Domain:   hdl.cookie.Domain(),
+		Expires:  output.Auth.ExpiresAt,
+		Secure:   hdl.cookie.Secure(),
+		HttpOnly: true,
+		SameSite: hdl.cookie.SameSite(),
+	})
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     auth.SessionTokenKey,
+		Value:    output.SessionToken.String(),
+		Path:     path,
+		Domain:   hdl.cookie.Domain(),
+		Expires:  output.Auth.IssuedAt.Add(model.DefaultSessionExpiresIn),
+		Secure:   hdl.cookie.Secure(),
+		HttpOnly: true,
+		SameSite: hdl.cookie.SameSite(),
+	})
 }

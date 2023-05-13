@@ -20,6 +20,7 @@ type APIAuth interface {
 	Verify(context.Context, APIAuthVerifyInput) (APIAuthVerifyOutput, error)
 	GenerateCode(context.Context, APIAuthGenerateCodeInput) (APIAuthGenerateCodeOutput, error)
 	Refresh(context.Context, APIAuthRefreshInput) (APIAuthRefreshOutput, error)
+	ChangePassword(context.Context, APIAuthChangePasswordInput) (APIAuthChangePasswordOutput, error)
 }
 
 type APIAuthSignUpInput struct {
@@ -57,7 +58,8 @@ type APIAuthSignOutAllInput struct {
 type APIAuthSignOutAllOutput struct{}
 
 type APIAuthVerifyInput struct {
-	UserID user.ID
+	UserID    user.ID
+	SessionID auth.SessionID
 }
 
 type APIAuthVerifyOutput struct{}
@@ -80,4 +82,20 @@ type APIAuthRefreshInput struct {
 type APIAuthRefreshOutput struct {
 	Auth      model.Auth
 	AuthToken auth.AuthToken
+}
+
+type APIAuthChangePasswordInput struct {
+	UserID      user.ID
+	Secret      auth.Secret
+	PublicKey   rsa.PublicKey
+	ExpiresIn   auth.ExpiresIn
+	EMail       auth.EMail
+	OldPassword auth.Password
+	NewPassword auth.Password
+}
+
+type APIAuthChangePasswordOutput struct {
+	Auth         model.Auth
+	AuthToken    auth.AuthToken
+	SessionToken auth.SessionToken
 }

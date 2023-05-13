@@ -25,3 +25,7 @@ func (pw Password) validate() error {
 
 	return nil
 }
+
+func (pw Password) Equal(password Password) bool {
+	return pw.String() == password.String()
+}
