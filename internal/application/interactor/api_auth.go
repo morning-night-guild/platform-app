@@ -3,6 +3,7 @@ package interactor
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/morning-night-guild/platform-app/internal/application/usecase"
 	"github.com/morning-night-guild/platform-app/internal/domain/cache"
@@ -139,14 +140,16 @@ func (itr *APIAuth) SignOutAll(
 		log.GetLogCtx(ctx).Warn("failed to get session cache keys", log.ErrorField(err))
 	}
 
-	log.GetLogCtx(ctx).Info(fmt.Sprintf("session cache keys: %v", keys))
+	// session:{uuid} の形式でキーは取得される
 
 	const length = 2
 
 	delCmds := make([]cache.TxDelCmd, 0, len(keys)+length)
 
 	for _, key := range keys {
-		cmd, err := itr.sessionCache.CreateTxDelCmd(ctx, key)
+		// FIXME: ここでキーの形式を変更しているのはよくないので修正する
+		// session:{uuid} の形式から session: の部分を取り出す -> cmd作成のときに session: が付与されるため
+		cmd, err := itr.sessionCache.CreateTxDelCmd(ctx, strings.Replace(key, "session:", "", -1))
 		if err != nil {
 			log.GetLogCtx(ctx).Warn("failed to create session cache delete command", log.ErrorField(err))
 
