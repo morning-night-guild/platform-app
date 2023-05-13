@@ -91,6 +91,8 @@ func TestE2EChangePassword(t *testing.T) {
 			t.Errorf("failed to auth change password: %v", err)
 		}
 
+		defer res.Body.Close()
+
 		if res.StatusCode != http.StatusOK {
 			t.Errorf("failed to auth change password: %d", res.StatusCode)
 		}
@@ -167,6 +169,106 @@ func TestE2EChangePassword(t *testing.T) {
 			res, err := client.Client.V1AuthSignIn(context.Background(), openapi.V1AuthSignInRequestSchema{
 				Email:     types.Email(email),
 				Password:  newPass,
+				PublicKey: helper.Public(t, prv),
+			})
+			if err != nil {
+				t.Fatalf("failed to auth sign in: %s", err)
+			}
+
+			defer res.Body.Close()
+
+			uid := helper.ExtractUserID(t, res.Cookies())
+
+			db := helper.NewDatabase(t, helper.GetDSN(t))
+
+			defer db.Close()
+
+			db.DeleteUser(uuid.MustParse(uid))
+		}()
+	})
+
+	t.Run("同じパスワードで更新することはできない", func(t *testing.T) {
+		t.Parallel()
+
+		ctx := context.Background()
+
+		client := helper.NewOpenAPIClient(t, url)
+
+		client.Client.Client = &http.Client{
+			Transport: helper.NewAPIKeyTransport(t, helper.GetAPIKey(t)),
+		}
+
+		id := uuid.New().String()
+
+		email := fmt.Sprintf("%s@example.com", id)
+
+		password := id
+
+		if res, err := client.Client.V1AuthSignUp(context.Background(), openapi.V1AuthSignUpJSONRequestBody{
+			Email:    types.Email(email),
+			Password: password,
+		}); err != nil || res.StatusCode != http.StatusOK {
+			defer res.Body.Close()
+
+			t.Fatalf("failed to auth sign up: %v", err)
+		} else {
+			defer res.Body.Close()
+		}
+
+		prv1, err := rsa.GenerateKey(rand.Reader, 2048)
+		if err != nil {
+			t.Fatalf("failed to generate key: %v", err)
+		}
+
+		pre, err := client.Client.V1AuthSignIn(ctx, openapi.V1AuthSignInJSONRequestBody{
+			Email:     types.Email(email),
+			Password:  password,
+			PublicKey: helper.Public(t, prv1),
+		})
+		if err != nil {
+			t.Fatalf("failed to auth sign in: %v", err)
+		}
+
+		defer pre.Body.Close()
+
+		if pre.StatusCode != http.StatusOK {
+			t.Fatalf("failed to auth sign in: %d", pre.StatusCode)
+		}
+
+		client.Client.Client = &http.Client{
+			Transport: helper.NewCookiesTransport(t, pre.Cookies()),
+		}
+
+		prv2, err := rsa.GenerateKey(rand.Reader, 2048)
+		if err != nil {
+			t.Fatalf("failed to generate key: %v", err)
+		}
+
+		res, err := client.Client.V1AuthChangePassword(ctx, openapi.V1AuthChangePasswordRequestSchema{
+			Email:       types.Email(email),
+			NewPassword: password,
+			OldPassword: password,
+			PublicKey:   helper.Public(t, prv2),
+		})
+		if err != nil {
+			t.Errorf("failed to auth change password: %v", err)
+		}
+
+		defer res.Body.Close()
+
+		if res.StatusCode != http.StatusBadRequest {
+			t.Errorf("failed to auth change password: %d", res.StatusCode)
+		}
+
+		defer func() {
+			prv, err := rsa.GenerateKey(rand.Reader, 2048)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			res, err := client.Client.V1AuthSignIn(context.Background(), openapi.V1AuthSignInRequestSchema{
+				Email:     types.Email(email),
+				Password:  password,
 				PublicKey: helper.Public(t, prv),
 			})
 			if err != nil {
