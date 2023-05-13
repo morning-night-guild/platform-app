@@ -118,7 +118,7 @@ func (ext *Auth) SignIn(ctx context.Context, email auth.EMail, password auth.Pas
 
 		log.GetLogCtx(ctx).Warn(msg)
 
-		if res.StatusCode == http.StatusUnauthorized {
+		if res.StatusCode == http.StatusBadRequest || res.StatusCode == http.StatusUnauthorized {
 			return model.User{}, errors.NewUnauthorizedError("invalid email or password")
 		}
 

@@ -662,10 +662,9 @@ func TestHandlerV1AuthSignOutAll(t *testing.T) {
 					t.Helper()
 					ctrl := gomock.NewController(t)
 					mock := usecase.NewMockAPIAuth(ctrl)
-					mock.EXPECT().SignOut(gomock.Any(), usecase.APIAuthSignOutInput{
-						UserID:    token.UserID,
-						SessionID: token.SessionToken.ID(auth.Secret("secret")),
-					}).Return(usecase.APIAuthSignOutOutput{}, nil)
+					mock.EXPECT().SignOutAll(gomock.Any(), usecase.APIAuthSignOutAllInput{
+						UserID: token.UserID,
+					}).Return(usecase.APIAuthSignOutAllOutput{}, nil)
 					return mock
 				},
 			},
@@ -798,10 +797,9 @@ func TestHandlerV1AuthSignOutAll(t *testing.T) {
 					t.Helper()
 					ctrl := gomock.NewController(t)
 					mock := usecase.NewMockAPIAuth(ctrl)
-					mock.EXPECT().SignOut(gomock.Any(), usecase.APIAuthSignOutInput{
-						UserID:    token.UserID,
-						SessionID: token.SessionToken.ID(auth.Secret("secret")),
-					}).Return(usecase.APIAuthSignOutOutput{}, fmt.Errorf("error"))
+					mock.EXPECT().SignOutAll(gomock.Any(), usecase.APIAuthSignOutAllInput{
+						UserID: token.UserID,
+					}).Return(usecase.APIAuthSignOutAllOutput{}, fmt.Errorf("error"))
 					return mock
 				},
 			},
@@ -1047,7 +1045,8 @@ func TestHandlerV1AuthVerify(t *testing.T) {
 					ctrl := gomock.NewController(t)
 					mock := usecase.NewMockAPIAuth(ctrl)
 					mock.EXPECT().Verify(gomock.Any(), usecase.APIAuthVerifyInput{
-						UserID: token.UserID,
+						UserID:    token.UserID,
+						SessionID: token.SessionToken.ID(auth.Secret("secret")),
 					}).Return(usecase.APIAuthVerifyOutput{}, nil)
 					return mock
 				},
@@ -1198,7 +1197,8 @@ func TestHandlerV1AuthVerify(t *testing.T) {
 					ctrl := gomock.NewController(t)
 					mock := usecase.NewMockAPIAuth(ctrl)
 					mock.EXPECT().Verify(gomock.Any(), usecase.APIAuthVerifyInput{
-						UserID: token.UserID,
+						UserID:    token.UserID,
+						SessionID: token.SessionToken.ID(auth.Secret("secret")),
 					}).Return(usecase.APIAuthVerifyOutput{}, fmt.Errorf("error"))
 					mock.EXPECT().GenerateCode(gomock.Any(), usecase.APIAuthGenerateCodeInput{
 						SessionID: token.SessionToken.ID(auth.Secret("secret")),
@@ -1239,7 +1239,8 @@ func TestHandlerV1AuthVerify(t *testing.T) {
 					ctrl := gomock.NewController(t)
 					mock := usecase.NewMockAPIAuth(ctrl)
 					mock.EXPECT().Verify(gomock.Any(), usecase.APIAuthVerifyInput{
-						UserID: token.UserID,
+						UserID:    token.UserID,
+						SessionID: token.SessionToken.ID(auth.Secret("secret")),
 					}).Return(usecase.APIAuthVerifyOutput{}, fmt.Errorf("error"))
 					mock.EXPECT().GenerateCode(gomock.Any(), usecase.APIAuthGenerateCodeInput{
 						SessionID: token.SessionToken.ID(auth.Secret("secret")),

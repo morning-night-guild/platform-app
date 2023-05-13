@@ -72,7 +72,7 @@ func (itr *APIAuth) SignIn(
 
 	session := model.IssueSession(user.UserID, input.PublicKey)
 
-	uCmd, err := itr.userCache.CreateTxSetCmd(ctx, session.SessionID.String(), user, model.DefaultAuthExpiresIn)
+	uCmd, err := itr.userCache.CreateTxSetCmd(ctx, session.SessionID.String(), user, model.DefaultSessionExpiresIn)
 	if err != nil {
 		return usecase.APIAuthSignInOutput{}, err
 	}
@@ -139,6 +139,8 @@ func (itr *APIAuth) SignOutAll(
 		log.GetLogCtx(ctx).Warn("failed to get session cache keys", log.ErrorField(err))
 	}
 
+	log.GetLogCtx(ctx).Info(fmt.Sprintf("session cache keys: %v", keys))
+
 	const length = 2
 
 	delCmds := make([]cache.TxDelCmd, 0, len(keys)+length)
@@ -162,7 +164,7 @@ func (itr *APIAuth) SignOutAll(
 	}
 
 	if err := itr.sessionCache.Tx(ctx, []cache.TxSetCmd{}, delCmds); err != nil {
-		log.GetLogCtx(ctx).Warn("failed to delete session cache", log.ErrorField(err))
+		log.GetLogCtx(ctx).Warn("failed to transaction", log.ErrorField(err))
 	}
 
 	return usecase.APIAuthSignOutAllOutput{}, nil
@@ -172,6 +174,21 @@ func (itr *APIAuth) Verify(
 	ctx context.Context,
 	input usecase.APIAuthVerifyInput,
 ) (usecase.APIAuthVerifyOutput, error) {
+	key := fmt.Sprintf(model.SessionKeyFormat, input.UserID.String(), input.SessionID.String())
+
+	session, err := itr.sessionCache.Get(ctx, key)
+	if err != nil {
+		log.GetLogCtx(ctx).Warn("failed to get session cache", log.ErrorField(err))
+
+		return usecase.APIAuthVerifyOutput{}, errors.NewUnauthorizedError("not found auth", err)
+	}
+
+	if session.IsExpired() {
+		log.GetLogCtx(ctx).Warn("session is expired")
+
+		return usecase.APIAuthVerifyOutput{}, errors.NewUnauthorizedError("session is expired")
+	}
+
 	auth, err := itr.authCache.Get(ctx, input.UserID.String())
 	if err != nil {
 		log.GetLogCtx(ctx).Warn("failed to get auth cache", log.ErrorField(err))
@@ -180,6 +197,8 @@ func (itr *APIAuth) Verify(
 	}
 
 	if auth.IsExpired() {
+		log.GetLogCtx(ctx).Warn("auth is expired")
+
 		return usecase.APIAuthVerifyOutput{}, errors.NewUnauthorizedError("auth is expired")
 	}
 

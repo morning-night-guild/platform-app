@@ -621,6 +621,18 @@ func TestAPIAuthVerify(t *testing.T) {
 		{
 			name: "検証できる",
 			fields: fields{
+				sessionCache: &cache.CacheMock[model.Session]{
+					T: t,
+					Value: model.Session{
+						SessionID: auth.SessionID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+						UserID:    user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+						IssuedAt:  now,
+						ExpiresAt: now.Add(time.Hour * 24 * 30),
+					},
+					GetAssert: func(t *testing.T, key string) {
+						t.Helper()
+					},
+				},
 				authCache: &cache.CacheMock[model.Auth]{
 					T: t,
 					Value: model.Auth{
@@ -637,7 +649,8 @@ func TestAPIAuthVerify(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				input: usecase.APIAuthVerifyInput{
-					UserID: user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+					UserID:    user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+					SessionID: auth.SessionID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
 				},
 			},
 			want:    usecase.APIAuthVerifyOutput{},
@@ -646,6 +659,18 @@ func TestAPIAuthVerify(t *testing.T) {
 		{
 			name: "AuthがCacheに存在せず検証に失敗する",
 			fields: fields{
+				sessionCache: &cache.CacheMock[model.Session]{
+					T: t,
+					Value: model.Session{
+						SessionID: auth.SessionID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+						UserID:    user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+						IssuedAt:  now,
+						ExpiresAt: now.Add(time.Hour * 24 * 30),
+					},
+					GetAssert: func(t *testing.T, key string) {
+						t.Helper()
+					},
+				},
 				authCache: &cache.CacheMock[model.Auth]{
 					T:      t,
 					Value:  model.Auth{},
@@ -658,7 +683,8 @@ func TestAPIAuthVerify(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				input: usecase.APIAuthVerifyInput{
-					UserID: user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+					UserID:    user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+					SessionID: auth.SessionID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
 				},
 			},
 			want:    usecase.APIAuthVerifyOutput{},
@@ -667,6 +693,18 @@ func TestAPIAuthVerify(t *testing.T) {
 		{
 			name: "Authの有効期限が切れて検証に失敗する",
 			fields: fields{
+				sessionCache: &cache.CacheMock[model.Session]{
+					T: t,
+					Value: model.Session{
+						SessionID: auth.SessionID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+						UserID:    user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+						IssuedAt:  now,
+						ExpiresAt: now.Add(time.Hour * 24 * 30),
+					},
+					GetAssert: func(t *testing.T, key string) {
+						t.Helper()
+					},
+				},
 				authCache: &cache.CacheMock[model.Auth]{
 					T: t,
 					Value: model.Auth{
@@ -683,7 +721,61 @@ func TestAPIAuthVerify(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				input: usecase.APIAuthVerifyInput{
-					UserID: user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+					UserID:    user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+					SessionID: auth.SessionID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+				},
+			},
+			want:    usecase.APIAuthVerifyOutput{},
+			wantErr: true,
+		},
+		{
+			name: "SessionがCacheに存在せず検証に失敗する",
+			fields: fields{
+				sessionCache: &cache.CacheMock[model.Session]{
+					T: t,
+					Value: model.Session{
+						SessionID: auth.SessionID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+						UserID:    user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+						IssuedAt:  now,
+						ExpiresAt: now.Add(time.Hour * 24 * 30),
+					},
+					GetAssert: func(t *testing.T, key string) {
+						t.Helper()
+					},
+					GetErr: fmt.Errorf("test"),
+				},
+			},
+			args: args{
+				ctx: context.Background(),
+				input: usecase.APIAuthVerifyInput{
+					UserID:    user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+					SessionID: auth.SessionID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+				},
+			},
+			want:    usecase.APIAuthVerifyOutput{},
+			wantErr: true,
+		},
+		{
+			name: "Sessionの有効期限が切れて検証に失敗する",
+			fields: fields{
+				sessionCache: &cache.CacheMock[model.Session]{
+					T: t,
+					Value: model.Session{
+						SessionID: auth.SessionID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+						UserID:    user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+						IssuedAt:  now,
+						ExpiresAt: now.Add(-time.Hour),
+					},
+					GetAssert: func(t *testing.T, key string) {
+						t.Helper()
+					},
+				},
+			},
+			args: args{
+				ctx: context.Background(),
+				input: usecase.APIAuthVerifyInput{
+					UserID:    user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+					SessionID: auth.SessionID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
 				},
 			},
 			want:    usecase.APIAuthVerifyOutput{},

@@ -213,6 +213,8 @@ func (hdl *Handler) V1AuthSignOut(_ http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// サインアウトオール
+// (GET /v1/auth/signout/all).
 func (hdl *Handler) V1AuthSignOutAll(_ http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
@@ -223,12 +225,11 @@ func (hdl *Handler) V1AuthSignOutAll(_ http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	input := usecase.APIAuthSignOutInput{
-		UserID:    tokens.AuthToken.UserID(),
-		SessionID: tokens.SessionToken.ID(hdl.secret),
+	input := usecase.APIAuthSignOutAllInput{
+		UserID: tokens.AuthToken.UserID(),
 	}
 
-	if _, err := hdl.auth.SignOut(ctx, input); err != nil {
+	if _, err := hdl.auth.SignOutAll(ctx, input); err != nil {
 		log.GetLogCtx(ctx).Warn("failed to sign out", log.ErrorField(err))
 
 		return
@@ -336,7 +337,8 @@ func (hdl *Handler) V1AuthVerify(w http.ResponseWriter, r *http.Request) {
 	}
 
 	input := usecase.APIAuthVerifyInput{
-		UserID: authToken.UserID(),
+		UserID:    authToken.UserID(),
+		SessionID: sessionToken.ID(hdl.secret),
 	}
 
 	if _, err := hdl.auth.Verify(ctx, input); err != nil {

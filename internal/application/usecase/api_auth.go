@@ -58,7 +58,8 @@ type APIAuthSignOutAllInput struct {
 type APIAuthSignOutAllOutput struct{}
 
 type APIAuthVerifyInput struct {
-	UserID user.ID
+	UserID    user.ID
+	SessionID auth.SessionID
 }
 
 type APIAuthVerifyOutput struct{}
