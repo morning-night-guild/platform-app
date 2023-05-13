@@ -93,7 +93,7 @@ func (mock *CacheMock[V]) Tx(ctx context.Context, setCmds []TxSetCmd, delCmds []
 	return mock.TxErr
 }
 
-func (mock *CacheMock[V]) Keys(ctx context.Context, pattern string) ([]string, error) {
+func (mock *CacheMock[V]) Keys(ctx context.Context, pattern string, withPrefix bool) ([]string, error) {
 	mock.T.Helper()
 
 	mock.KeysAssert(mock.T, pattern)

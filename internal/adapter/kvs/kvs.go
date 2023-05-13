@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/morning-night-guild/platform-app/internal/domain/cache"
@@ -138,6 +139,7 @@ func (kvs *KVS[T]) Tx(
 func (kvs *KVS[T]) Keys(
 	ctx context.Context,
 	pattern string,
+	withPrefix bool,
 ) ([]string, error) {
 	ptn := fmt.Sprintf(keyFormat, kvs.Prefix, pattern)
 
@@ -146,5 +148,15 @@ func (kvs *KVS[T]) Keys(
 		return nil, fmt.Errorf("failed to get keys: %w", err)
 	}
 
-	return keys, nil
+	if withPrefix {
+		return keys, nil
+	}
+
+	res := make([]string, len(keys))
+
+	for i, key := range keys {
+		res[i] = strings.ReplaceAll(key, fmt.Sprintf("%s:", kvs.Prefix), "")
+	}
+
+	return res, nil
 }

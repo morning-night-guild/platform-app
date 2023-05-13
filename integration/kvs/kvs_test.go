@@ -244,31 +244,58 @@ func TestKVS(t *testing.T) {
 			t.Errorf("failed to set: %v", err)
 		}
 
-		got, err := kvs.Keys(ctx, prf)
+		got1, err := kvs.Keys(ctx, prf, true)
 		if err != nil {
 			t.Fatalf("failed to get keys: %v", err)
 		}
 
-		want := []string{
+		want1 := []string{
 			fmt.Sprintf("test:%s", key1),
 			fmt.Sprintf("test:%s", key2),
 			fmt.Sprintf("test:%s", key3),
 		}
 
-		if len(got) != len(want) {
-			t.Errorf("got = %v, want = %v", got, want)
+		if len(got1) != len(want1) {
+			t.Errorf("got1 = %v, want1 = %v", got1, want1)
 		}
 
-		sort.Slice(got, func(i, j int) bool {
-			return got[i] < got[j]
+		sort.Slice(got1, func(i, j int) bool {
+			return got1[i] < got1[j]
 		})
 
-		sort.Slice(want, func(i, j int) bool {
-			return want[i] < want[j]
+		sort.Slice(want1, func(i, j int) bool {
+			return want1[i] < want1[j]
 		})
 
-		if !reflect.DeepEqual(got, want) {
-			t.Errorf("got = %v, want = %v", got, want)
+		if !reflect.DeepEqual(got1, want1) {
+			t.Errorf("got1 = %v, want1 = %v", got1, want1)
+		}
+
+		got2, err := kvs.Keys(ctx, prf, false)
+		if err != nil {
+			t.Fatalf("failed to get keys: %v", err)
+		}
+
+		want2 := []string{
+			key1,
+			key2,
+			key3,
+		}
+
+		if len(got2) != len(want2) {
+			t.Errorf("got2 = %v, want2 = %v", got2, want2)
+		}
+
+		sort.Slice(got2, func(i, j int) bool {
+			return got2[i] < got2[j]
+		})
+
+		sort.Slice(want2, func(i, j int) bool {
+			return want2[i] < want2[j]
+		})
+
+		if !reflect.DeepEqual(got2, want2) {
+			t.Errorf("got2 = %v, want2 = %v", got2, want2)
 		}
 	})
 }
