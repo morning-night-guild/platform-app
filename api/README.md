@@ -217,6 +217,48 @@ To perform this operation, you must be authenticated by means of one of the foll
 authTokenCookie, sessionTokenCookie
 </aside>
 
+## v1AuthChangePassword
+
+<a id="opIdv1AuthChangePassword"></a>
+
+`PUT /v1/auth/password`
+
+*パスワード変更*
+
+パスワードを変更する。認証トークンとセッショントークンは新たに発行される。（これまで発行されているトークンは無効化される）
+
+> Body parameter
+
+```json
+{
+  "email": "morning.night.guild@example.com",
+  "oldPassword": "OldPassword",
+  "newPassword": "NewPassword",
+  "publicKey": "string",
+  "expiresIn": 3600
+}
+```
+
+<h3 id="v1authchangepassword-parameters">Parameters</h3>
+
+|Name|In|Type|Required|Description|
+|---|---|---|---|---|
+|body|body|[V1AuthChangePasswordRequestSchema](#schemav1authchangepasswordrequestschema)|true|パスワード更新リクエストボディ|
+
+<h3 id="v1authchangepassword-responses">Responses</h3>
+
+|Status|Meaning|Description|Schema|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|OK|None|
+|400|[Bad Request](https://tools.ietf.org/html/rfc7231#section-6.5.1)|Bad Request|None|
+|401|[Unauthorized](https://tools.ietf.org/html/rfc7235#section-3.1)|Unauthorized|None|
+|500|[Internal Server Error](https://tools.ietf.org/html/rfc7231#section-6.6.1)|Internal Server Error|None|
+
+<aside class="warning">
+To perform this operation, you must be authenticated by means of one of the following methods:
+authTokenCookie, sessionTokenCookie
+</aside>
+
 <h1 id="morning-night-guild-app-api-article">article</h1>
 
 記事
@@ -491,6 +533,34 @@ This operation does not require authentication
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
 |code|string(uuid)|true|none|リフレッシュコード<br>このコードを使用してトークンを新たに取得することができます。<br>リフレッシュできる見込みがない場合(セッショントークンがない状態でのリクエスト)ではリフレッシュ用コードは払い出しません。|
+
+<h2 id="tocS_V1AuthChangePasswordRequestSchema">V1AuthChangePasswordRequestSchema</h2>
+<!-- backwards compatibility -->
+<a id="schemav1authchangepasswordrequestschema"></a>
+<a id="schema_V1AuthChangePasswordRequestSchema"></a>
+<a id="tocSv1authchangepasswordrequestschema"></a>
+<a id="tocsv1authchangepasswordrequestschema"></a>
+
+```json
+{
+  "email": "morning.night.guild@example.com",
+  "oldPassword": "OldPassword",
+  "newPassword": "NewPassword",
+  "publicKey": "string",
+  "expiresIn": 3600
+}
+
+```
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|email|string(email)|true|none|メールアドレス|
+|oldPassword|string|true|none|旧パスワード|
+|newPassword|string|true|none|新パスワード|
+|publicKey|string(base64)|true|none|公開鍵|
+|expiresIn|integer|false|none|トークン有効期限(秒)|
 
 <h2 id="tocS_V1ArticleListResponseSchema">V1ArticleListResponseSchema</h2>
 <!-- backwards compatibility -->
