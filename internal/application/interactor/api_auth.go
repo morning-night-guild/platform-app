@@ -3,6 +3,7 @@ package interactor
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/morning-night-guild/platform-app/internal/application/usecase"
 	"github.com/morning-night-guild/platform-app/internal/domain/cache"
@@ -139,19 +140,31 @@ func (itr *APIAuth) SignOutAll(
 		log.GetLogCtx(ctx).Warn("failed to get session cache keys", log.ErrorField(err))
 	}
 
-	const length = 2
+	const length = 1
 
-	delCmds := make([]cache.TxDelCmd, 0, len(keys)+length)
+	delCmds := make([]cache.TxDelCmd, 0, len(keys)*2+length)
 
 	for _, key := range keys {
-		cmd, err := itr.sessionCache.CreateTxDelCmd(ctx, key)
+		sDelCmd, err := itr.sessionCache.CreateTxDelCmd(ctx, key)
 		if err != nil {
 			log.GetLogCtx(ctx).Warn("failed to create session cache delete command", log.ErrorField(err))
 
 			continue
 		}
 
-		delCmds = append(delCmds, cmd)
+		delCmds = append(delCmds, sDelCmd)
+
+		// 取得したkey:${user_id}:${session_id}形式 -> ここから${session_id}のみを抽出
+		ukey := strings.ReplaceAll(key, fmt.Sprintf("%s:", input.UserID.String()), "")
+
+		uDelCmd, err := itr.userCache.CreateTxDelCmd(ctx, ukey)
+		if err != nil {
+			log.GetLogCtx(ctx).Warn("failed to create user cache delete command", log.ErrorField(err))
+
+			continue
+		}
+
+		delCmds = append(delCmds, uDelCmd)
 	}
 
 	authDelCmd, err := itr.authCache.CreateTxDelCmd(ctx, input.UserID.String())

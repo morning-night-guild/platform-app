@@ -26,7 +26,7 @@ type CacheMock[V any] struct {
 	TxAssert             func(t *testing.T, setCmds []TxSetCmd, delCmds []TxDelCmd)
 	TxErr                error
 	KeysValue            []string
-	KeysAssert           func(t *testing.T, pattern string)
+	KeysAssert           func(t *testing.T, pattern string, withPrefix bool)
 	KeysErr              error
 }
 
@@ -96,7 +96,7 @@ func (mock *CacheMock[V]) Tx(ctx context.Context, setCmds []TxSetCmd, delCmds []
 func (mock *CacheMock[V]) Keys(ctx context.Context, pattern string, withPrefix bool) ([]string, error) {
 	mock.T.Helper()
 
-	mock.KeysAssert(mock.T, pattern)
+	mock.KeysAssert(mock.T, pattern, withPrefix)
 
 	return mock.KeysValue, mock.KeysErr
 }
