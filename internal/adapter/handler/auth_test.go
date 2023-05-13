@@ -1266,6 +1266,7 @@ func TestHandlerV1AuthVerify(t *testing.T) {
 			status: http.StatusInternalServerError,
 		},
 	}
+
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
@@ -1283,6 +1284,340 @@ func TestHandlerV1AuthVerify(t *testing.T) {
 				tt.args.r.AddCookie(cookie)
 			}
 			hdl.V1AuthVerify(got, tt.args.r)
+			if got.Code != tt.status {
+				t.Errorf("got %v, want %v", got.Code, tt.status)
+			}
+		})
+	}
+}
+
+func TestHandlerV1AuthChangePassword(t *testing.T) {
+	t.Parallel()
+
+	type fields struct {
+		auth    func(*testing.T) usecase.APIAuth
+		article usecase.APIArticle
+		health  usecase.APIHealth
+	}
+
+	type args struct {
+		r       *http.Request
+		cookies []*http.Cookie
+		body    openapi.V1AuthChangePasswordRequestSchema
+	}
+
+	pubkey := NewPublicKey(t)
+
+	token := GenerateToken(t)
+
+	tests := []struct {
+		name   string
+		fields fields
+		args   args
+		status int
+	}{
+		{
+			name: "パスワードを変更できる",
+			fields: fields{
+				auth: func(t *testing.T) usecase.APIAuth {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := usecase.NewMockAPIAuth(ctrl)
+					mock.EXPECT().ChangePassword(gomock.Any(), usecase.APIAuthChangePasswordInput{
+						UserID:      token.UserID,
+						Secret:      auth.Secret("secret"),
+						PublicKey:   pubkey.Key,
+						ExpiresIn:   auth.DefaultExpiresIn,
+						EMail:       auth.EMail("test@example.com"),
+						OldPassword: auth.Password("OldPassword"),
+						NewPassword: auth.Password("NewPassword"),
+					}).Return(usecase.APIAuthChangePasswordOutput{}, nil)
+					return mock
+				},
+			},
+			args: args{
+				r: &http.Request{
+					Method: http.MethodPut,
+					Header: http.Header{},
+				},
+				body: openapi.V1AuthChangePasswordRequestSchema{
+					Email:       "test@example.com",
+					OldPassword: "OldPassword",
+					NewPassword: "NewPassword",
+					PublicKey:   pubkey.String(),
+				},
+				cookies: []*http.Cookie{
+					{
+						Name:  auth.AuthTokenKey,
+						Value: token.AuthTokenString,
+					},
+					{
+						Name:  auth.SessionTokenKey,
+						Value: token.SessionTokenString,
+					},
+				},
+			},
+			status: http.StatusOK,
+		},
+		{
+			name: "トークンが取得できずにパスワードが更新できない",
+			fields: fields{
+				auth: func(t *testing.T) usecase.APIAuth {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := usecase.NewMockAPIAuth(ctrl)
+					return mock
+				},
+			},
+			args: args{
+				r: &http.Request{
+					Method: http.MethodPut,
+					Header: http.Header{},
+				},
+				body: openapi.V1AuthChangePasswordRequestSchema{
+					Email:       "test@example.com",
+					OldPassword: "OldPassword",
+					NewPassword: "NewPassword",
+					PublicKey:   pubkey.String(),
+				},
+				cookies: []*http.Cookie{},
+			},
+			status: http.StatusUnauthorized,
+		},
+		{
+			name: "公開鍵が不正な値でパスワードが更新できない",
+			fields: fields{
+				auth: func(t *testing.T) usecase.APIAuth {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := usecase.NewMockAPIAuth(ctrl)
+					return mock
+				},
+			},
+			args: args{
+				r: &http.Request{
+					Method: http.MethodPut,
+					Header: http.Header{},
+				},
+				body: openapi.V1AuthChangePasswordRequestSchema{
+					Email:       "test@example.com",
+					OldPassword: "OldPassword",
+					NewPassword: "NewPassword",
+					PublicKey:   "",
+				},
+				cookies: []*http.Cookie{
+					{
+						Name:  auth.AuthTokenKey,
+						Value: token.AuthTokenString,
+					},
+					{
+						Name:  auth.SessionTokenKey,
+						Value: token.SessionTokenString,
+					},
+				},
+			},
+			status: http.StatusBadRequest,
+		},
+		{
+			name: "EMailが不正な値でパスワードが更新できない",
+			fields: fields{
+				auth: func(t *testing.T) usecase.APIAuth {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := usecase.NewMockAPIAuth(ctrl)
+					return mock
+				},
+			},
+			args: args{
+				r: &http.Request{
+					Method: http.MethodPut,
+					Header: http.Header{},
+				},
+				body: openapi.V1AuthChangePasswordRequestSchema{
+					Email:       "",
+					OldPassword: "OldPassword",
+					NewPassword: "NewPassword",
+					PublicKey:   pubkey.String(),
+				},
+				cookies: []*http.Cookie{
+					{
+						Name:  auth.AuthTokenKey,
+						Value: token.AuthTokenString,
+					},
+					{
+						Name:  auth.SessionTokenKey,
+						Value: token.SessionTokenString,
+					},
+				},
+			},
+			status: http.StatusBadRequest,
+		},
+		{
+			name: "旧パスワードが不正な値でパスワードが更新できない",
+			fields: fields{
+				auth: func(t *testing.T) usecase.APIAuth {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := usecase.NewMockAPIAuth(ctrl)
+					return mock
+				},
+			},
+			args: args{
+				r: &http.Request{
+					Method: http.MethodPut,
+					Header: http.Header{},
+				},
+				body: openapi.V1AuthChangePasswordRequestSchema{
+					Email:       "test@example.com",
+					OldPassword: "",
+					NewPassword: "NewPassword",
+					PublicKey:   pubkey.String(),
+				},
+				cookies: []*http.Cookie{
+					{
+						Name:  auth.AuthTokenKey,
+						Value: token.AuthTokenString,
+					},
+					{
+						Name:  auth.SessionTokenKey,
+						Value: token.SessionTokenString,
+					},
+				},
+			},
+			status: http.StatusBadRequest,
+		},
+		{
+			name: "新パスワードが不正な値でパスワードが更新できない",
+			fields: fields{
+				auth: func(t *testing.T) usecase.APIAuth {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := usecase.NewMockAPIAuth(ctrl)
+					return mock
+				},
+			},
+			args: args{
+				r: &http.Request{
+					Method: http.MethodPut,
+					Header: http.Header{},
+				},
+				body: openapi.V1AuthChangePasswordRequestSchema{
+					Email:       "test@example.com",
+					OldPassword: "OldPassword",
+					NewPassword: "",
+					PublicKey:   pubkey.String(),
+				},
+				cookies: []*http.Cookie{
+					{
+						Name:  auth.AuthTokenKey,
+						Value: token.AuthTokenString,
+					},
+					{
+						Name:  auth.SessionTokenKey,
+						Value: token.SessionTokenString,
+					},
+				},
+			},
+			status: http.StatusBadRequest,
+		},
+		{
+			name: "旧パスワードと新パスワードが一致してパスワードが更新できない",
+			fields: fields{
+				auth: func(t *testing.T) usecase.APIAuth {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := usecase.NewMockAPIAuth(ctrl)
+					return mock
+				},
+			},
+			args: args{
+				r: &http.Request{
+					Method: http.MethodPut,
+					Header: http.Header{},
+				},
+				body: openapi.V1AuthChangePasswordRequestSchema{
+					Email:       "test@example.com",
+					OldPassword: "password",
+					NewPassword: "password",
+					PublicKey:   pubkey.String(),
+				},
+				cookies: []*http.Cookie{
+					{
+						Name:  auth.AuthTokenKey,
+						Value: token.AuthTokenString,
+					},
+					{
+						Name:  auth.SessionTokenKey,
+						Value: token.SessionTokenString,
+					},
+				},
+			},
+			status: http.StatusBadRequest,
+		},
+		{
+			name: "usecaseでエラーが発生してパスワードが更新できない",
+			fields: fields{
+				auth: func(t *testing.T) usecase.APIAuth {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := usecase.NewMockAPIAuth(ctrl)
+					mock.EXPECT().ChangePassword(gomock.Any(), usecase.APIAuthChangePasswordInput{
+						UserID:      token.UserID,
+						Secret:      auth.Secret("secret"),
+						PublicKey:   pubkey.Key,
+						ExpiresIn:   auth.DefaultExpiresIn,
+						EMail:       auth.EMail("test@example.com"),
+						OldPassword: auth.Password("OldPassword"),
+						NewPassword: auth.Password("NewPassword"),
+					}).Return(usecase.APIAuthChangePasswordOutput{}, fmt.Errorf("error"))
+					return mock
+				},
+			},
+			args: args{
+				r: &http.Request{
+					Method: http.MethodPut,
+					Header: http.Header{},
+				},
+				body: openapi.V1AuthChangePasswordRequestSchema{
+					Email:       "test@example.com",
+					OldPassword: "OldPassword",
+					NewPassword: "NewPassword",
+					PublicKey:   pubkey.String(),
+				},
+				cookies: []*http.Cookie{
+					{
+						Name:  auth.AuthTokenKey,
+						Value: token.AuthTokenString,
+					},
+					{
+						Name:  auth.SessionTokenKey,
+						Value: token.SessionTokenString,
+					},
+				},
+			},
+			status: http.StatusInternalServerError,
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			hdl := handler.New(
+				"key",
+				auth.Secret("secret"),
+				Cookie(t),
+				tt.fields.auth(t),
+				tt.fields.article,
+				tt.fields.health,
+			)
+			got := httptest.NewRecorder()
+			for _, cookie := range tt.args.cookies {
+				tt.args.r.AddCookie(cookie)
+			}
+			buf, _ := json.Marshal(tt.args.body)
+			tt.args.r.Body = io.NopCloser(bytes.NewBuffer(buf))
+			hdl.V1AuthChangePassword(got, tt.args.r)
 			if got.Code != tt.status {
 				t.Errorf("got %v, want %v", got.Code, tt.status)
 			}
