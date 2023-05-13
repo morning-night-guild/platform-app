@@ -147,9 +147,9 @@ func (itr *APIAuth) SignOutAll(
 	delCmds := make([]cache.TxDelCmd, 0, len(keys)+length)
 
 	for _, key := range keys {
-		// FIXME: ここでキーの形式を変更しているのはよくないので修正する
+		// NOTE: ここでキーの形式を変更しているのはよくないので修正する
 		// session:{uuid} の形式から session: の部分を取り出す -> cmd作成のときに session: が付与されるため
-		cmd, err := itr.sessionCache.CreateTxDelCmd(ctx, strings.Replace(key, "session:", "", -1))
+		cmd, err := itr.sessionCache.CreateTxDelCmd(ctx, strings.ReplaceAll(key, "session:", ""))
 		if err != nil {
 			log.GetLogCtx(ctx).Warn("failed to create session cache delete command", log.ErrorField(err))
 
