@@ -139,7 +139,7 @@ func (kvs *KVS[T]) Tx(
 func (kvs *KVS[T]) Keys(
 	ctx context.Context,
 	pattern string,
-	withPrefix bool,
+	prefix cache.Prefix,
 ) ([]string, error) {
 	ptn := fmt.Sprintf(keyFormat, kvs.Prefix, pattern)
 
@@ -148,7 +148,7 @@ func (kvs *KVS[T]) Keys(
 		return nil, fmt.Errorf("failed to get keys: %w", err)
 	}
 
-	if withPrefix {
+	if prefix {
 		return keys, nil
 	}
 

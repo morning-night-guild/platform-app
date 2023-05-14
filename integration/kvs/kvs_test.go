@@ -244,7 +244,7 @@ func TestKVS(t *testing.T) {
 			t.Errorf("failed to set: %v", err)
 		}
 
-		got1, err := kvs.Keys(ctx, prf, true)
+		got1, err := kvs.Keys(ctx, prf, cache.WithPrefix)
 		if err != nil {
 			t.Fatalf("failed to get keys: %v", err)
 		}
@@ -271,7 +271,7 @@ func TestKVS(t *testing.T) {
 			t.Errorf("got1 = %v, want1 = %v", got1, want1)
 		}
 
-		got2, err := kvs.Keys(ctx, prf, false)
+		got2, err := kvs.Keys(ctx, prf, cache.WithoutPrefix)
 		if err != nil {
 			t.Fatalf("failed to get keys: %v", err)
 		}

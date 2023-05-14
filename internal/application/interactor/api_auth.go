@@ -135,7 +135,7 @@ func (itr *APIAuth) SignOutAll(
 	ctx context.Context,
 	input usecase.APIAuthSignOutAllInput,
 ) (usecase.APIAuthSignOutAllOutput, error) {
-	keys, err := itr.sessionCache.Keys(ctx, input.UserID.String(), false)
+	keys, err := itr.sessionCache.Keys(ctx, input.UserID.String(), cache.WithoutPrefix)
 	if err != nil {
 		log.GetLogCtx(ctx).Warn("failed to get session cache keys", log.ErrorField(err))
 	}

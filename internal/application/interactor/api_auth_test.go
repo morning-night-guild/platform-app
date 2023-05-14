@@ -546,7 +546,7 @@ func TestAPIAuthSignOutAll(t *testing.T) {
 						"session:01234567-0123-0123-0123-0123456789ab:01234567-0123-0123-0123-0123456789ac",
 						"session:01234567-0123-0123-0123-0123456789ab:01234567-0123-0123-0123-0123456789ad",
 					},
-					KeysAssert: func(t *testing.T, pattern string, withPrefix bool) {
+					KeysAssert: func(t *testing.T, pattern string, prefix cache.Prefix) {
 						t.Helper()
 					},
 					CreateTxDelCmdAssert: func(t *testing.T, key string) {
@@ -1094,7 +1094,7 @@ func TestAPIAuthChangePassword(t *testing.T) {
 						"session:01234567-0123-0123-0123-0123456789ab:01234567-0123-0123-0123-0123456789ac",
 						"session:01234567-0123-0123-0123-0123456789ab:01234567-0123-0123-0123-0123456789ad",
 					},
-					KeysAssert: func(t *testing.T, pattern string, withPrefix bool) {
+					KeysAssert: func(t *testing.T, pattern string, prefix cache.Prefix) {
 						t.Helper()
 					},
 					CreateTxDelCmdAssert: func(t *testing.T, key string) {
