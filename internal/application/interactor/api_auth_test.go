@@ -546,13 +546,19 @@ func TestAPIAuthSignOutAll(t *testing.T) {
 						"session:01234567-0123-0123-0123-0123456789ab:01234567-0123-0123-0123-0123456789ac",
 						"session:01234567-0123-0123-0123-0123456789ab:01234567-0123-0123-0123-0123456789ad",
 					},
-					KeysAssert: func(t *testing.T, pattern string) {
+					KeysAssert: func(t *testing.T, pattern string, prefix cache.Prefix) {
 						t.Helper()
 					},
 					CreateTxDelCmdAssert: func(t *testing.T, key string) {
 						t.Helper()
 					},
 					TxAssert: func(t *testing.T, setCmds []cache.TxSetCmd, delCmds []cache.TxDelCmd) {
+						t.Helper()
+					},
+				},
+				userCache: &cache.CacheMock[model.User]{
+					T: t,
+					CreateTxDelCmdAssert: func(t *testing.T, key string) {
 						t.Helper()
 					},
 				},
@@ -1056,6 +1062,9 @@ func TestAPIAuthChangePassword(t *testing.T) {
 					CreateTxSetCmdAssert: func(t *testing.T, key string, value model.User, ttl time.Duration) {
 						t.Helper()
 					},
+					CreateTxDelCmdAssert: func(t *testing.T, key string) {
+						t.Helper()
+					},
 				},
 				authCache: &cache.CacheMock[model.Auth]{
 					T: t,
@@ -1085,7 +1094,7 @@ func TestAPIAuthChangePassword(t *testing.T) {
 						"session:01234567-0123-0123-0123-0123456789ab:01234567-0123-0123-0123-0123456789ac",
 						"session:01234567-0123-0123-0123-0123456789ab:01234567-0123-0123-0123-0123456789ad",
 					},
-					KeysAssert: func(t *testing.T, pattern string) {
+					KeysAssert: func(t *testing.T, pattern string, prefix cache.Prefix) {
 						t.Helper()
 					},
 					CreateTxDelCmdAssert: func(t *testing.T, key string) {

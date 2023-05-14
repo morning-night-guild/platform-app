@@ -7,7 +7,7 @@ import (
 	"github.com/morning-night-guild/platform-app/internal/domain/model/errors"
 )
 
-const DefaultCodeExpiresIn = time.Hour // 1 hour
+const DefaultCodeExpiresIn = 10 * time.Minute // 10 minutes
 
 type Code struct {
 	CodeID    auth.CodeID    `json:"codeId"`

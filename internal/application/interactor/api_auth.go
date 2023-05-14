@@ -135,28 +135,36 @@ func (itr *APIAuth) SignOutAll(
 	ctx context.Context,
 	input usecase.APIAuthSignOutAllInput,
 ) (usecase.APIAuthSignOutAllOutput, error) {
-	keys, err := itr.sessionCache.Keys(ctx, input.UserID.String())
+	keys, err := itr.sessionCache.Keys(ctx, input.UserID.String(), cache.WithoutPrefix)
 	if err != nil {
 		log.GetLogCtx(ctx).Warn("failed to get session cache keys", log.ErrorField(err))
 	}
 
-	// session:{uuid} の形式でキーは取得される
+	const length = 1
 
-	const length = 2
-
-	delCmds := make([]cache.TxDelCmd, 0, len(keys)+length)
+	delCmds := make([]cache.TxDelCmd, 0, len(keys)*2+length)
 
 	for _, key := range keys {
-		// NOTE: ここでキーの形式を変更しているのはよくないので修正する
-		// session:{uuid} の形式から session: の部分を取り出す -> cmd作成のときに session: が付与されるため
-		cmd, err := itr.sessionCache.CreateTxDelCmd(ctx, strings.ReplaceAll(key, "session:", ""))
+		sDelCmd, err := itr.sessionCache.CreateTxDelCmd(ctx, key)
 		if err != nil {
 			log.GetLogCtx(ctx).Warn("failed to create session cache delete command", log.ErrorField(err))
 
 			continue
 		}
 
-		delCmds = append(delCmds, cmd)
+		delCmds = append(delCmds, sDelCmd)
+
+		// 取得したkey:${user_id}:${session_id}形式 -> ここから${session_id}のみを抽出
+		ukey := strings.ReplaceAll(key, fmt.Sprintf("%s:", input.UserID.String()), "")
+
+		uDelCmd, err := itr.userCache.CreateTxDelCmd(ctx, ukey)
+		if err != nil {
+			log.GetLogCtx(ctx).Warn("failed to create user cache delete command", log.ErrorField(err))
+
+			continue
+		}
+
+		delCmds = append(delCmds, uDelCmd)
 	}
 
 	authDelCmd, err := itr.authCache.CreateTxDelCmd(ctx, input.UserID.String())
