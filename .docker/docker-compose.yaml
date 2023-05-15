@@ -17,7 +17,7 @@ services:
     restart: always
   postgres-primary:
     container_name: ${APP_NAME}-postgres-primary
-    image: postgres:15.2-alpine
+    image: postgres:15.3-alpine
     ports:
       - ${PRIMARY_DB_PORT}:5432
     environment:
@@ -31,7 +31,7 @@ services:
     restart: always
   postgres-secondary:
     container_name: ${APP_NAME}-postgres-secondary
-    image: postgres:15.2-alpine
+    image: postgres:15.3-alpine
     ports:
       - ${SECONDARY_DB_PORT}:5432
     environment:
