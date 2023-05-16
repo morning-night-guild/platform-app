@@ -24,10 +24,6 @@ tool: ## Install tool.
 dev: ## Make development.
 	@docker compose --project-name ${APP_NAME} --file ./.docker/docker-compose.yaml up -d
 
-.PHONY: devtest
-devtest: ## Make development for test.
-	@docker compose --project-name ${APP_NAME} --file ./.docker/test.docker-compose.yaml up -d
-
 .PHONY: redev
 redev: ## restart dev container
 	@touch cmd/app/core/main.go
