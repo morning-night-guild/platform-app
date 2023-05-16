@@ -82,7 +82,6 @@ func TestE2EChangePassword(t *testing.T) {
 		}
 
 		res, err := client.Client.V1AuthChangePassword(ctx, openapi.V1AuthChangePasswordRequestSchema{
-			Email:       types.Email(email),
 			NewPassword: newPass,
 			OldPassword: oldPass,
 			PublicKey:   helper.Public(t, prv2),
@@ -245,7 +244,6 @@ func TestE2EChangePassword(t *testing.T) {
 		}
 
 		res, err := client.Client.V1AuthChangePassword(ctx, openapi.V1AuthChangePasswordRequestSchema{
-			Email:       types.Email(email),
 			NewPassword: password,
 			OldPassword: password,
 			PublicKey:   helper.Public(t, prv2),

@@ -7,23 +7,23 @@ import (
 	"github.com/morning-night-guild/platform-app/pkg/log"
 )
 
-type EMail string
+type Email string
 
-func NewEMail(value string) (EMail, error) {
-	em := EMail(value)
+func NewEmail(value string) (Email, error) {
+	em := Email(value)
 
 	if err := em.validate(); err != nil {
-		return EMail(""), err
+		return Email(""), err
 	}
 
 	return em, nil
 }
 
-func (em EMail) String() string {
+func (em Email) String() string {
 	return string(em)
 }
 
-func (em EMail) validate() error {
+func (em Email) validate() error {
 	if _, err := mail.ParseAddress(em.String()); err != nil {
 		log.Log().Warn("failed to parse email address", log.ErrorField(err))
 

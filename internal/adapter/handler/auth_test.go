@@ -247,7 +247,7 @@ func TestHandlerV1AuthSignIn(t *testing.T) {
 					mock := usecase.NewMockAPIAuth(ctrl)
 					mock.EXPECT().SignIn(gomock.Any(), usecase.APIAuthSignInInput{
 						Secret:    auth.Secret("secret"),
-						EMail:     auth.EMail("test@example.com"),
+						Email:     auth.Email("test@example.com"),
 						Password:  auth.Password("password"),
 						PublicKey: pubkey.Key,
 						ExpiresIn: auth.DefaultExpiresIn,
@@ -276,7 +276,7 @@ func TestHandlerV1AuthSignIn(t *testing.T) {
 					mock := usecase.NewMockAPIAuth(ctrl)
 					mock.EXPECT().SignIn(gomock.Any(), usecase.APIAuthSignInInput{
 						Secret:    auth.Secret("secret"),
-						EMail:     auth.EMail("test@example.com"),
+						Email:     auth.Email("test@example.com"),
 						Password:  auth.Password("password"),
 						PublicKey: pubkey.Key,
 						ExpiresIn: auth.ExpiresIn(600),
@@ -372,7 +372,7 @@ func TestHandlerV1AuthSignIn(t *testing.T) {
 					mock := usecase.NewMockAPIAuth(ctrl)
 					mock.EXPECT().SignIn(gomock.Any(), usecase.APIAuthSignInInput{
 						Secret:    auth.Secret("secret"),
-						EMail:     auth.EMail("test@example.com"),
+						Email:     auth.Email("test@example.com"),
 						Password:  auth.Password("password"),
 						PublicKey: pubkey.Key,
 						ExpiresIn: auth.DefaultExpiresIn,
@@ -875,7 +875,7 @@ func TestHandlerV1AuthSignUp(t *testing.T) {
 					ctrl := gomock.NewController(t)
 					mock := usecase.NewMockAPIAuth(ctrl)
 					mock.EXPECT().SignUp(gomock.Any(), usecase.APIAuthSignUpInput{
-						EMail:    auth.EMail("test@example.com"),
+						Email:    auth.Email("test@example.com"),
 						Password: auth.Password("password"),
 					}).Return(usecase.APIAuthSignUpOutput{}, nil)
 					return mock
@@ -970,7 +970,7 @@ func TestHandlerV1AuthSignUp(t *testing.T) {
 					ctrl := gomock.NewController(t)
 					mock := usecase.NewMockAPIAuth(ctrl)
 					mock.EXPECT().SignUp(gomock.Any(), usecase.APIAuthSignUpInput{
-						EMail:    auth.EMail("test@example.com"),
+						Email:    auth.Email("test@example.com"),
 						Password: auth.Password("password"),
 					}).Return(usecase.APIAuthSignUpOutput{}, fmt.Errorf("error"))
 					return mock
@@ -1329,7 +1329,6 @@ func TestHandlerV1AuthChangePassword(t *testing.T) {
 						Secret:      auth.Secret("secret"),
 						PublicKey:   pubkey.Key,
 						ExpiresIn:   auth.DefaultExpiresIn,
-						EMail:       auth.EMail("test@example.com"),
 						OldPassword: auth.Password("OldPassword"),
 						NewPassword: auth.Password("NewPassword"),
 					}).Return(usecase.APIAuthChangePasswordOutput{}, nil)
@@ -1342,7 +1341,6 @@ func TestHandlerV1AuthChangePassword(t *testing.T) {
 					Header: http.Header{},
 				},
 				body: openapi.V1AuthChangePasswordRequestSchema{
-					Email:       "test@example.com",
 					OldPassword: "OldPassword",
 					NewPassword: "NewPassword",
 					PublicKey:   pubkey.String(),
@@ -1376,7 +1374,6 @@ func TestHandlerV1AuthChangePassword(t *testing.T) {
 					Header: http.Header{},
 				},
 				body: openapi.V1AuthChangePasswordRequestSchema{
-					Email:       "test@example.com",
 					OldPassword: "OldPassword",
 					NewPassword: "NewPassword",
 					PublicKey:   pubkey.String(),
@@ -1401,44 +1398,9 @@ func TestHandlerV1AuthChangePassword(t *testing.T) {
 					Header: http.Header{},
 				},
 				body: openapi.V1AuthChangePasswordRequestSchema{
-					Email:       "test@example.com",
 					OldPassword: "OldPassword",
 					NewPassword: "NewPassword",
 					PublicKey:   "",
-				},
-				cookies: []*http.Cookie{
-					{
-						Name:  auth.AuthTokenKey,
-						Value: token.AuthTokenString,
-					},
-					{
-						Name:  auth.SessionTokenKey,
-						Value: token.SessionTokenString,
-					},
-				},
-			},
-			status: http.StatusBadRequest,
-		},
-		{
-			name: "EMailが不正な値でパスワードが更新できない",
-			fields: fields{
-				auth: func(t *testing.T) usecase.APIAuth {
-					t.Helper()
-					ctrl := gomock.NewController(t)
-					mock := usecase.NewMockAPIAuth(ctrl)
-					return mock
-				},
-			},
-			args: args{
-				r: &http.Request{
-					Method: http.MethodPut,
-					Header: http.Header{},
-				},
-				body: openapi.V1AuthChangePasswordRequestSchema{
-					Email:       "",
-					OldPassword: "OldPassword",
-					NewPassword: "NewPassword",
-					PublicKey:   pubkey.String(),
 				},
 				cookies: []*http.Cookie{
 					{
@@ -1469,7 +1431,6 @@ func TestHandlerV1AuthChangePassword(t *testing.T) {
 					Header: http.Header{},
 				},
 				body: openapi.V1AuthChangePasswordRequestSchema{
-					Email:       "test@example.com",
 					OldPassword: "",
 					NewPassword: "NewPassword",
 					PublicKey:   pubkey.String(),
@@ -1503,7 +1464,6 @@ func TestHandlerV1AuthChangePassword(t *testing.T) {
 					Header: http.Header{},
 				},
 				body: openapi.V1AuthChangePasswordRequestSchema{
-					Email:       "test@example.com",
 					OldPassword: "OldPassword",
 					NewPassword: "",
 					PublicKey:   pubkey.String(),
@@ -1537,7 +1497,6 @@ func TestHandlerV1AuthChangePassword(t *testing.T) {
 					Header: http.Header{},
 				},
 				body: openapi.V1AuthChangePasswordRequestSchema{
-					Email:       "test@example.com",
 					OldPassword: "password",
 					NewPassword: "password",
 					PublicKey:   pubkey.String(),
@@ -1567,7 +1526,6 @@ func TestHandlerV1AuthChangePassword(t *testing.T) {
 						Secret:      auth.Secret("secret"),
 						PublicKey:   pubkey.Key,
 						ExpiresIn:   auth.DefaultExpiresIn,
-						EMail:       auth.EMail("test@example.com"),
 						OldPassword: auth.Password("OldPassword"),
 						NewPassword: auth.Password("NewPassword"),
 					}).Return(usecase.APIAuthChangePasswordOutput{}, fmt.Errorf("error"))
@@ -1580,7 +1538,6 @@ func TestHandlerV1AuthChangePassword(t *testing.T) {
 					Header: http.Header{},
 				},
 				body: openapi.V1AuthChangePasswordRequestSchema{
-					Email:       "test@example.com",
 					OldPassword: "OldPassword",
 					NewPassword: "NewPassword",
 					PublicKey:   pubkey.String(),

@@ -51,8 +51,23 @@ func (mr *MockAuthMockRecorder) ChangePassword(arg0, arg1, arg2 interface{}) *go
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ChangePassword", reflect.TypeOf((*MockAuth)(nil).ChangePassword), arg0, arg1, arg2)
 }
 
+// GetEmail mocks base method.
+func (m *MockAuth) GetEmail(arg0 context.Context, arg1 user.ID) (auth.Email, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetEmail", arg0, arg1)
+	ret0, _ := ret[0].(auth.Email)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetEmail indicates an expected call of GetEmail.
+func (mr *MockAuthMockRecorder) GetEmail(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEmail", reflect.TypeOf((*MockAuth)(nil).GetEmail), arg0, arg1)
+}
+
 // SignIn mocks base method.
-func (m *MockAuth) SignIn(arg0 context.Context, arg1 auth.EMail, arg2 auth.Password) (model.User, error) {
+func (m *MockAuth) SignIn(arg0 context.Context, arg1 auth.Email, arg2 auth.Password) (model.User, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SignIn", arg0, arg1, arg2)
 	ret0, _ := ret[0].(model.User)
@@ -67,7 +82,7 @@ func (mr *MockAuthMockRecorder) SignIn(arg0, arg1, arg2 interface{}) *gomock.Cal
 }
 
 // SignUp mocks base method.
-func (m *MockAuth) SignUp(arg0 context.Context, arg1 user.ID, arg2 auth.EMail, arg3 auth.Password) error {
+func (m *MockAuth) SignUp(arg0 context.Context, arg1 user.ID, arg2 auth.Email, arg3 auth.Password) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SignUp", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(error)

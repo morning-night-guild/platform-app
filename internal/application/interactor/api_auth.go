@@ -53,7 +53,7 @@ func (itr *APIAuth) SignUp(
 		return usecase.APIAuthSignUpOutput{}, err
 	}
 
-	if err := itr.authRPC.SignUp(ctx, user.UserID, input.EMail, input.Password); err != nil {
+	if err := itr.authRPC.SignUp(ctx, user.UserID, input.Email, input.Password); err != nil {
 		log.GetLogCtx(ctx).Warn("failed to sign up", log.ErrorField(err))
 
 		return usecase.APIAuthSignUpOutput{}, err
@@ -66,7 +66,7 @@ func (itr *APIAuth) SignIn(
 	ctx context.Context,
 	input usecase.APIAuthSignInInput,
 ) (usecase.APIAuthSignInOutput, error) {
-	user, err := itr.authRPC.SignIn(ctx, input.EMail, input.Password)
+	user, err := itr.authRPC.SignIn(ctx, input.Email, input.Password)
 	if err != nil {
 		return usecase.APIAuthSignInOutput{}, err
 	}
@@ -298,7 +298,14 @@ func (itr *APIAuth) ChangePassword(
 	ctx context.Context,
 	input usecase.APIAuthChangePasswordInput,
 ) (usecase.APIAuthChangePasswordOutput, error) {
-	if _, err := itr.authRPC.SignIn(ctx, input.EMail, input.OldPassword); err != nil {
+	email, err := itr.authRPC.GetEmail(ctx, input.UserID)
+	if err != nil {
+		log.GetLogCtx(ctx).Warn("failed to get email", log.ErrorField(err))
+
+		return usecase.APIAuthChangePasswordOutput{}, errors.NewUnknownError("failed to get email", err)
+	}
+
+	if _, err := itr.authRPC.SignIn(ctx, email, input.OldPassword); err != nil {
 		log.GetLogCtx(ctx).Warn("failed to sign in with old password", log.ErrorField(err))
 
 		return usecase.APIAuthChangePasswordOutput{}, errors.NewUnauthorizedError("failed to sign in", err)
@@ -320,7 +327,7 @@ func (itr *APIAuth) ChangePassword(
 
 	output, err := itr.SignIn(ctx, usecase.APIAuthSignInInput{
 		Secret:    input.Secret,
-		EMail:     input.EMail,
+		Email:     email,
 		Password:  input.NewPassword,
 		PublicKey: input.PublicKey,
 		ExpiresIn: input.ExpiresIn,

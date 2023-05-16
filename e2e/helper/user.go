@@ -26,7 +26,7 @@ const bits = 2048
 type User struct {
 	T        *testing.T
 	UserID   string
-	EMail    string
+	Email    string
 	Password string
 	Cookies  []*http.Cookie
 	Client   *OpenAPIClient
@@ -90,7 +90,7 @@ func NewUser(
 	return User{
 		T:        t,
 		UserID:   uid,
-		EMail:    email,
+		Email:    email,
 		Password: password,
 		Cookies:  res.Cookies(),
 		Client:   client,

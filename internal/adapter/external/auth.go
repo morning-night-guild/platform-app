@@ -47,7 +47,7 @@ func NewAuth(
 	}
 }
 
-func (ext *Auth) SignUp(ctx context.Context, uid user.ID, email auth.EMail, password auth.Password) error {
+func (ext *Auth) SignUp(ctx context.Context, uid user.ID, email auth.Email, password auth.Password) error {
 	params := (&firebase.UserToCreate{}).
 		UID(uid.String()).
 		Email(email.String()).
@@ -78,7 +78,7 @@ type SignInResponse struct {
 }
 
 //nolint:funlen
-func (ext *Auth) SignIn(ctx context.Context, email auth.EMail, password auth.Password) (model.User, error) {
+func (ext *Auth) SignIn(ctx context.Context, email auth.Email, password auth.Password) (model.User, error) {
 	// https://firebase.google.com/docs/reference/rest/auth#section-sign-in-email-password
 	url := fmt.Sprintf("%s/v1/accounts:signInWithPassword?key=%s", ext.endpoint, ext.apiKey)
 
@@ -172,4 +172,18 @@ func (ext *Auth) ChangePassword(
 	}
 
 	return nil
+}
+
+func (ext *Auth) GetEmail(
+	ctx context.Context,
+	userID user.ID,
+) (auth.Email, error) {
+	user, err := ext.firebaseAuth.GetUser(ctx, userID.String())
+	if err != nil {
+		log.GetLogCtx(ctx).Warn("failed to get user", log.ErrorField(err))
+
+		return auth.Email(""), fmt.Errorf("failed to get user: %w", err)
+	}
+
+	return auth.Email(user.Email), nil
 }

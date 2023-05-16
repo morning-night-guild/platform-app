@@ -59,9 +59,6 @@ type V1ArticleShareRequestSchema struct {
 
 // V1AuthChangePasswordRequestSchema defines model for V1AuthChangePasswordRequestSchema.
 type V1AuthChangePasswordRequestSchema struct {
-	// Email メールアドレス
-	Email openapi_types.Email `json:"email"`
-
 	// ExpiresIn トークン有効期限(秒)
 	ExpiresIn *int `json:"expiresIn,omitempty"`
 

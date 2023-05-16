@@ -24,7 +24,7 @@ type APIAuth interface {
 }
 
 type APIAuthSignUpInput struct {
-	EMail    auth.EMail
+	Email    auth.Email
 	Password auth.Password
 }
 
@@ -32,7 +32,7 @@ type APIAuthSignUpOutput struct{}
 
 type APIAuthSignInInput struct {
 	Secret    auth.Secret
-	EMail     auth.EMail
+	Email     auth.Email
 	Password  auth.Password
 	PublicKey rsa.PublicKey
 	ExpiresIn auth.ExpiresIn
@@ -89,7 +89,6 @@ type APIAuthChangePasswordInput struct {
 	Secret      auth.Secret
 	PublicKey   rsa.PublicKey
 	ExpiresIn   auth.ExpiresIn
-	EMail       auth.EMail
 	OldPassword auth.Password
 	NewPassword auth.Password
 }
