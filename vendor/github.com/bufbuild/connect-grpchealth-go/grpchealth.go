@@ -1,4 +1,4 @@
-// Copyright 2022 Buf Technologies, Inc.
+// Copyright 2022-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -40,6 +40,9 @@ import (
 type Status uint8
 
 const (
+	// HealthV1ServiceName is the fully-qualified name of the v1 version of the health service.
+	HealthV1ServiceName = "grpc.health.v1.Health"
+
 	// StatusUnknown indicates that the service's health state is indeterminate.
 	StatusUnknown Status = 0
 
@@ -166,7 +169,7 @@ func (c *StaticChecker) SetStatus(service string, status Status) {
 }
 
 // Check implements Checker. It's safe to call concurrently with SetStatus.
-func (c *StaticChecker) Check(ctx context.Context, req *CheckRequest) (*CheckResponse, error) {
+func (c *StaticChecker) Check(_ context.Context, req *CheckRequest) (*CheckResponse, error) {
 	if req.Service == "" {
 		return &CheckResponse{Status: StatusServing}, nil
 	}
