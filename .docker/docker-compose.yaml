@@ -12,8 +12,6 @@ services:
       dockerfile: firebase/Dockerfile
     ports:
       - ${FIREBASE_PORT}:9099
-    volumes:
-      - ./firebase:/firebase
     restart: always
   postgres-primary:
     container_name: ${APP_NAME}-postgres-primary
