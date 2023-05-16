@@ -16,7 +16,7 @@ func TestExternal(t *testing.T) {
 	t.Run("Firebaseに接続できる", func(t *testing.T) {
 		t.Parallel()
 
-		res, err := http.DefaultClient.Get(fmt.Sprintf("%s/emulator/openapi.json", url))
+		res, err := http.DefaultClient.Get(fmt.Sprintf("%s/emulator/openapi.json", url)) //nolint:noctx
 		if err != nil {
 			t.Fatalf("failed to connect to firebase: %v", err)
 		}

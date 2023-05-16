@@ -387,7 +387,7 @@ func (hdl *Handler) unauthorize(
 
 // パスワード変更
 // (PUT /v1/auth/password).
-func (hdl *Handler) V1AuthChangePassword( 
+func (hdl *Handler) V1AuthChangePassword(
 	w http.ResponseWriter,
 	r *http.Request,
 ) {
