@@ -12,8 +12,6 @@ services:
       dockerfile: firebase/Dockerfile
     ports:
       - ${FIREBASE_PORT}:9099
-    volumes:
-      - ./firebase:/firebase
     restart: always
   postgres-primary:
     container_name: ${APP_NAME}-postgres-primary
@@ -114,3 +112,32 @@ services:
       - app-core
       - redis
       - firebase
+# for integration test
+  redis-test:
+    container_name: ${APP_NAME}-redis-test
+    image: redis:7.0.11-alpine
+    ports:
+      - ${TEST_REDIS_PORT}:6379
+    restart: always
+  postgres-test:
+    container_name: ${APP_NAME}-postgres-test
+    image: postgres:15.3-alpine
+    ports:
+      - ${TEST_DB_PORT}:5432
+    environment:
+      TZ: UTC
+      LANG: ja_JP.UTF-8
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8"
+      POSTGRES_HOST_AUTH_METHOD: trust
+    restart: always
+  firebase-test:
+    container_name: ${APP_NAME}-firebase-test
+    build:
+      context: .
+      dockerfile: firebase/Dockerfile
+    ports:
+      - ${TEST_FIREBASE_PORT}:9099
+    restart: always

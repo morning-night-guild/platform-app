@@ -79,7 +79,7 @@ func TestAPIAuthSignUp(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				input: usecase.APIAuthSignUpInput{
-					EMail:    auth.EMail("test@example.com"),
+					Email:    auth.Email("test@example.com"),
 					Password: auth.Password("password"),
 				},
 			},
@@ -100,7 +100,7 @@ func TestAPIAuthSignUp(t *testing.T) {
 					mock.EXPECT().SignUp(
 						gomock.Any(),
 						user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
-						auth.EMail("test@example.com"),
+						auth.Email("test@example.com"),
 						auth.Password("password"),
 					).Return(nil)
 					return mock
@@ -114,7 +114,7 @@ func TestAPIAuthSignUp(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				input: usecase.APIAuthSignUpInput{
-					EMail:    auth.EMail("test@example.com"),
+					Email:    auth.Email("test@example.com"),
 					Password: auth.Password("password"),
 				},
 			},
@@ -141,7 +141,7 @@ func TestAPIAuthSignUp(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				input: usecase.APIAuthSignUpInput{
-					EMail:    auth.EMail("test@example.com"),
+					Email:    auth.Email("test@example.com"),
 					Password: auth.Password("password"),
 				},
 			},
@@ -162,7 +162,7 @@ func TestAPIAuthSignUp(t *testing.T) {
 					mock.EXPECT().SignUp(
 						gomock.Any(),
 						user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
-						auth.EMail("test@example.com"),
+						auth.Email("test@example.com"),
 						auth.Password("password"),
 					).Return(fmt.Errorf("test"))
 					return mock
@@ -230,7 +230,7 @@ func TestAPIAuthSignIn(t *testing.T) {
 					mock := rpc.NewMockAuth(ctrl)
 					mock.EXPECT().SignIn(
 						gomock.Any(),
-						auth.EMail("test@example.com"),
+						auth.Email("test@example.com"),
 						auth.Password("password"),
 					).Return(model.User{
 						UserID: user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
@@ -268,7 +268,7 @@ func TestAPIAuthSignIn(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				input: usecase.APIAuthSignInInput{
-					EMail:     auth.EMail("test@example.com"),
+					Email:     auth.Email("test@example.com"),
 					Password:  auth.Password("password"),
 					PublicKey: rsa.PublicKey{},
 					ExpiresIn: auth.DefaultExpiresIn,
@@ -1043,9 +1043,13 @@ func TestAPIAuthChangePassword(t *testing.T) {
 					t.Helper()
 					ctrl := gomock.NewController(t)
 					mock := rpc.NewMockAuth(ctrl)
+					mock.EXPECT().GetEmail(
+						gomock.Any(),
+						user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+					).Return(auth.Email("test@example.com"), nil)
 					mock.EXPECT().SignIn(
 						gomock.Any(),
-						auth.EMail("test@example.com"),
+						auth.Email("test@example.com"),
 						gomock.Any(),
 					).Return(model.User{
 						UserID: user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
@@ -1107,7 +1111,6 @@ func TestAPIAuthChangePassword(t *testing.T) {
 				input: usecase.APIAuthChangePasswordInput{
 					Secret:      auth.Secret("secret"),
 					UserID:      user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
-					EMail:       auth.EMail("test@example.com"),
 					OldPassword: auth.Password("OldPassword"),
 					NewPassword: auth.Password("NewPassword"),
 					PublicKey:   rsa.PublicKey{},

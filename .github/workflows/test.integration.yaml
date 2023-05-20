@@ -34,8 +34,24 @@ jobs:
         uses: actions/setup-go@v4
         with:
           go-version-file: go.mod
+      - name: Run firebase authentication
+        id: firebase
+        working-directory: ./.docker/firebase
+        run: |
+          npm install -g firebase-tools
+          firebase emulators:start --project=emulator &
+          echo FIREBASE_PID=$! >> $GITHUB_OUTPUT
+          sleep 20
       - name: Test integration
         env:
           DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable
           REDIS_URL: localhost:6379
+          FIREBASE_URL: http://localhost:9099
+          FIREBASE_API_ENDPOINT: http://localhost:9099/identitytoolkit.googleapis.com
+          FIREBASE_API_KEY: emulator
+          FIREBASE_AUTH_EMULATOR_HOST: localhost:9099
         run: go test ./integration/...
+      - name: Shutdown
+        if: always()
+        run: |
+          kill ${{ steps.firebase.outputs.FIREBASE_PID }}

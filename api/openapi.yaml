@@ -413,11 +413,6 @@ components:
     V1AuthChangePasswordRequestSchema:
       type: object
       properties:
-        email:
-          type: string
-          description: メールアドレス
-          format: email
-          example: morning.night.guild@example.com
         oldPassword:
           type: string
           description: 旧パスワード
@@ -437,7 +432,6 @@ components:
           minimum: 0
           maximum: 3600
       required:
-        - email
         - oldPassword
         - newPassword
         - publicKey

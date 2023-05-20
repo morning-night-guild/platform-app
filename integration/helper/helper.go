@@ -70,3 +70,25 @@ func GetDSN(t *testing.T) string {
 
 	return ""
 }
+
+func GetFirebaseURL(t *testing.T) string {
+	t.Helper()
+
+	url := os.Getenv("TEST_FIREBASE_URL")
+
+	if url != "" {
+		return url
+	}
+
+	url = os.Getenv("FIREBASE_URL")
+
+	if url != "" {
+		return url
+	}
+
+	if url == "" {
+		t.Fatal("TEST_FIREBASE_URL or FIREBASE_URL is not set")
+	}
+
+	return url
+}

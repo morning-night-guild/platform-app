@@ -119,7 +119,7 @@ func (hdl *Handler) V1AuthSignIn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	email, err := auth.NewEMail(string(req.Email))
+	email, err := auth.NewEmail(string(req.Email))
 	if err != nil {
 		log.GetLogCtx(ctx).Warn("failed to new email", log.ErrorField(err))
 
@@ -152,7 +152,7 @@ func (hdl *Handler) V1AuthSignIn(w http.ResponseWriter, r *http.Request) {
 	input := usecase.APIAuthSignInInput{
 		Secret:    hdl.secret,
 		PublicKey: key,
-		EMail:     email,
+		Email:     email,
 		Password:  password,
 		ExpiresIn: expiresIn,
 	}
@@ -260,7 +260,7 @@ func (hdl *Handler) V1AuthSignUp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	email, err := auth.NewEMail(string(body.Email))
+	email, err := auth.NewEmail(string(body.Email))
 	if err != nil {
 		log.GetLogCtx(ctx).Warn("failed to new email", log.ErrorField(err))
 
@@ -279,7 +279,7 @@ func (hdl *Handler) V1AuthSignUp(w http.ResponseWriter, r *http.Request) {
 	}
 
 	input := usecase.APIAuthSignUpInput{
-		EMail:    email,
+		Email:    email,
 		Password: password,
 	}
 
@@ -387,7 +387,7 @@ func (hdl *Handler) unauthorize(
 
 // パスワード変更
 // (PUT /v1/auth/password).
-func (hdl *Handler) V1AuthChangePassword( //nolint:cyclop
+func (hdl *Handler) V1AuthChangePassword(
 	w http.ResponseWriter,
 	r *http.Request,
 ) {
@@ -415,15 +415,6 @@ func (hdl *Handler) V1AuthChangePassword( //nolint:cyclop
 	key, err := auth.DecodePublicKey(req.PublicKey)
 	if err != nil {
 		log.GetLogCtx(ctx).Warn("failed to decode public key", log.ErrorField(err))
-
-		w.WriteHeader(http.StatusBadRequest)
-
-		return
-	}
-
-	email, err := auth.NewEMail(string(req.Email))
-	if err != nil {
-		log.GetLogCtx(ctx).Warn("failed to new email", log.ErrorField(err))
 
 		w.WriteHeader(http.StatusBadRequest)
 
@@ -473,7 +464,6 @@ func (hdl *Handler) V1AuthChangePassword( //nolint:cyclop
 		Secret:      hdl.secret,
 		PublicKey:   key,
 		ExpiresIn:   expiresIn,
-		EMail:       email,
 		OldPassword: oldPassword,
 		NewPassword: newPassword,
 	}

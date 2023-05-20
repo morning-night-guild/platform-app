@@ -6,7 +6,7 @@ import (
 	"github.com/morning-night-guild/platform-app/internal/domain/model/auth"
 )
 
-func TestNewEMail(t *testing.T) {
+func TestNewEmail(t *testing.T) {
 	t.Parallel()
 
 	type args struct {
@@ -16,7 +16,7 @@ func TestNewEMail(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		want    auth.EMail
+		want    auth.Email
 		wantErr bool
 	}{
 		{
@@ -24,7 +24,7 @@ func TestNewEMail(t *testing.T) {
 			args: args{
 				value: "test@example.com",
 			},
-			want:    auth.EMail("test@example.com"),
+			want:    auth.Email("test@example.com"),
 			wantErr: false,
 		},
 		{
@@ -32,7 +32,7 @@ func TestNewEMail(t *testing.T) {
 			args: args{
 				value: "email",
 			},
-			want:    auth.EMail(""),
+			want:    auth.Email(""),
 			wantErr: true,
 		},
 	}
@@ -41,13 +41,13 @@ func TestNewEMail(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			got, err := auth.NewEMail(tt.args.value)
+			got, err := auth.NewEmail(tt.args.value)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("NewEMail() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("NewEmail() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if got != tt.want {
-				t.Errorf("NewEMail() = %v, want %v", got, tt.want)
+				t.Errorf("NewEmail() = %v, want %v", got, tt.want)
 			}
 		})
 	}
