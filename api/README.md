@@ -231,7 +231,6 @@ authTokenCookie, sessionTokenCookie
 
 ```json
 {
-  "email": "morning.night.guild@example.com",
   "oldPassword": "OldPassword",
   "newPassword": "NewPassword",
   "publicKey": "string",
@@ -543,7 +542,6 @@ This operation does not require authentication
 
 ```json
 {
-  "email": "morning.night.guild@example.com",
   "oldPassword": "OldPassword",
   "newPassword": "NewPassword",
   "publicKey": "string",
@@ -556,7 +554,6 @@ This operation does not require authentication
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|email|string(email)|true|none|メールアドレス|
 |oldPassword|string|true|none|旧パスワード|
 |newPassword|string|true|none|新パスワード|
 |publicKey|string(base64)|true|none|公開鍵|
