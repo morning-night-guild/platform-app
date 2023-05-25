@@ -40,9 +40,11 @@ type Article struct {
 type ArticleEdges struct {
 	// Tags holds the value of the tags edge.
 	Tags []*ArticleTag `json:"tags,omitempty"`
+	// UserArticles holds the value of the user_articles edge.
+	UserArticles []*UserArticle `json:"user_articles,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [1]bool
+	loadedTypes [2]bool
 }
 
 // TagsOrErr returns the Tags value or an error if the edge
@@ -52,6 +54,15 @@ func (e ArticleEdges) TagsOrErr() ([]*ArticleTag, error) {
 		return e.Tags, nil
 	}
 	return nil, &NotLoadedError{edge: "tags"}
+}
+
+// UserArticlesOrErr returns the UserArticles value or an error if the edge
+// was not loaded in eager-loading.
+func (e ArticleEdges) UserArticlesOrErr() ([]*UserArticle, error) {
+	if e.loadedTypes[1] {
+		return e.UserArticles, nil
+	}
+	return nil, &NotLoadedError{edge: "user_articles"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -138,6 +149,11 @@ func (a *Article) Value(name string) (ent.Value, error) {
 // QueryTags queries the "tags" edge of the Article entity.
 func (a *Article) QueryTags() *ArticleTagQuery {
 	return NewArticleClient(a.config).QueryTags(a)
+}
+
+// QueryUserArticles queries the "user_articles" edge of the Article entity.
+func (a *Article) QueryUserArticles() *UserArticleQuery {
+	return NewArticleClient(a.config).QueryUserArticles(a)
 }
 
 // Update returns a builder for updating this Article.

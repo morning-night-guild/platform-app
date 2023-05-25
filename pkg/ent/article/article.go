@@ -29,6 +29,8 @@ const (
 	FieldUpdatedAt = "updated_at"
 	// EdgeTags holds the string denoting the tags edge name in mutations.
 	EdgeTags = "tags"
+	// EdgeUserArticles holds the string denoting the user_articles edge name in mutations.
+	EdgeUserArticles = "user_articles"
 	// Table holds the table name of the article in the database.
 	Table = "articles"
 	// TagsTable is the table that holds the tags relation/edge.
@@ -38,6 +40,13 @@ const (
 	TagsInverseTable = "article_tags"
 	// TagsColumn is the table column denoting the tags relation/edge.
 	TagsColumn = "article_id"
+	// UserArticlesTable is the table that holds the user_articles relation/edge.
+	UserArticlesTable = "user_articles"
+	// UserArticlesInverseTable is the table name for the UserArticle entity.
+	// It exists in this package in order to avoid circular dependency with the "userarticle" package.
+	UserArticlesInverseTable = "user_articles"
+	// UserArticlesColumn is the table column denoting the user_articles relation/edge.
+	UserArticlesColumn = "article_id"
 )
 
 // Columns holds all SQL columns for article fields.
@@ -123,10 +132,31 @@ func ByTags(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newTagsStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByUserArticlesCount orders the results by user_articles count.
+func ByUserArticlesCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newUserArticlesStep(), opts...)
+	}
+}
+
+// ByUserArticles orders the results by user_articles terms.
+func ByUserArticles(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newUserArticlesStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newTagsStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(TagsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, TagsTable, TagsColumn),
+	)
+}
+func newUserArticlesStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(UserArticlesInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, UserArticlesTable, UserArticlesColumn),
 	)
 }

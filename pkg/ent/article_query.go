@@ -16,17 +16,19 @@ import (
 	"github.com/morning-night-guild/platform-app/pkg/ent/article"
 	"github.com/morning-night-guild/platform-app/pkg/ent/articletag"
 	"github.com/morning-night-guild/platform-app/pkg/ent/predicate"
+	"github.com/morning-night-guild/platform-app/pkg/ent/userarticle"
 )
 
 // ArticleQuery is the builder for querying Article entities.
 type ArticleQuery struct {
 	config
-	ctx        *QueryContext
-	order      []article.OrderOption
-	inters     []Interceptor
-	predicates []predicate.Article
-	withTags   *ArticleTagQuery
-	modifiers  []func(*sql.Selector)
+	ctx              *QueryContext
+	order            []article.OrderOption
+	inters           []Interceptor
+	predicates       []predicate.Article
+	withTags         *ArticleTagQuery
+	withUserArticles *UserArticleQuery
+	modifiers        []func(*sql.Selector)
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -78,6 +80,28 @@ func (aq *ArticleQuery) QueryTags() *ArticleTagQuery {
 			sqlgraph.From(article.Table, article.FieldID, selector),
 			sqlgraph.To(articletag.Table, articletag.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, article.TagsTable, article.TagsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(aq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryUserArticles chains the current query on the "user_articles" edge.
+func (aq *ArticleQuery) QueryUserArticles() *UserArticleQuery {
+	query := (&UserArticleClient{config: aq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := aq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := aq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(article.Table, article.FieldID, selector),
+			sqlgraph.To(userarticle.Table, userarticle.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, article.UserArticlesTable, article.UserArticlesColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(aq.driver.Dialect(), step)
 		return fromU, nil
@@ -272,12 +296,13 @@ func (aq *ArticleQuery) Clone() *ArticleQuery {
 		return nil
 	}
 	return &ArticleQuery{
-		config:     aq.config,
-		ctx:        aq.ctx.Clone(),
-		order:      append([]article.OrderOption{}, aq.order...),
-		inters:     append([]Interceptor{}, aq.inters...),
-		predicates: append([]predicate.Article{}, aq.predicates...),
-		withTags:   aq.withTags.Clone(),
+		config:           aq.config,
+		ctx:              aq.ctx.Clone(),
+		order:            append([]article.OrderOption{}, aq.order...),
+		inters:           append([]Interceptor{}, aq.inters...),
+		predicates:       append([]predicate.Article{}, aq.predicates...),
+		withTags:         aq.withTags.Clone(),
+		withUserArticles: aq.withUserArticles.Clone(),
 		// clone intermediate query.
 		sql:  aq.sql.Clone(),
 		path: aq.path,
@@ -292,6 +317,17 @@ func (aq *ArticleQuery) WithTags(opts ...func(*ArticleTagQuery)) *ArticleQuery {
 		opt(query)
 	}
 	aq.withTags = query
+	return aq
+}
+
+// WithUserArticles tells the query-builder to eager-load the nodes that are connected to
+// the "user_articles" edge. The optional arguments are used to configure the query builder of the edge.
+func (aq *ArticleQuery) WithUserArticles(opts ...func(*UserArticleQuery)) *ArticleQuery {
+	query := (&UserArticleClient{config: aq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	aq.withUserArticles = query
 	return aq
 }
 
@@ -373,8 +409,9 @@ func (aq *ArticleQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Arti
 	var (
 		nodes       = []*Article{}
 		_spec       = aq.querySpec()
-		loadedTypes = [1]bool{
+		loadedTypes = [2]bool{
 			aq.withTags != nil,
+			aq.withUserArticles != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -405,6 +442,13 @@ func (aq *ArticleQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Arti
 			return nil, err
 		}
 	}
+	if query := aq.withUserArticles; query != nil {
+		if err := aq.loadUserArticles(ctx, query, nodes,
+			func(n *Article) { n.Edges.UserArticles = []*UserArticle{} },
+			func(n *Article, e *UserArticle) { n.Edges.UserArticles = append(n.Edges.UserArticles, e) }); err != nil {
+			return nil, err
+		}
+	}
 	return nodes, nil
 }
 
@@ -423,6 +467,36 @@ func (aq *ArticleQuery) loadTags(ctx context.Context, query *ArticleTagQuery, no
 	}
 	query.Where(predicate.ArticleTag(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(article.TagsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.ArticleID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "article_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (aq *ArticleQuery) loadUserArticles(ctx context.Context, query *UserArticleQuery, nodes []*Article, init func(*Article), assign func(*Article, *UserArticle)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*Article)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(userarticle.FieldArticleID)
+	}
+	query.Where(predicate.UserArticle(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(article.UserArticlesColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {

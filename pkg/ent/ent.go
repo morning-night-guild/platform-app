@@ -15,6 +15,7 @@ import (
 	"github.com/morning-night-guild/platform-app/pkg/ent/article"
 	"github.com/morning-night-guild/platform-app/pkg/ent/articletag"
 	"github.com/morning-night-guild/platform-app/pkg/ent/user"
+	"github.com/morning-night-guild/platform-app/pkg/ent/userarticle"
 )
 
 // ent aliases to avoid import conflicts in user's code.
@@ -75,9 +76,10 @@ var (
 func checkColumn(table, column string) error {
 	initCheck.Do(func() {
 		columnCheck = sql.NewColumnCheck(map[string]func(string) bool{
-			article.Table:    article.ValidColumn,
-			articletag.Table: articletag.ValidColumn,
-			user.Table:       user.ValidColumn,
+			article.Table:     article.ValidColumn,
+			articletag.Table:  articletag.ValidColumn,
+			user.Table:        user.ValidColumn,
+			userarticle.Table: userarticle.ValidColumn,
 		})
 	})
 	return columnCheck(table, column)
