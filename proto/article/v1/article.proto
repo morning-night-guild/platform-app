@@ -7,12 +7,15 @@ option go_package = "github.com/morning-night-guild/platform-app/pkg/connect/art
 // 記事サービス
 service ArticleService {
   // 共有
-  // Need X-Api-Key Header
   rpc Share(ShareRequest) returns (ShareResponse) {}
   // 一覧
   rpc List(ListRequest) returns (ListResponse) {}
   // 削除
   rpc Delete(DeleteRequest) returns (DeleteResponse) {}
+  // 追加
+  rpc Add(AddRequest) returns (AddResponse) {}
+  // 削除
+  rpc Remove(RemoveRequest) returns (RemoveResponse) {}
 }
 
 // 記事モデル
@@ -58,3 +61,21 @@ message DeleteRequest {
 
 // 削除レスポンス
 message DeleteResponse {}
+
+// 追加リクエスト
+message AddRequest {
+  string user_id = 1;
+  string article_id = 2;
+}
+
+// 追加レスポンス
+message AddResponse {}
+
+// 削除リクエスト
+message RemoveRequest {
+  string user_id = 1;
+  string article_id = 2;
+}
+
+// 削除レスポンス
+message RemoveResponse {}

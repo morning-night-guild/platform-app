@@ -2,6 +2,7 @@ package controller
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/bufbuild/connect-go"
 	"github.com/morning-night-guild/platform-app/internal/application/usecase"
@@ -9,6 +10,7 @@ import (
 	"github.com/morning-night-guild/platform-app/internal/domain/value"
 	articlev1 "github.com/morning-night-guild/platform-app/pkg/connect/article/v1"
 	"github.com/morning-night-guild/platform-app/pkg/connect/article/v1/articlev1connect"
+	"github.com/morning-night-guild/platform-app/pkg/log"
 )
 
 var _ articlev1connect.ArticleServiceHandler = (*Article)(nil)
@@ -152,4 +154,22 @@ func (ctrl *Article) Delete(
 	}
 
 	return connect.NewResponse(&articlev1.DeleteResponse{}), nil
+}
+
+func (ctrl *Article) Add(
+	ctx context.Context,
+	req *connect.Request[articlev1.AddRequest],
+) (*connect.Response[articlev1.AddResponse], error) {
+	log.GetLogCtx(ctx).Debug(fmt.Sprintf("%+v", req))
+
+	return connect.NewResponse(&articlev1.AddResponse{}), nil
+}
+
+func (ctrl *Article) Remove(
+	ctx context.Context,
+	req *connect.Request[articlev1.RemoveRequest],
+) (*connect.Response[articlev1.RemoveResponse], error) {
+	log.GetLogCtx(ctx).Debug(fmt.Sprintf("%+v", req))
+
+	return connect.NewResponse(&articlev1.RemoveResponse{}), nil
 }
