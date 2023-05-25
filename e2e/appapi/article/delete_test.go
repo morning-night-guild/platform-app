@@ -27,7 +27,7 @@ func TestAppAPIE2EArticleDelete(t *testing.T) {
 
 		client := helper.NewOpenAPIClientWithAPIKey(t, url, helper.GetAPIKey(t))
 
-		res, err := client.Client.V1ArticleDelete(context.Background(), id)
+		res, err := client.Client.V1InternalArticleDelete(context.Background(), id)
 		if err != nil {
 			t.Fatalf("failed to delete article: %s", err)
 		}
@@ -46,7 +46,7 @@ func TestAppAPIE2EArticleDelete(t *testing.T) {
 
 		client := helper.NewOpenAPIClientWithAPIKey(t, url, helper.GetAPIKey(t))
 
-		res, err := client.Client.V1ArticleDelete(context.Background(), id)
+		res, err := client.Client.V1InternalArticleDelete(context.Background(), id)
 		if err != nil {
 			t.Fatalf("failed to delete article: %s", err)
 		}
@@ -65,7 +65,7 @@ func TestAppAPIE2EArticleDelete(t *testing.T) {
 
 		client := helper.NewOpenAPIClient(t, url)
 
-		res, err := client.Client.V1ArticleDelete(context.Background(), id)
+		res, err := client.Client.V1InternalArticleDelete(context.Background(), id)
 		if err != nil {
 			t.Fatalf("failed to delete article: %s", err)
 		}

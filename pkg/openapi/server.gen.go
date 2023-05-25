@@ -23,7 +23,10 @@ type ServerInterface interface {
 	V1ArticleShare(w http.ResponseWriter, r *http.Request)
 	// 記事削除
 	// (DELETE /v1/articles/{articleId})
-	V1ArticleDelete(w http.ResponseWriter, r *http.Request, articleId openapi_types.UUID)
+	V1ArticleRemove(w http.ResponseWriter, r *http.Request, articleId openapi_types.UUID)
+	// 記事追加
+	// (POST /v1/articles/{articleId})
+	V1ArticleAdd(w http.ResponseWriter, r *http.Request, articleId openapi_types.UUID)
 	// パスワード変更
 	// (PUT /v1/auth/password)
 	V1AuthChangePassword(w http.ResponseWriter, r *http.Request)
@@ -51,6 +54,12 @@ type ServerInterface interface {
 	// coreヘルスチェック
 	// (GET /v1/health/core)
 	V1HealthCore(w http.ResponseWriter, r *http.Request)
+	// 記事共有
+	// (POST /v1/internal/articles)
+	V1InternalArticleShare(w http.ResponseWriter, r *http.Request)
+	// 記事削除
+	// (DELETE /v1/internal/articles/{articleId})
+	V1InternalArticleDelete(w http.ResponseWriter, r *http.Request, articleId openapi_types.UUID)
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -127,8 +136,8 @@ func (siw *ServerInterfaceWrapper) V1ArticleShare(w http.ResponseWriter, r *http
 	handler.ServeHTTP(w, r.WithContext(ctx))
 }
 
-// V1ArticleDelete operation middleware
-func (siw *ServerInterfaceWrapper) V1ArticleDelete(w http.ResponseWriter, r *http.Request) {
+// V1ArticleRemove operation middleware
+func (siw *ServerInterfaceWrapper) V1ArticleRemove(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	var err error
@@ -142,10 +151,42 @@ func (siw *ServerInterfaceWrapper) V1ArticleDelete(w http.ResponseWriter, r *htt
 		return
 	}
 
-	ctx = context.WithValue(ctx, ApiKeyScopes, []string{""})
+	ctx = context.WithValue(ctx, AuthTokenCookieScopes, []string{""})
+
+	ctx = context.WithValue(ctx, SessionTokenCookieScopes, []string{""})
 
 	var handler http.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.V1ArticleDelete(w, r, articleId)
+		siw.Handler.V1ArticleRemove(w, r, articleId)
+	})
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r.WithContext(ctx))
+}
+
+// V1ArticleAdd operation middleware
+func (siw *ServerInterfaceWrapper) V1ArticleAdd(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	var err error
+
+	// ------------- Path parameter "articleId" -------------
+	var articleId openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithLocation("simple", true, "articleId", runtime.ParamLocationPath, chi.URLParam(r, "articleId"), &articleId)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "articleId", Err: err})
+		return
+	}
+
+	ctx = context.WithValue(ctx, AuthTokenCookieScopes, []string{""})
+
+	ctx = context.WithValue(ctx, SessionTokenCookieScopes, []string{""})
+
+	var handler http.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.V1ArticleAdd(w, r, articleId)
 	})
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -353,6 +394,51 @@ func (siw *ServerInterfaceWrapper) V1HealthCore(w http.ResponseWriter, r *http.R
 	handler.ServeHTTP(w, r.WithContext(ctx))
 }
 
+// V1InternalArticleShare operation middleware
+func (siw *ServerInterfaceWrapper) V1InternalArticleShare(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, ApiKeyScopes, []string{""})
+
+	var handler http.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.V1InternalArticleShare(w, r)
+	})
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r.WithContext(ctx))
+}
+
+// V1InternalArticleDelete operation middleware
+func (siw *ServerInterfaceWrapper) V1InternalArticleDelete(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	var err error
+
+	// ------------- Path parameter "articleId" -------------
+	var articleId openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithLocation("simple", true, "articleId", runtime.ParamLocationPath, chi.URLParam(r, "articleId"), &articleId)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "articleId", Err: err})
+		return
+	}
+
+	ctx = context.WithValue(ctx, ApiKeyScopes, []string{""})
+
+	var handler http.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.V1InternalArticleDelete(w, r, articleId)
+	})
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r.WithContext(ctx))
+}
+
 type UnescapedCookieParamError struct {
 	ParamName string
 	Err       error
@@ -473,7 +559,10 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Post(options.BaseURL+"/v1/articles", wrapper.V1ArticleShare)
 	})
 	r.Group(func(r chi.Router) {
-		r.Delete(options.BaseURL+"/v1/articles/{articleId}", wrapper.V1ArticleDelete)
+		r.Delete(options.BaseURL+"/v1/articles/{articleId}", wrapper.V1ArticleRemove)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/v1/articles/{articleId}", wrapper.V1ArticleAdd)
 	})
 	r.Group(func(r chi.Router) {
 		r.Put(options.BaseURL+"/v1/auth/password", wrapper.V1AuthChangePassword)
@@ -501,6 +590,12 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/v1/health/core", wrapper.V1HealthCore)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/v1/internal/articles", wrapper.V1InternalArticleShare)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/v1/internal/articles/{articleId}", wrapper.V1InternalArticleDelete)
 	})
 
 	return r

@@ -478,7 +478,7 @@ func TestHandlerV1DeleteArticle(t *testing.T) {
 				tt.fields.health,
 			)
 			got := httptest.NewRecorder()
-			hdl.V1ArticleDelete(got, tt.args.r, tt.args.articleID)
+			hdl.V1InternalArticleDelete(got, tt.args.r, tt.args.articleID)
 			if got.Code != tt.status {
 				t.Errorf("V1DeleteArticle() = %v, want %v", got.Code, tt.status)
 			}

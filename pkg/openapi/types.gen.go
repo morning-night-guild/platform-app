@@ -137,3 +137,6 @@ type V1AuthSignInJSONRequestBody = V1AuthSignInRequestSchema
 
 // V1AuthSignUpJSONRequestBody defines body for V1AuthSignUp for application/json ContentType.
 type V1AuthSignUpJSONRequestBody = V1AuthSignUpRequestSchema
+
+// V1InternalArticleShareJSONRequestBody defines body for V1InternalArticleShare for application/json ContentType.
+type V1InternalArticleShareJSONRequestBody = V1ArticleShareRequestSchema
