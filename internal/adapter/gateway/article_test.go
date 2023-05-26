@@ -715,67 +715,71 @@ func TestArticleAddToUser(t *testing.T) {
 func TestArticleFindAllByUser(t *testing.T) {
 	t.Parallel()
 
-	rdb, err := gateway.NewRDBClientMock(t).Of(uuid.NewString())
-	if err != nil {
-		t.Fatalf("failed to create rdb client. got %v", err)
-	}
+	t.Run("ユーザーに紐づく記事を全て取得できる", func(t *testing.T) {
+		t.Parallel()
 
-	userGateway := gateway.NewUser(rdb)
+		rdb, err := gateway.NewRDBClientMock(t).Of(uuid.NewString())
+		if err != nil {
+			t.Fatalf("failed to create rdb client. got %v", err)
+		}
 
-	articleGateway := gateway.NewArticle(rdb)
+		userGateway := gateway.NewUser(rdb)
 
-	ctx := context.Background()
+		articleGateway := gateway.NewArticle(rdb)
 
-	usr := model.User{
-		UserID: user.GenerateID(),
-	}
+		ctx := context.Background()
 
-	if err := userGateway.Save(ctx, usr); err != nil {
-		t.Fatalf("failed to save. got %v", err)
-	}
+		usr := model.User{
+			UserID: user.GenerateID(),
+		}
 
-	item1 := model.CreateArticle(
-		article.URL("https://example.com/1"),
-		article.Title("title1"),
-		article.Description("description"),
-		article.Thumbnail("https://example.com/1"),
-		article.TagList([]article.Tag{
-			article.Tag("tag1"),
-			article.Tag("tag2"),
-		}),
-	)
+		if err := userGateway.Save(ctx, usr); err != nil {
+			t.Fatalf("failed to save. got %v", err)
+		}
 
-	if err := articleGateway.Save(ctx, item1); err != nil {
-		t.Fatalf("failed to save. got %v", err)
-	}
+		item1 := model.CreateArticle(
+			article.URL("https://example.com/1"),
+			article.Title("title1"),
+			article.Description("description"),
+			article.Thumbnail("https://example.com/1"),
+			article.TagList([]article.Tag{
+				article.Tag("tag1"),
+				article.Tag("tag2"),
+			}),
+		)
 
-	item2 := model.CreateArticle(
-		article.URL("https://example.com/2"),
-		article.Title("title2"),
-		article.Description("description"),
-		article.Thumbnail("https://example.com/2"),
-		article.TagList([]article.Tag{
-			article.Tag("tag1"),
-			article.Tag("tag2"),
-		}),
-	)
+		if err := articleGateway.Save(ctx, item1); err != nil {
+			t.Fatalf("failed to save. got %v", err)
+		}
 
-	if err := articleGateway.Save(ctx, item2); err != nil {
-		t.Fatalf("failed to save. got %v", err)
-	}
+		item2 := model.CreateArticle(
+			article.URL("https://example.com/2"),
+			article.Title("title2"),
+			article.Description("description"),
+			article.Thumbnail("https://example.com/2"),
+			article.TagList([]article.Tag{
+				article.Tag("tag1"),
+				article.Tag("tag2"),
+			}),
+		)
 
-	if err := articleGateway.AddToUser(ctx, item1.ArticleID, usr.UserID); err != nil {
-		t.Fatalf("failed to add to user. got %v", err)
-	}
+		if err := articleGateway.Save(ctx, item2); err != nil {
+			t.Fatalf("failed to save. got %v", err)
+		}
 
-	got, err := articleGateway.FindAllByUser(ctx, usr.UserID, value.Index(0), value.Size(2))
-	if err != nil {
-		t.Fatalf("unexpected error while find. got %v", err)
-	}
+		if err := articleGateway.AddToUser(ctx, item1.ArticleID, usr.UserID); err != nil {
+			t.Fatalf("failed to add to user. got %v", err)
+		}
 
-	want := []model.Article{item1}
+		got, err := articleGateway.FindAllByUser(ctx, usr.UserID, value.Index(0), value.Size(2))
+		if err != nil {
+			t.Fatalf("unexpected error while find. got %v", err)
+		}
 
-	if !reflect.DeepEqual(got, want) {
-		t.Errorf("FindAll() = %v, want %v", got, want)
-	}
+		want := []model.Article{item1}
+
+		if !reflect.DeepEqual(got, want) {
+			t.Errorf("FindAll() = %v, want %v", got, want)
+		}
+	})
 }

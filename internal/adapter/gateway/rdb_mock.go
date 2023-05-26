@@ -27,6 +27,7 @@ func (rm *RDBClientMock) Of(dsn string) (*RDB, error) {
 
 	opts := []enttest.Option{
 		enttest.WithOptions(ent.Log(rm.t.Log)),
+		enttest.WithOptions(ent.Debug()),
 	}
 
 	dataSourceName := fmt.Sprintf("file:%s?mode=memory&cache=shared&_fk=1", dsn)

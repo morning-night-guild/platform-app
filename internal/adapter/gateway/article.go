@@ -140,14 +140,15 @@ func (gtw *Article) FindAllByUser(
 	index value.Index,
 	size value.Size,
 ) ([]model.Article, error) {
-	eas, err := gtw.rdb.UserArticle.Query().
+	query := gtw.rdb.UserArticle.Query().
 		Where(entuserarticle.UserID(userID.Value())).
 		QueryArticle().
 		WithTags().
 		Order(ent.Desc(entarticle.FieldCreatedAt)).
 		Offset(index.Int()).
-		Limit(size.Int()).
-		All(ctx)
+		Limit(size.Int())
+
+	eas, err := query.All(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to article query")
 	}
