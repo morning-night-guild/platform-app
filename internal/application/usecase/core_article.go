@@ -5,6 +5,7 @@ import (
 
 	"github.com/morning-night-guild/platform-app/internal/domain/model"
 	"github.com/morning-night-guild/platform-app/internal/domain/model/article"
+	"github.com/morning-night-guild/platform-app/internal/domain/model/user"
 	"github.com/morning-night-guild/platform-app/internal/domain/value"
 )
 
@@ -15,6 +16,7 @@ type CoreArticle interface {
 	Share(context.Context, CoreArticleShareInput) (CoreArticleShareOutput, error)
 	List(context.Context, CoreArticleListInput) (CoreArticleListOutput, error)
 	Delete(context.Context, CoreArticleDeleteInput) (CoreArticleDeleteOutput, error)
+	AddToUser(context.Context, CoreArticleAddToUserInput) (CoreArticleAddToUserOutput, error)
 }
 
 // CoreArticleShareInput.
@@ -49,3 +51,12 @@ type CoreArticleDeleteInput struct {
 
 // CoreArticleDeleteOutput.
 type CoreArticleDeleteOutput struct{}
+
+// CoreArticleAddToUserInput.
+type CoreArticleAddToUserInput struct {
+	ArticleID article.ID
+	UserID    user.ID
+}
+
+// CoreArticleAddToUserOutput.
+type CoreArticleAddToUserOutput struct{}
