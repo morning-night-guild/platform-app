@@ -72,7 +72,7 @@ func (ctrl *Article) Share(
 
 	return connect.NewResponse(&articlev1.ShareResponse{
 		Article: &articlev1.Article{
-			ArticleId:   output.Article.ID.String(),
+			ArticleId:   output.Article.ArticleID.String(),
 			Title:       output.Article.Title.String(),
 			Url:         output.Article.URL.String(),
 			Description: output.Article.Description.String(),
@@ -116,7 +116,7 @@ func (ctrl *Article) List(
 
 	for i, article := range output.Articles {
 		result[i] = &articlev1.Article{
-			ArticleId:   article.ID.String(),
+			ArticleId:   article.ArticleID.String(),
 			Title:       article.Title.String(),
 			Url:         article.URL.String(),
 			Description: article.Description.String(),

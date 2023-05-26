@@ -82,7 +82,7 @@ func (hdl *Handler) V1ArticleList(
 	articles := make([]openapi.ArticleSchema, len(output.Articles))
 
 	for i, article := range output.Articles {
-		id := uuid.MustParse(article.ID.String())
+		id := uuid.MustParse(article.ArticleID.String())
 		tags := article.TagList.StringSlice()
 		articles[i] = openapi.ArticleSchema{
 			Id:          &id,

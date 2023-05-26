@@ -62,7 +62,7 @@ func TestCoreArticleShare(t *testing.T) {
 			},
 			want: usecase.CoreArticleShareOutput{
 				Article: model.Article{
-					ID:          article.ID(uuid.New()),
+					ArticleID:   article.ID(uuid.New()),
 					URL:         article.URL("https://example.com"),
 					Title:       article.Title("title"),
 					Description: article.Description("description"),
@@ -112,8 +112,8 @@ func TestCoreArticleShare(t *testing.T) {
 				t.Errorf("CoreArticle.Share() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if _, err := uuid.Parse(got.Article.ID.String()); err != nil {
-				t.Errorf("CoreArticle.Share() got Article.ID = %v, err %v", got.Article.ID, err)
+			if _, err := uuid.Parse(got.Article.ArticleID.String()); err != nil {
+				t.Errorf("CoreArticle.Share() got Article.ID = %v, err %v", got.Article.ArticleID, err)
 			}
 			if !reflect.DeepEqual(got.Article.URL, tt.want.Article.URL) {
 				t.Errorf("CoreArticle.Share() got Article.URL = %v, want %v", got.Article.URL, tt.want.Article.URL)
@@ -165,7 +165,7 @@ func TestCoreArticleList(t *testing.T) {
 						value.Size(1),
 					).Return([]model.Article{
 						{
-							ID:          article.ID(id),
+							ArticleID:   article.ID(id),
 							Title:       article.Title("title"),
 							URL:         article.URL("https://example.com"),
 							Description: article.Description("description"),
@@ -186,7 +186,7 @@ func TestCoreArticleList(t *testing.T) {
 			want: usecase.CoreArticleListOutput{
 				Articles: []model.Article{
 					{
-						ID:          article.ID(id),
+						ArticleID:   article.ID(id),
 						Title:       article.Title("title"),
 						URL:         article.URL("https://example.com"),
 						Description: article.Description("description"),
@@ -211,7 +211,7 @@ func TestCoreArticleList(t *testing.T) {
 						[]value.Filter{value.NewFilter("title", "title")},
 					).Return([]model.Article{
 						{
-							ID:          article.ID(id),
+							ArticleID:   article.ID(id),
 							Title:       article.Title("title"),
 							URL:         article.URL("https://example.com"),
 							Description: article.Description("description"),
@@ -233,7 +233,7 @@ func TestCoreArticleList(t *testing.T) {
 			want: usecase.CoreArticleListOutput{
 				Articles: []model.Article{
 					{
-						ID:          article.ID(id),
+						ArticleID:   article.ID(id),
 						Title:       article.Title("title"),
 						URL:         article.URL("https://example.com"),
 						Description: article.Description("description"),
@@ -281,7 +281,7 @@ func TestCoreArticleDelete(t *testing.T) {
 	id := article.ID(uuid.New())
 
 	article := model.Article{
-		ID:          id,
+		ArticleID:   id,
 		Title:       article.Title("title"),
 		URL:         article.URL("https://example.com"),
 		Description: article.Description("description"),
@@ -413,7 +413,7 @@ func TestCoreArticleAddToUser(t *testing.T) {
 	aid := article.ID(uuid.New())
 
 	article := model.Article{
-		ID:          aid,
+		ArticleID:   aid,
 		Title:       article.Title("title"),
 		URL:         article.URL("https://example.com"),
 		Description: article.Description("description"),

@@ -10,7 +10,7 @@ const DefaultArticleSize = value.Size(20)
 
 // Article 記事モデル.
 type Article struct {
-	ID          article.ID          // ID
+	ArticleID   article.ID          // ID
 	URL         article.URL         // 記事のURL
 	Title       article.Title       // タイトル
 	Description article.Description // 記事の説明
@@ -28,7 +28,7 @@ func NewArticle(
 	tags article.TagList,
 ) (Article, error) {
 	article := Article{
-		ID:          id,
+		ArticleID:   id,
 		Title:       title,
 		URL:         url,
 		Description: description,
@@ -59,7 +59,7 @@ func ReconstructArticle(
 	}
 
 	return Article{
-		ID:          article.ID(id),
+		ArticleID:   article.ID(id),
 		URL:         article.URL(url),
 		Title:       article.Title(title),
 		Description: article.Description(description),
@@ -84,7 +84,7 @@ func CreateArticle(
 	id := article.GenerateID()
 
 	return Article{
-		ID:          id,
+		ArticleID:   id,
 		URL:         url,
 		Title:       title,
 		Description: description,

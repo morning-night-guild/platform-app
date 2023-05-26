@@ -54,7 +54,7 @@ func TestArticleShare(t *testing.T) {
 						Thumbnail:   article.Thumbnail("https://example.com"),
 					}).Return(usecase.CoreArticleShareOutput{
 						Article: model.Article{
-							ID:          article.ID(uuid.MustParse(aid)),
+							ArticleID:   article.ID(uuid.MustParse(aid)),
 							URL:         article.URL("https://example.com"),
 							Title:       article.Title("title"),
 							Description: article.Description("description"),
@@ -272,7 +272,7 @@ func TestArticleList(t *testing.T) {
 					}).Return(usecase.CoreArticleListOutput{
 						Articles: []model.Article{
 							{
-								ID:          article.ID(id),
+								ArticleID:   article.ID(id),
 								URL:         article.URL("https://example.com"),
 								Title:       article.Title("title"),
 								Description: article.Description("description"),
@@ -321,7 +321,7 @@ func TestArticleList(t *testing.T) {
 					}).Return(usecase.CoreArticleListOutput{
 						Articles: []model.Article{
 							{
-								ID:          article.ID(id),
+								ArticleID:   article.ID(id),
 								URL:         article.URL("https://example.com"),
 								Title:       article.Title("title"),
 								Description: article.Description("description"),
@@ -371,7 +371,7 @@ func TestArticleList(t *testing.T) {
 					}).Return(usecase.CoreArticleListOutput{
 						Articles: []model.Article{
 							{
-								ID:          article.ID(id),
+								ArticleID:   article.ID(id),
 								URL:         article.URL("https://example.com"),
 								Title:       article.Title("title"),
 								Description: article.Description("description"),

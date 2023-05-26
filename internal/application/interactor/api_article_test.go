@@ -55,7 +55,7 @@ func TestAPIArticleShare(t *testing.T) {
 						article.Description("description"),
 						article.Thumbnail("https://example.com"),
 					).Return(model.Article{
-						ID:          id,
+						ArticleID:   id,
 						Title:       article.Title("title"),
 						URL:         article.URL("https://example.com"),
 						Description: article.Description("description"),
@@ -75,7 +75,7 @@ func TestAPIArticleShare(t *testing.T) {
 			},
 			want: usecase.APIArticleShareOutput{
 				Article: model.Article{
-					ID:          id,
+					ArticleID:   id,
 					Title:       article.Title("title"),
 					URL:         article.URL("https://example.com"),
 					Description: article.Description("description"),
@@ -152,14 +152,14 @@ func TestAPIArticleList(t *testing.T) {
 
 	articles := []model.Article{
 		{
-			ID:          article.GenerateID(),
+			ArticleID:   article.GenerateID(),
 			Title:       article.Title("title1"),
 			URL:         article.URL("https://example.com/1"),
 			Description: article.Description("description1"),
 			Thumbnail:   article.Thumbnail("https://example.com/2"),
 		},
 		{
-			ID:          article.GenerateID(),
+			ArticleID:   article.GenerateID(),
 			Title:       article.Title("title2"),
 			URL:         article.URL("https://example.com/2"),
 			Description: article.Description("description2"),

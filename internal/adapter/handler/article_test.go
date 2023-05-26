@@ -272,7 +272,7 @@ func TestHandlerV1ShareArticle(t *testing.T) {
 						Thumbnail:   article.Thumbnail("https://example.com"),
 					}).Return(usecase.APIArticleShareOutput{
 						Article: model.Article{
-							ID:          article.ID(uuid.MustParse(aid)),
+							ArticleID:   article.ID(uuid.MustParse(aid)),
 							URL:         article.URL("https://example.com"),
 							Title:       article.Title("title"),
 							Description: article.Description("description"),
@@ -313,7 +313,7 @@ func TestHandlerV1ShareArticle(t *testing.T) {
 						Thumbnail:   article.Thumbnail(""),
 					}).Return(usecase.APIArticleShareOutput{
 						Article: model.Article{
-							ID:          article.ID(uuid.MustParse(aid)),
+							ArticleID:   article.ID(uuid.MustParse(aid)),
 							URL:         article.URL("https://example.com"),
 							Title:       article.Title(""),
 							Description: article.Description(""),

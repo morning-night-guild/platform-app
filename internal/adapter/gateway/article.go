@@ -31,7 +31,7 @@ func NewArticle(rdb *RDB) *Article {
 
 // Save 記事を保存するメソッド.
 func (gtw *Article) Save(ctx context.Context, item model.Article) error {
-	id := item.ID.Value()
+	id := item.ArticleID.Value()
 
 	now := time.Now().UTC()
 
