@@ -12,6 +12,7 @@ import (
 	"github.com/morning-night-guild/platform-app/internal/domain/value"
 	"github.com/morning-night-guild/platform-app/pkg/ent"
 	entarticle "github.com/morning-night-guild/platform-app/pkg/ent/article"
+	entuserarticle "github.com/morning-night-guild/platform-app/pkg/ent/userarticle"
 	"github.com/pkg/errors"
 )
 
@@ -30,7 +31,10 @@ func NewArticle(rdb *RDB) *Article {
 }
 
 // Save 記事を保存するメソッド.
-func (gtw *Article) Save(ctx context.Context, item model.Article) error {
+func (gtw *Article) Save(
+	ctx context.Context,
+	item model.Article,
+) error {
 	id := item.ArticleID.Value()
 
 	now := time.Now().UTC()
@@ -126,11 +130,36 @@ func (gtw *Article) FindAll(
 		)
 	}
 
-	return articles, nil
+	return gtw.toModels(eas), nil
+}
+
+// FindAllByUser ユーザーに紐づく記事を取得するメソッド.
+func (gtw *Article) FindAllByUser(
+	ctx context.Context,
+	userID user.ID,
+	index value.Index,
+	size value.Size,
+) ([]model.Article, error) {
+	eas, err := gtw.rdb.UserArticle.Query().
+		Where(entuserarticle.UserID(userID.Value())).
+		QueryArticle().
+		WithTags().
+		Order(ent.Desc(entarticle.FieldCreatedAt)).
+		Offset(index.Int()).
+		Limit(size.Int()).
+		All(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to article query")
+	}
+
+	return gtw.toModels(eas), nil
 }
 
 // Find ID指定で記事を取得するメソッド.
-func (gtw *Article) Find(ctx context.Context, id article.ID) (model.Article, error) {
+func (gtw *Article) Find(
+	ctx context.Context,
+	id article.ID,
+) (model.Article, error) {
 	ea, err := gtw.rdb.Article.Query().
 		Where(entarticle.IDEQ(id.Value())).
 		WithTags().
@@ -143,19 +172,7 @@ func (gtw *Article) Find(ctx context.Context, id article.ID) (model.Article, err
 		return model.Article{}, errors.Wrap(err, "failed to find")
 	}
 
-	tags := make([]string, len(ea.Edges.Tags))
-	for i, tag := range ea.Edges.Tags {
-		tags[i] = tag.Tag
-	}
-
-	return model.ReconstructArticle(
-		ea.ID,
-		ea.URL,
-		ea.Title,
-		ea.Description,
-		ea.Thumbnail,
-		tags,
-	), nil
+	return gtw.toModel(ea), nil
 }
 
 func (gtw *Article) Delete(ctx context.Context, id article.ID) error {
@@ -170,7 +187,11 @@ func (gtw *Article) Delete(ctx context.Context, id article.ID) error {
 	return nil
 }
 
-func (gtw *Article) AddToUser(ctx context.Context, articleID article.ID, userID user.ID) error {
+func (gtw *Article) AddToUser(
+	ctx context.Context,
+	articleID article.ID,
+	userID user.ID,
+) error {
 	if err := gtw.rdb.UserArticle.Create().
 		SetArticleID(articleID.Value()).
 		SetUserID(userID.Value()).
@@ -181,4 +202,46 @@ func (gtw *Article) AddToUser(ctx context.Context, articleID article.ID, userID 
 	}
 
 	return nil
+}
+
+func (gtw *Article) toModel(
+	ea *ent.Article,
+) model.Article {
+	tags := make([]string, len(ea.Edges.Tags))
+	for i, tag := range ea.Edges.Tags {
+		tags[i] = tag.Tag
+	}
+
+	return model.ReconstructArticle(
+		ea.ID,
+		ea.URL,
+		ea.Title,
+		ea.Description,
+		ea.Thumbnail,
+		tags,
+	)
+}
+
+func (gtw *Article) toModels(
+	eas []*ent.Article,
+) []model.Article {
+	articles := make([]model.Article, len(eas))
+
+	for i, ea := range eas {
+		tags := make([]string, len(ea.Edges.Tags))
+		for i, tag := range ea.Edges.Tags {
+			tags[i] = tag.Tag
+		}
+
+		articles[i] = model.ReconstructArticle(
+			ea.ID,
+			ea.URL,
+			ea.Title,
+			ea.Description,
+			ea.Thumbnail,
+			tags,
+		)
+	}
+
+	return articles
 }
