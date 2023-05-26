@@ -23,10 +23,10 @@ type ServerInterface interface {
 	V1ArticleShare(w http.ResponseWriter, r *http.Request)
 	// 記事削除
 	// (DELETE /v1/articles/{articleId})
-	V1ArticleRemove(w http.ResponseWriter, r *http.Request, articleId openapi_types.UUID)
+	V1ArticleRemoveOwn(w http.ResponseWriter, r *http.Request, articleId openapi_types.UUID)
 	// 記事追加
 	// (POST /v1/articles/{articleId})
-	V1ArticleAdd(w http.ResponseWriter, r *http.Request, articleId openapi_types.UUID)
+	V1ArticleAddOwn(w http.ResponseWriter, r *http.Request, articleId openapi_types.UUID)
 	// パスワード変更
 	// (PUT /v1/auth/password)
 	V1AuthChangePassword(w http.ResponseWriter, r *http.Request)
@@ -136,8 +136,8 @@ func (siw *ServerInterfaceWrapper) V1ArticleShare(w http.ResponseWriter, r *http
 	handler.ServeHTTP(w, r.WithContext(ctx))
 }
 
-// V1ArticleRemove operation middleware
-func (siw *ServerInterfaceWrapper) V1ArticleRemove(w http.ResponseWriter, r *http.Request) {
+// V1ArticleRemoveOwn operation middleware
+func (siw *ServerInterfaceWrapper) V1ArticleRemoveOwn(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	var err error
@@ -156,7 +156,7 @@ func (siw *ServerInterfaceWrapper) V1ArticleRemove(w http.ResponseWriter, r *htt
 	ctx = context.WithValue(ctx, SessionTokenCookieScopes, []string{""})
 
 	var handler http.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.V1ArticleRemove(w, r, articleId)
+		siw.Handler.V1ArticleRemoveOwn(w, r, articleId)
 	})
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -166,8 +166,8 @@ func (siw *ServerInterfaceWrapper) V1ArticleRemove(w http.ResponseWriter, r *htt
 	handler.ServeHTTP(w, r.WithContext(ctx))
 }
 
-// V1ArticleAdd operation middleware
-func (siw *ServerInterfaceWrapper) V1ArticleAdd(w http.ResponseWriter, r *http.Request) {
+// V1ArticleAddOwn operation middleware
+func (siw *ServerInterfaceWrapper) V1ArticleAddOwn(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	var err error
@@ -186,7 +186,7 @@ func (siw *ServerInterfaceWrapper) V1ArticleAdd(w http.ResponseWriter, r *http.R
 	ctx = context.WithValue(ctx, SessionTokenCookieScopes, []string{""})
 
 	var handler http.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.V1ArticleAdd(w, r, articleId)
+		siw.Handler.V1ArticleAddOwn(w, r, articleId)
 	})
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -559,10 +559,10 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Post(options.BaseURL+"/v1/articles", wrapper.V1ArticleShare)
 	})
 	r.Group(func(r chi.Router) {
-		r.Delete(options.BaseURL+"/v1/articles/{articleId}", wrapper.V1ArticleRemove)
+		r.Delete(options.BaseURL+"/v1/articles/{articleId}", wrapper.V1ArticleRemoveOwn)
 	})
 	r.Group(func(r chi.Router) {
-		r.Post(options.BaseURL+"/v1/articles/{articleId}", wrapper.V1ArticleAdd)
+		r.Post(options.BaseURL+"/v1/articles/{articleId}", wrapper.V1ArticleAddOwn)
 	})
 	r.Group(func(r chi.Router) {
 		r.Put(options.BaseURL+"/v1/auth/password", wrapper.V1AuthChangePassword)

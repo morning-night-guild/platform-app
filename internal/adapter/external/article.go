@@ -2,10 +2,12 @@ package external
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/google/uuid"
 	"github.com/morning-night-guild/platform-app/internal/domain/model"
 	"github.com/morning-night-guild/platform-app/internal/domain/model/article"
+	"github.com/morning-night-guild/platform-app/internal/domain/model/user"
 	"github.com/morning-night-guild/platform-app/internal/domain/rpc"
 	"github.com/morning-night-guild/platform-app/internal/domain/value"
 	articlev1 "github.com/morning-night-guild/platform-app/pkg/connect/article/v1"
@@ -119,6 +121,27 @@ func (ext *Article) Delete(
 
 	if _, err := ext.connect.Delete(ctx, req); err != nil {
 		log.GetLogCtx(ctx).Sugar().Warnf("failed to delete articles. articleID=%s", articleID.String(), log.ErrorField(err))
+
+		return ext.external.HandleError(ctx, err)
+	}
+
+	return nil
+}
+
+func (ext *Article) AddToUser(
+	ctx context.Context,
+	articleID article.ID,
+	userID user.ID,
+) error {
+	req := NewRequest(ctx, &articlev1.AddToUserRequest{
+		ArticleId: articleID.String(),
+		UserId:    userID.String(),
+	})
+
+	if _, err := ext.connect.AddToUser(ctx, req); err != nil {
+		msg := fmt.Sprintf("failed to add article to user. articleID=%s, userID=%s", articleID.String(), userID.String())
+
+		log.GetLogCtx(ctx).Warn(msg, log.ErrorField(err))
 
 		return ext.external.HandleError(ctx, err)
 	}

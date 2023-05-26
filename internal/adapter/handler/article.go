@@ -119,19 +119,50 @@ func (hdl *Handler) V1ArticleShare(
 
 // 記事追加
 // (POST /v1/articles/{articleId}).
-func (hdl *Handler) V1ArticleAdd(
+func (hdl *Handler) V1ArticleAddOwn(
 	w http.ResponseWriter,
 	r *http.Request,
 	articleID types.UUID,
 ) {
 	ctx := r.Context()
 
-	log.GetLogCtx(ctx).Debug(fmt.Sprintf("%v %v %v", w, r, articleID))
+	uid, err := hdl.ExtractUserID(ctx, r)
+	if err != nil {
+		log.GetLogCtx(ctx).Warn("failed to extract user id", log.ErrorField(err))
+
+		w.WriteHeader(http.StatusUnauthorized)
+
+		return
+	}
+
+	ctx = user.SetUIDCtx(ctx, uid)
+
+	aid, err := article.NewID(articleID.String())
+	if err != nil {
+		log.GetLogCtx(ctx).Warn("failed to add article", log.ErrorField(err))
+
+		w.WriteHeader(http.StatusBadRequest)
+
+		return
+	}
+
+	input := usecase.APIArticleAddToUserInput{
+		ArticleID: aid,
+		UserID:    uid,
+	}
+
+	if _, err := hdl.article.AddToUser(ctx, input); err != nil {
+		log.GetLogCtx(ctx).Warn("failed to add article", log.ErrorField(err))
+
+		w.WriteHeader(hdl.HandleConnectError(ctx, err))
+
+		return
+	}
 }
 
 // 記事削除
 // (DELETE /v1/articles/{articleId}).
-func (hdl *Handler) V1ArticleRemove(
+func (hdl *Handler) V1ArticleRemoveOwn(
 	w http.ResponseWriter,
 	r *http.Request,
 	articleID types.UUID,

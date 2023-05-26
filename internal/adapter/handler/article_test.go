@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"testing"
 
+	"github.com/deepmap/oapi-codegen/pkg/types"
 	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
 	"github.com/morning-night-guild/platform-app/internal/adapter/handler"
@@ -481,6 +482,112 @@ func TestHandlerV1DeleteArticle(t *testing.T) {
 			hdl.V1InternalArticleDelete(got, tt.args.r, tt.args.articleID)
 			if got.Code != tt.status {
 				t.Errorf("V1DeleteArticle() = %v, want %v", got.Code, tt.status)
+			}
+		})
+	}
+}
+
+func TestHandlerV1ArticleAddOwn(t *testing.T) {
+	t.Parallel()
+
+	type fields struct {
+		cookie  handler.Cookie
+		auth    usecase.APIAuth
+		article func(*testing.T) usecase.APIArticle
+		health  usecase.APIHealth
+	}
+
+	type args struct {
+		r         *http.Request
+		cookies   []*http.Cookie
+		articleID types.UUID
+	}
+
+	token := GenerateToken(t)
+
+	tests := []struct {
+		name   string
+		fields fields
+		args   args
+		status int
+	}{
+		{
+			name: "自身に記事が追加できる",
+			fields: fields{
+				article: func(t *testing.T) usecase.APIArticle {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := usecase.NewMockAPIArticle(ctrl)
+					mock.EXPECT().AddToUser(
+						gomock.Any(),
+						usecase.APIArticleAddToUserInput{
+							ArticleID: article.ID(uuid.MustParse(aid)),
+							UserID:    token.UserID,
+						},
+					).Return(usecase.APIArticleAddToUserOutput{}, nil)
+					return mock
+				},
+			},
+			args: args{
+				r: &http.Request{
+					Method: http.MethodPost,
+					Header: http.Header{},
+				},
+				cookies: []*http.Cookie{
+					{
+						Name:  auth.AuthTokenKey,
+						Value: token.AuthTokenString,
+					},
+					{
+						Name:  auth.SessionTokenKey,
+						Value: token.SessionTokenString,
+					},
+				},
+				articleID: uuid.MustParse(aid),
+			},
+			status: http.StatusOK,
+		},
+		{
+			name: "認証に失敗して記事が追加できない",
+			fields: fields{
+				article: func(t *testing.T) usecase.APIArticle {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := usecase.NewMockAPIArticle(ctrl)
+					return mock
+				},
+			},
+			args: args{
+				r: &http.Request{
+					Method: http.MethodPost,
+					Header: http.Header{},
+				},
+				cookies:   []*http.Cookie{},
+				articleID: uuid.MustParse(aid),
+			},
+			status: http.StatusUnauthorized,
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			hdl := handler.New(
+				"key",
+				auth.Secret("secret"),
+				tt.fields.cookie,
+				tt.fields.auth,
+				tt.fields.article(t),
+				tt.fields.health,
+			)
+			got := httptest.NewRecorder()
+			for _, cookie := range tt.args.cookies {
+				tt.args.r.AddCookie(cookie)
+			}
+			hdl.V1ArticleAddOwn(got, tt.args.r, tt.args.articleID)
+			if got.Code != tt.status {
+				t.Errorf("V1ArticleAddOwn() = %v, want %v", got.Code, tt.status)
 			}
 		})
 	}

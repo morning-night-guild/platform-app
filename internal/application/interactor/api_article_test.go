@@ -333,3 +333,95 @@ func TestAPIArticleList(t *testing.T) {
 		})
 	}
 }
+
+func TestAPIArticleAddToUser(t *testing.T) {
+	t.Parallel()
+
+	type fields struct {
+		authCache  cache.Cache[model.Auth]
+		articleRPC func(*testing.T) rpc.Article
+	}
+
+	type args struct {
+		ctx   context.Context
+		input usecase.APIArticleAddToUserInput
+	}
+
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		want    usecase.APIArticleAddToUserOutput
+		wantErr bool
+	}{
+		{
+			name: "ユーザーに記事を追加できる",
+			fields: fields{
+				articleRPC: func(t *testing.T) rpc.Article {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := rpc.NewMockArticle(ctrl)
+					mock.EXPECT().AddToUser(
+						gomock.Any(),
+						article.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+						user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ac")),
+					).Return(nil)
+					return mock
+				},
+			},
+			args: args{
+				ctx: context.Background(),
+				input: usecase.APIArticleAddToUserInput{
+					ArticleID: article.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+					UserID:    user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ac")),
+				},
+			},
+			want:    usecase.APIArticleAddToUserOutput{},
+			wantErr: false,
+		},
+		{
+			name: "ユーザーに記事を追加できない",
+			fields: fields{
+				articleRPC: func(t *testing.T) rpc.Article {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := rpc.NewMockArticle(ctrl)
+					mock.EXPECT().AddToUser(
+						gomock.Any(),
+						article.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+						user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ac")),
+					).Return(fmt.Errorf("error"))
+					return mock
+				},
+			},
+			args: args{
+				ctx: context.Background(),
+				input: usecase.APIArticleAddToUserInput{
+					ArticleID: article.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+					UserID:    user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ac")),
+				},
+			},
+			want:    usecase.APIArticleAddToUserOutput{},
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			itr := interactor.NewAPIArticle(
+				tt.fields.authCache,
+				tt.fields.articleRPC(t),
+			)
+			got, err := itr.AddToUser(tt.args.ctx, tt.args.input)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("APIArticle.AddToUser() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("APIArticle.AddToUser() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

@@ -98,11 +98,11 @@ type ClientInterface interface {
 
 	V1ArticleShare(ctx context.Context, body V1ArticleShareJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// V1ArticleRemove request
-	V1ArticleRemove(ctx context.Context, articleId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// V1ArticleRemoveOwn request
+	V1ArticleRemoveOwn(ctx context.Context, articleId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// V1ArticleAdd request
-	V1ArticleAdd(ctx context.Context, articleId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// V1ArticleAddOwn request
+	V1ArticleAddOwn(ctx context.Context, articleId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// V1AuthChangePassword request with any body
 	V1AuthChangePasswordWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -182,8 +182,8 @@ func (c *Client) V1ArticleShare(ctx context.Context, body V1ArticleShareJSONRequ
 	return c.Client.Do(req)
 }
 
-func (c *Client) V1ArticleRemove(ctx context.Context, articleId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewV1ArticleRemoveRequest(c.Server, articleId)
+func (c *Client) V1ArticleRemoveOwn(ctx context.Context, articleId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewV1ArticleRemoveOwnRequest(c.Server, articleId)
 	if err != nil {
 		return nil, err
 	}
@@ -194,8 +194,8 @@ func (c *Client) V1ArticleRemove(ctx context.Context, articleId openapi_types.UU
 	return c.Client.Do(req)
 }
 
-func (c *Client) V1ArticleAdd(ctx context.Context, articleId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewV1ArticleAddRequest(c.Server, articleId)
+func (c *Client) V1ArticleAddOwn(ctx context.Context, articleId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewV1ArticleAddOwnRequest(c.Server, articleId)
 	if err != nil {
 		return nil, err
 	}
@@ -505,8 +505,8 @@ func NewV1ArticleShareRequestWithBody(server string, contentType string, body io
 	return req, nil
 }
 
-// NewV1ArticleRemoveRequest generates requests for V1ArticleRemove
-func NewV1ArticleRemoveRequest(server string, articleId openapi_types.UUID) (*http.Request, error) {
+// NewV1ArticleRemoveOwnRequest generates requests for V1ArticleRemoveOwn
+func NewV1ArticleRemoveOwnRequest(server string, articleId openapi_types.UUID) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -539,8 +539,8 @@ func NewV1ArticleRemoveRequest(server string, articleId openapi_types.UUID) (*ht
 	return req, nil
 }
 
-// NewV1ArticleAddRequest generates requests for V1ArticleAdd
-func NewV1ArticleAddRequest(server string, articleId openapi_types.UUID) (*http.Request, error) {
+// NewV1ArticleAddOwnRequest generates requests for V1ArticleAddOwn
+func NewV1ArticleAddOwnRequest(server string, articleId openapi_types.UUID) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -1024,11 +1024,11 @@ type ClientWithResponsesInterface interface {
 
 	V1ArticleShareWithResponse(ctx context.Context, body V1ArticleShareJSONRequestBody, reqEditors ...RequestEditorFn) (*V1ArticleShareResponse, error)
 
-	// V1ArticleRemove request
-	V1ArticleRemoveWithResponse(ctx context.Context, articleId openapi_types.UUID, reqEditors ...RequestEditorFn) (*V1ArticleRemoveResponse, error)
+	// V1ArticleRemoveOwn request
+	V1ArticleRemoveOwnWithResponse(ctx context.Context, articleId openapi_types.UUID, reqEditors ...RequestEditorFn) (*V1ArticleRemoveOwnResponse, error)
 
-	// V1ArticleAdd request
-	V1ArticleAddWithResponse(ctx context.Context, articleId openapi_types.UUID, reqEditors ...RequestEditorFn) (*V1ArticleAddResponse, error)
+	// V1ArticleAddOwn request
+	V1ArticleAddOwnWithResponse(ctx context.Context, articleId openapi_types.UUID, reqEditors ...RequestEditorFn) (*V1ArticleAddOwnResponse, error)
 
 	// V1AuthChangePassword request with any body
 	V1AuthChangePasswordWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*V1AuthChangePasswordResponse, error)
@@ -1115,13 +1115,13 @@ func (r V1ArticleShareResponse) StatusCode() int {
 	return 0
 }
 
-type V1ArticleRemoveResponse struct {
+type V1ArticleRemoveOwnResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 }
 
 // Status returns HTTPResponse.Status
-func (r V1ArticleRemoveResponse) Status() string {
+func (r V1ArticleRemoveOwnResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -1129,20 +1129,20 @@ func (r V1ArticleRemoveResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r V1ArticleRemoveResponse) StatusCode() int {
+func (r V1ArticleRemoveOwnResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
 	return 0
 }
 
-type V1ArticleAddResponse struct {
+type V1ArticleAddOwnResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 }
 
 // Status returns HTTPResponse.Status
-func (r V1ArticleAddResponse) Status() string {
+func (r V1ArticleAddOwnResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -1150,7 +1150,7 @@ func (r V1ArticleAddResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r V1ArticleAddResponse) StatusCode() int {
+func (r V1ArticleAddOwnResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -1415,22 +1415,22 @@ func (c *ClientWithResponses) V1ArticleShareWithResponse(ctx context.Context, bo
 	return ParseV1ArticleShareResponse(rsp)
 }
 
-// V1ArticleRemoveWithResponse request returning *V1ArticleRemoveResponse
-func (c *ClientWithResponses) V1ArticleRemoveWithResponse(ctx context.Context, articleId openapi_types.UUID, reqEditors ...RequestEditorFn) (*V1ArticleRemoveResponse, error) {
-	rsp, err := c.V1ArticleRemove(ctx, articleId, reqEditors...)
+// V1ArticleRemoveOwnWithResponse request returning *V1ArticleRemoveOwnResponse
+func (c *ClientWithResponses) V1ArticleRemoveOwnWithResponse(ctx context.Context, articleId openapi_types.UUID, reqEditors ...RequestEditorFn) (*V1ArticleRemoveOwnResponse, error) {
+	rsp, err := c.V1ArticleRemoveOwn(ctx, articleId, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseV1ArticleRemoveResponse(rsp)
+	return ParseV1ArticleRemoveOwnResponse(rsp)
 }
 
-// V1ArticleAddWithResponse request returning *V1ArticleAddResponse
-func (c *ClientWithResponses) V1ArticleAddWithResponse(ctx context.Context, articleId openapi_types.UUID, reqEditors ...RequestEditorFn) (*V1ArticleAddResponse, error) {
-	rsp, err := c.V1ArticleAdd(ctx, articleId, reqEditors...)
+// V1ArticleAddOwnWithResponse request returning *V1ArticleAddOwnResponse
+func (c *ClientWithResponses) V1ArticleAddOwnWithResponse(ctx context.Context, articleId openapi_types.UUID, reqEditors ...RequestEditorFn) (*V1ArticleAddOwnResponse, error) {
+	rsp, err := c.V1ArticleAddOwn(ctx, articleId, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseV1ArticleAddResponse(rsp)
+	return ParseV1ArticleAddOwnResponse(rsp)
 }
 
 // V1AuthChangePasswordWithBodyWithResponse request with arbitrary body returning *V1AuthChangePasswordResponse
@@ -1606,15 +1606,15 @@ func ParseV1ArticleShareResponse(rsp *http.Response) (*V1ArticleShareResponse, e
 	return response, nil
 }
 
-// ParseV1ArticleRemoveResponse parses an HTTP response from a V1ArticleRemoveWithResponse call
-func ParseV1ArticleRemoveResponse(rsp *http.Response) (*V1ArticleRemoveResponse, error) {
+// ParseV1ArticleRemoveOwnResponse parses an HTTP response from a V1ArticleRemoveOwnWithResponse call
+func ParseV1ArticleRemoveOwnResponse(rsp *http.Response) (*V1ArticleRemoveOwnResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &V1ArticleRemoveResponse{
+	response := &V1ArticleRemoveOwnResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
@@ -1622,15 +1622,15 @@ func ParseV1ArticleRemoveResponse(rsp *http.Response) (*V1ArticleRemoveResponse,
 	return response, nil
 }
 
-// ParseV1ArticleAddResponse parses an HTTP response from a V1ArticleAddWithResponse call
-func ParseV1ArticleAddResponse(rsp *http.Response) (*V1ArticleAddResponse, error) {
+// ParseV1ArticleAddOwnResponse parses an HTTP response from a V1ArticleAddOwnWithResponse call
+func ParseV1ArticleAddOwnResponse(rsp *http.Response) (*V1ArticleAddOwnResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &V1ArticleAddResponse{
+	response := &V1ArticleAddOwnResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}

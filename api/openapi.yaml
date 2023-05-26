@@ -267,7 +267,7 @@ paths:
         - article
       summary: 記事追加
       description: 操作者が管理する記事として追加する
-      operationId: v1ArticleAdd
+      operationId: v1ArticleAddOwn
       security:
         - authTokenCookie: []
         - sessionTokenCookie: []
@@ -297,7 +297,7 @@ paths:
         - article
       summary: 記事削除
       description: 操作者が管理する記事から削除する
-      operationId: v1ArticleRemove
+      operationId: v1ArticleRemoveOwn
       security:
         - authTokenCookie: []
         - sessionTokenCookie: []
