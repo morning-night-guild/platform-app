@@ -7,6 +7,7 @@ import (
 	"github.com/morning-night-guild/platform-app/internal/domain/model"
 	"github.com/morning-night-guild/platform-app/internal/domain/model/article"
 	domainerrors "github.com/morning-night-guild/platform-app/internal/domain/model/errors"
+	"github.com/morning-night-guild/platform-app/internal/domain/model/user"
 	"github.com/morning-night-guild/platform-app/internal/domain/repository"
 	"github.com/morning-night-guild/platform-app/internal/domain/value"
 	"github.com/morning-night-guild/platform-app/pkg/ent"
@@ -164,6 +165,19 @@ func (gtw *Article) Delete(ctx context.Context, id article.ID) error {
 		}
 
 		return errors.Wrap(err, "failed to delete article")
+	}
+
+	return nil
+}
+
+func (gtw *Article) AddToUser(ctx context.Context, articleID article.ID, userID user.ID) error {
+	if err := gtw.rdb.UserArticle.Create().
+		SetArticleID(articleID.Value()).
+		SetUserID(userID.Value()).
+		OnConflict().
+		DoNothing().
+		Exec(ctx); err != nil {
+		return errors.Wrap(err, "failed to add to user")
 	}
 
 	return nil

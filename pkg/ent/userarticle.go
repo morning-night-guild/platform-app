@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"github.com/google/uuid"
 	"github.com/morning-night-guild/platform-app/pkg/ent/article"
+	"github.com/morning-night-guild/platform-app/pkg/ent/user"
 	"github.com/morning-night-guild/platform-app/pkg/ent/userarticle"
 )
 
@@ -37,9 +38,11 @@ type UserArticle struct {
 type UserArticleEdges struct {
 	// Article holds the value of the article edge.
 	Article *Article `json:"article,omitempty"`
+	// User holds the value of the user edge.
+	User *User `json:"user,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [1]bool
+	loadedTypes [2]bool
 }
 
 // ArticleOrErr returns the Article value or an error if the edge
@@ -53,6 +56,19 @@ func (e UserArticleEdges) ArticleOrErr() (*Article, error) {
 		return e.Article, nil
 	}
 	return nil, &NotLoadedError{edge: "article"}
+}
+
+// UserOrErr returns the User value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e UserArticleEdges) UserOrErr() (*User, error) {
+	if e.loadedTypes[1] {
+		if e.User == nil {
+			// Edge was loaded but was not found.
+			return nil, &NotFoundError{label: user.Label}
+		}
+		return e.User, nil
+	}
+	return nil, &NotLoadedError{edge: "user"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -125,6 +141,11 @@ func (ua *UserArticle) Value(name string) (ent.Value, error) {
 // QueryArticle queries the "article" edge of the UserArticle entity.
 func (ua *UserArticle) QueryArticle() *ArticleQuery {
 	return NewUserArticleClient(ua.config).QueryArticle(ua)
+}
+
+// QueryUser queries the "user" edge of the UserArticle entity.
+func (ua *UserArticle) QueryUser() *UserQuery {
+	return NewUserArticleClient(ua.config).QueryUser(ua)
 }
 
 // Update returns a builder for updating this UserArticle.

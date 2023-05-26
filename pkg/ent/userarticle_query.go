@@ -14,6 +14,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/morning-night-guild/platform-app/pkg/ent/article"
 	"github.com/morning-night-guild/platform-app/pkg/ent/predicate"
+	"github.com/morning-night-guild/platform-app/pkg/ent/user"
 	"github.com/morning-night-guild/platform-app/pkg/ent/userarticle"
 )
 
@@ -25,6 +26,7 @@ type UserArticleQuery struct {
 	inters      []Interceptor
 	predicates  []predicate.UserArticle
 	withArticle *ArticleQuery
+	withUser    *UserQuery
 	modifiers   []func(*sql.Selector)
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
@@ -77,6 +79,28 @@ func (uaq *UserArticleQuery) QueryArticle() *ArticleQuery {
 			sqlgraph.From(userarticle.Table, userarticle.FieldID, selector),
 			sqlgraph.To(article.Table, article.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, userarticle.ArticleTable, userarticle.ArticleColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(uaq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryUser chains the current query on the "user" edge.
+func (uaq *UserArticleQuery) QueryUser() *UserQuery {
+	query := (&UserClient{config: uaq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := uaq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := uaq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(userarticle.Table, userarticle.FieldID, selector),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, userarticle.UserTable, userarticle.UserColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(uaq.driver.Dialect(), step)
 		return fromU, nil
@@ -277,6 +301,7 @@ func (uaq *UserArticleQuery) Clone() *UserArticleQuery {
 		inters:      append([]Interceptor{}, uaq.inters...),
 		predicates:  append([]predicate.UserArticle{}, uaq.predicates...),
 		withArticle: uaq.withArticle.Clone(),
+		withUser:    uaq.withUser.Clone(),
 		// clone intermediate query.
 		sql:  uaq.sql.Clone(),
 		path: uaq.path,
@@ -291,6 +316,17 @@ func (uaq *UserArticleQuery) WithArticle(opts ...func(*ArticleQuery)) *UserArtic
 		opt(query)
 	}
 	uaq.withArticle = query
+	return uaq
+}
+
+// WithUser tells the query-builder to eager-load the nodes that are connected to
+// the "user" edge. The optional arguments are used to configure the query builder of the edge.
+func (uaq *UserArticleQuery) WithUser(opts ...func(*UserQuery)) *UserArticleQuery {
+	query := (&UserClient{config: uaq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	uaq.withUser = query
 	return uaq
 }
 
@@ -372,8 +408,9 @@ func (uaq *UserArticleQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]
 	var (
 		nodes       = []*UserArticle{}
 		_spec       = uaq.querySpec()
-		loadedTypes = [1]bool{
+		loadedTypes = [2]bool{
 			uaq.withArticle != nil,
+			uaq.withUser != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -403,6 +440,12 @@ func (uaq *UserArticleQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]
 			return nil, err
 		}
 	}
+	if query := uaq.withUser; query != nil {
+		if err := uaq.loadUser(ctx, query, nodes, nil,
+			func(n *UserArticle, e *User) { n.Edges.User = e }); err != nil {
+			return nil, err
+		}
+	}
 	return nodes, nil
 }
 
@@ -428,6 +471,35 @@ func (uaq *UserArticleQuery) loadArticle(ctx context.Context, query *ArticleQuer
 		nodes, ok := nodeids[n.ID]
 		if !ok {
 			return fmt.Errorf(`unexpected foreign-key "article_id" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
+func (uaq *UserArticleQuery) loadUser(ctx context.Context, query *UserQuery, nodes []*UserArticle, init func(*UserArticle), assign func(*UserArticle, *User)) error {
+	ids := make([]uuid.UUID, 0, len(nodes))
+	nodeids := make(map[uuid.UUID][]*UserArticle)
+	for i := range nodes {
+		fk := nodes[i].UserID
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(user.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "user_id" returned %v`, n.ID)
 		}
 		for i := range nodes {
 			assign(nodes[i], n)
@@ -466,6 +538,9 @@ func (uaq *UserArticleQuery) querySpec() *sqlgraph.QuerySpec {
 		}
 		if uaq.withArticle != nil {
 			_spec.Node.AddColumnOnce(userarticle.FieldArticleID)
+		}
+		if uaq.withUser != nil {
+			_spec.Node.AddColumnOnce(userarticle.FieldUserID)
 		}
 	}
 	if ps := uaq.predicates; len(ps) > 0 {

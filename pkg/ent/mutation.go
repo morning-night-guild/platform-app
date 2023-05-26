@@ -1254,15 +1254,18 @@ func (m *ArticleTagMutation) ResetEdge(name string) error {
 // UserMutation represents an operation that mutates the User nodes in the graph.
 type UserMutation struct {
 	config
-	op            Op
-	typ           string
-	id            *uuid.UUID
-	created_at    *time.Time
-	updated_at    *time.Time
-	clearedFields map[string]struct{}
-	done          bool
-	oldValue      func(context.Context) (*User, error)
-	predicates    []predicate.User
+	op                   Op
+	typ                  string
+	id                   *uuid.UUID
+	created_at           *time.Time
+	updated_at           *time.Time
+	clearedFields        map[string]struct{}
+	user_articles        map[uuid.UUID]struct{}
+	removeduser_articles map[uuid.UUID]struct{}
+	cleareduser_articles bool
+	done                 bool
+	oldValue             func(context.Context) (*User, error)
+	predicates           []predicate.User
 }
 
 var _ ent.Mutation = (*UserMutation)(nil)
@@ -1441,6 +1444,60 @@ func (m *UserMutation) ResetUpdatedAt() {
 	m.updated_at = nil
 }
 
+// AddUserArticleIDs adds the "user_articles" edge to the UserArticle entity by ids.
+func (m *UserMutation) AddUserArticleIDs(ids ...uuid.UUID) {
+	if m.user_articles == nil {
+		m.user_articles = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.user_articles[ids[i]] = struct{}{}
+	}
+}
+
+// ClearUserArticles clears the "user_articles" edge to the UserArticle entity.
+func (m *UserMutation) ClearUserArticles() {
+	m.cleareduser_articles = true
+}
+
+// UserArticlesCleared reports if the "user_articles" edge to the UserArticle entity was cleared.
+func (m *UserMutation) UserArticlesCleared() bool {
+	return m.cleareduser_articles
+}
+
+// RemoveUserArticleIDs removes the "user_articles" edge to the UserArticle entity by IDs.
+func (m *UserMutation) RemoveUserArticleIDs(ids ...uuid.UUID) {
+	if m.removeduser_articles == nil {
+		m.removeduser_articles = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.user_articles, ids[i])
+		m.removeduser_articles[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedUserArticles returns the removed IDs of the "user_articles" edge to the UserArticle entity.
+func (m *UserMutation) RemovedUserArticlesIDs() (ids []uuid.UUID) {
+	for id := range m.removeduser_articles {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// UserArticlesIDs returns the "user_articles" edge IDs in the mutation.
+func (m *UserMutation) UserArticlesIDs() (ids []uuid.UUID) {
+	for id := range m.user_articles {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetUserArticles resets all changes to the "user_articles" edge.
+func (m *UserMutation) ResetUserArticles() {
+	m.user_articles = nil
+	m.cleareduser_articles = false
+	m.removeduser_articles = nil
+}
+
 // Where appends a list predicates to the UserMutation builder.
 func (m *UserMutation) Where(ps ...predicate.User) {
 	m.predicates = append(m.predicates, ps...)
@@ -1591,49 +1648,85 @@ func (m *UserMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *UserMutation) AddedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 1)
+	if m.user_articles != nil {
+		edges = append(edges, user.EdgeUserArticles)
+	}
 	return edges
 }
 
 // AddedIDs returns all IDs (to other nodes) that were added for the given edge
 // name in this mutation.
 func (m *UserMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case user.EdgeUserArticles:
+		ids := make([]ent.Value, 0, len(m.user_articles))
+		for id := range m.user_articles {
+			ids = append(ids, id)
+		}
+		return ids
+	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *UserMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 1)
+	if m.removeduser_articles != nil {
+		edges = append(edges, user.EdgeUserArticles)
+	}
 	return edges
 }
 
 // RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
 // the given name in this mutation.
 func (m *UserMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case user.EdgeUserArticles:
+		ids := make([]ent.Value, 0, len(m.removeduser_articles))
+		for id := range m.removeduser_articles {
+			ids = append(ids, id)
+		}
+		return ids
+	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *UserMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 1)
+	if m.cleareduser_articles {
+		edges = append(edges, user.EdgeUserArticles)
+	}
 	return edges
 }
 
 // EdgeCleared returns a boolean which indicates if the edge with the given name
 // was cleared in this mutation.
 func (m *UserMutation) EdgeCleared(name string) bool {
+	switch name {
+	case user.EdgeUserArticles:
+		return m.cleareduser_articles
+	}
 	return false
 }
 
 // ClearEdge clears the value of the edge with the given name. It returns an error
 // if that edge is not defined in the schema.
 func (m *UserMutation) ClearEdge(name string) error {
+	switch name {
+	}
 	return fmt.Errorf("unknown User unique edge %s", name)
 }
 
 // ResetEdge resets all changes to the edge with the given name in this mutation.
 // It returns an error if the edge is not defined in the schema.
 func (m *UserMutation) ResetEdge(name string) error {
+	switch name {
+	case user.EdgeUserArticles:
+		m.ResetUserArticles()
+		return nil
+	}
 	return fmt.Errorf("unknown User edge %s", name)
 }
 
@@ -1643,12 +1736,13 @@ type UserArticleMutation struct {
 	op             Op
 	typ            string
 	id             *uuid.UUID
-	user_id        *uuid.UUID
 	created_at     *time.Time
 	updated_at     *time.Time
 	clearedFields  map[string]struct{}
 	article        *uuid.UUID
 	clearedarticle bool
+	user           *uuid.UUID
+	cleareduser    bool
 	done           bool
 	oldValue       func(context.Context) (*UserArticle, error)
 	predicates     []predicate.UserArticle
@@ -1796,12 +1890,12 @@ func (m *UserArticleMutation) ResetArticleID() {
 
 // SetUserID sets the "user_id" field.
 func (m *UserArticleMutation) SetUserID(u uuid.UUID) {
-	m.user_id = &u
+	m.user = &u
 }
 
 // UserID returns the value of the "user_id" field in the mutation.
 func (m *UserArticleMutation) UserID() (r uuid.UUID, exists bool) {
-	v := m.user_id
+	v := m.user
 	if v == nil {
 		return
 	}
@@ -1827,7 +1921,7 @@ func (m *UserArticleMutation) OldUserID(ctx context.Context) (v uuid.UUID, err e
 
 // ResetUserID resets all changes to the "user_id" field.
 func (m *UserArticleMutation) ResetUserID() {
-	m.user_id = nil
+	m.user = nil
 }
 
 // SetCreatedAt sets the "created_at" field.
@@ -1928,6 +2022,32 @@ func (m *UserArticleMutation) ResetArticle() {
 	m.clearedarticle = false
 }
 
+// ClearUser clears the "user" edge to the User entity.
+func (m *UserArticleMutation) ClearUser() {
+	m.cleareduser = true
+}
+
+// UserCleared reports if the "user" edge to the User entity was cleared.
+func (m *UserArticleMutation) UserCleared() bool {
+	return m.cleareduser
+}
+
+// UserIDs returns the "user" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// UserID instead. It exists only for internal usage by the builders.
+func (m *UserArticleMutation) UserIDs() (ids []uuid.UUID) {
+	if id := m.user; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetUser resets all changes to the "user" edge.
+func (m *UserArticleMutation) ResetUser() {
+	m.user = nil
+	m.cleareduser = false
+}
+
 // Where appends a list predicates to the UserArticleMutation builder.
 func (m *UserArticleMutation) Where(ps ...predicate.UserArticle) {
 	m.predicates = append(m.predicates, ps...)
@@ -1966,7 +2086,7 @@ func (m *UserArticleMutation) Fields() []string {
 	if m.article != nil {
 		fields = append(fields, userarticle.FieldArticleID)
 	}
-	if m.user_id != nil {
+	if m.user != nil {
 		fields = append(fields, userarticle.FieldUserID)
 	}
 	if m.created_at != nil {
@@ -2112,9 +2232,12 @@ func (m *UserArticleMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *UserArticleMutation) AddedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.article != nil {
 		edges = append(edges, userarticle.EdgeArticle)
+	}
+	if m.user != nil {
+		edges = append(edges, userarticle.EdgeUser)
 	}
 	return edges
 }
@@ -2127,13 +2250,17 @@ func (m *UserArticleMutation) AddedIDs(name string) []ent.Value {
 		if id := m.article; id != nil {
 			return []ent.Value{*id}
 		}
+	case userarticle.EdgeUser:
+		if id := m.user; id != nil {
+			return []ent.Value{*id}
+		}
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *UserArticleMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	return edges
 }
 
@@ -2145,9 +2272,12 @@ func (m *UserArticleMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *UserArticleMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.clearedarticle {
 		edges = append(edges, userarticle.EdgeArticle)
+	}
+	if m.cleareduser {
+		edges = append(edges, userarticle.EdgeUser)
 	}
 	return edges
 }
@@ -2158,6 +2288,8 @@ func (m *UserArticleMutation) EdgeCleared(name string) bool {
 	switch name {
 	case userarticle.EdgeArticle:
 		return m.clearedarticle
+	case userarticle.EdgeUser:
+		return m.cleareduser
 	}
 	return false
 }
@@ -2169,6 +2301,9 @@ func (m *UserArticleMutation) ClearEdge(name string) error {
 	case userarticle.EdgeArticle:
 		m.ClearArticle()
 		return nil
+	case userarticle.EdgeUser:
+		m.ClearUser()
+		return nil
 	}
 	return fmt.Errorf("unknown UserArticle unique edge %s", name)
 }
@@ -2179,6 +2314,9 @@ func (m *UserArticleMutation) ResetEdge(name string) error {
 	switch name {
 	case userarticle.EdgeArticle:
 		m.ResetArticle()
+		return nil
+	case userarticle.EdgeUser:
+		m.ResetUser()
 		return nil
 	}
 	return fmt.Errorf("unknown UserArticle edge %s", name)

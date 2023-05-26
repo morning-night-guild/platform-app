@@ -598,6 +598,22 @@ func (c *UserClient) GetX(ctx context.Context, id uuid.UUID) *User {
 	return obj
 }
 
+// QueryUserArticles queries the user_articles edge of a User.
+func (c *UserClient) QueryUserArticles(u *User) *UserArticleQuery {
+	query := (&UserArticleClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := u.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, id),
+			sqlgraph.To(userarticle.Table, userarticle.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, user.UserArticlesTable, user.UserArticlesColumn),
+		)
+		fromV = sqlgraph.Neighbors(u.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *UserClient) Hooks() []Hook {
 	return c.hooks.User
@@ -725,6 +741,22 @@ func (c *UserArticleClient) QueryArticle(ua *UserArticle) *ArticleQuery {
 			sqlgraph.From(userarticle.Table, userarticle.FieldID, id),
 			sqlgraph.To(article.Table, article.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, userarticle.ArticleTable, userarticle.ArticleColumn),
+		)
+		fromV = sqlgraph.Neighbors(ua.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryUser queries the user edge of a UserArticle.
+func (c *UserArticleClient) QueryUser(ua *UserArticle) *UserQuery {
+	query := (&UserClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := ua.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(userarticle.Table, userarticle.FieldID, id),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, userarticle.UserTable, userarticle.UserColumn),
 		)
 		fromV = sqlgraph.Neighbors(ua.driver.Dialect(), step)
 		return fromV, nil

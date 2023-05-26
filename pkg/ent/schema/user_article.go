@@ -34,6 +34,11 @@ func (UserArticle) Edges() []ent.Edge {
 			Field("article_id").
 			Required().
 			Unique(),
+		edge.From("user", User.Type).
+			Ref("user_articles").
+			Field("user_id").
+			Required().
+			Unique(),
 	}
 }
 

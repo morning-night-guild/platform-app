@@ -14,6 +14,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/morning-night-guild/platform-app/pkg/ent/article"
 	"github.com/morning-night-guild/platform-app/pkg/ent/predicate"
+	"github.com/morning-night-guild/platform-app/pkg/ent/user"
 	"github.com/morning-night-guild/platform-app/pkg/ent/userarticle"
 )
 
@@ -67,6 +68,11 @@ func (uau *UserArticleUpdate) SetArticle(a *Article) *UserArticleUpdate {
 	return uau.SetArticleID(a.ID)
 }
 
+// SetUser sets the "user" edge to the User entity.
+func (uau *UserArticleUpdate) SetUser(u *User) *UserArticleUpdate {
+	return uau.SetUserID(u.ID)
+}
+
 // Mutation returns the UserArticleMutation object of the builder.
 func (uau *UserArticleUpdate) Mutation() *UserArticleMutation {
 	return uau.mutation
@@ -75,6 +81,12 @@ func (uau *UserArticleUpdate) Mutation() *UserArticleMutation {
 // ClearArticle clears the "article" edge to the Article entity.
 func (uau *UserArticleUpdate) ClearArticle() *UserArticleUpdate {
 	uau.mutation.ClearArticle()
+	return uau
+}
+
+// ClearUser clears the "user" edge to the User entity.
+func (uau *UserArticleUpdate) ClearUser() *UserArticleUpdate {
+	uau.mutation.ClearUser()
 	return uau
 }
 
@@ -119,6 +131,9 @@ func (uau *UserArticleUpdate) check() error {
 	if _, ok := uau.mutation.ArticleID(); uau.mutation.ArticleCleared() && !ok {
 		return errors.New(`ent: clearing a required unique edge "UserArticle.article"`)
 	}
+	if _, ok := uau.mutation.UserID(); uau.mutation.UserCleared() && !ok {
+		return errors.New(`ent: clearing a required unique edge "UserArticle.user"`)
+	}
 	return nil
 }
 
@@ -133,9 +148,6 @@ func (uau *UserArticleUpdate) sqlSave(ctx context.Context) (n int, err error) {
 				ps[i](selector)
 			}
 		}
-	}
-	if value, ok := uau.mutation.UserID(); ok {
-		_spec.SetField(userarticle.FieldUserID, field.TypeUUID, value)
 	}
 	if value, ok := uau.mutation.CreatedAt(); ok {
 		_spec.SetField(userarticle.FieldCreatedAt, field.TypeTime, value)
@@ -165,6 +177,35 @@ func (uau *UserArticleUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(article.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if uau.mutation.UserCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   userarticle.UserTable,
+			Columns: []string{userarticle.UserColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uau.mutation.UserIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   userarticle.UserTable,
+			Columns: []string{userarticle.UserColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -229,6 +270,11 @@ func (uauo *UserArticleUpdateOne) SetArticle(a *Article) *UserArticleUpdateOne {
 	return uauo.SetArticleID(a.ID)
 }
 
+// SetUser sets the "user" edge to the User entity.
+func (uauo *UserArticleUpdateOne) SetUser(u *User) *UserArticleUpdateOne {
+	return uauo.SetUserID(u.ID)
+}
+
 // Mutation returns the UserArticleMutation object of the builder.
 func (uauo *UserArticleUpdateOne) Mutation() *UserArticleMutation {
 	return uauo.mutation
@@ -237,6 +283,12 @@ func (uauo *UserArticleUpdateOne) Mutation() *UserArticleMutation {
 // ClearArticle clears the "article" edge to the Article entity.
 func (uauo *UserArticleUpdateOne) ClearArticle() *UserArticleUpdateOne {
 	uauo.mutation.ClearArticle()
+	return uauo
+}
+
+// ClearUser clears the "user" edge to the User entity.
+func (uauo *UserArticleUpdateOne) ClearUser() *UserArticleUpdateOne {
+	uauo.mutation.ClearUser()
 	return uauo
 }
 
@@ -294,6 +346,9 @@ func (uauo *UserArticleUpdateOne) check() error {
 	if _, ok := uauo.mutation.ArticleID(); uauo.mutation.ArticleCleared() && !ok {
 		return errors.New(`ent: clearing a required unique edge "UserArticle.article"`)
 	}
+	if _, ok := uauo.mutation.UserID(); uauo.mutation.UserCleared() && !ok {
+		return errors.New(`ent: clearing a required unique edge "UserArticle.user"`)
+	}
 	return nil
 }
 
@@ -326,9 +381,6 @@ func (uauo *UserArticleUpdateOne) sqlSave(ctx context.Context) (_node *UserArtic
 			}
 		}
 	}
-	if value, ok := uauo.mutation.UserID(); ok {
-		_spec.SetField(userarticle.FieldUserID, field.TypeUUID, value)
-	}
 	if value, ok := uauo.mutation.CreatedAt(); ok {
 		_spec.SetField(userarticle.FieldCreatedAt, field.TypeTime, value)
 	}
@@ -357,6 +409,35 @@ func (uauo *UserArticleUpdateOne) sqlSave(ctx context.Context) (_node *UserArtic
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(article.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if uauo.mutation.UserCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   userarticle.UserTable,
+			Columns: []string{userarticle.UserColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uauo.mutation.UserIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   userarticle.UserTable,
+			Columns: []string{userarticle.UserColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

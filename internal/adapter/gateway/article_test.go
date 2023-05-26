@@ -11,6 +11,7 @@ import (
 	"github.com/morning-night-guild/platform-app/internal/domain/model"
 	"github.com/morning-night-guild/platform-app/internal/domain/model/article"
 	"github.com/morning-night-guild/platform-app/internal/domain/model/errors"
+	"github.com/morning-night-guild/platform-app/internal/domain/model/user"
 	"github.com/morning-night-guild/platform-app/internal/domain/value"
 	"github.com/morning-night-guild/platform-app/pkg/ent"
 	entarticle "github.com/morning-night-guild/platform-app/pkg/ent/article"
@@ -588,6 +589,111 @@ func TestArticleDelete(t *testing.T) {
 
 		if err := articleGateway.Delete(ctx, article.GenerateID()); err != nil {
 			t.Errorf("unexpected error while delete. got %v", err)
+		}
+	})
+}
+
+func TestArticleAddToUser(t *testing.T) {
+	t.Parallel()
+
+	t.Run("記事をユーザーに追加できる", func(t *testing.T) {
+		t.Parallel()
+
+		rdb, err := gateway.NewRDBClientMock(t).Of(uuid.NewString())
+		if err != nil {
+			t.Fatalf("failed to create rdb client. got %v", err)
+		}
+
+		userGateway := gateway.NewUser(rdb)
+
+		articleGateway := gateway.NewArticle(rdb)
+
+		ctx := context.Background()
+
+		usr := model.User{
+			UserID: user.GenerateID(),
+		}
+
+		if err := userGateway.Save(ctx, usr); err != nil {
+			t.Fatalf("failed to save. got %v", err)
+		}
+
+		atc := model.CreateArticle(
+			article.URL("https://example.com"),
+			article.Title("title"),
+			article.Description("description"),
+			article.Thumbnail("https://example.com"),
+			article.TagList([]article.Tag{
+				article.Tag("tag1"),
+				article.Tag("tag2"),
+			}),
+		)
+
+		if err := articleGateway.Save(ctx, atc); err != nil {
+			t.Fatalf("failed to save. got %v", err)
+		}
+
+		if err := articleGateway.AddToUser(ctx, atc.ID, usr.UserID); err != nil {
+			t.Errorf("unexpected error while add to user. got %v", err)
+		}
+	})
+
+	t.Run("存在しない記事をユーザーに追加しようとするとエラーになる", func(t *testing.T) {
+		t.Parallel()
+
+		rdb, err := gateway.NewRDBClientMock(t).Of(uuid.NewString())
+		if err != nil {
+			t.Fatalf("failed to create rdb client. got %v", err)
+		}
+
+		userGateway := gateway.NewUser(rdb)
+
+		articleGateway := gateway.NewArticle(rdb)
+
+		ctx := context.Background()
+
+		usr := model.User{
+			UserID: user.GenerateID(),
+		}
+
+		if err := userGateway.Save(ctx, usr); err != nil {
+			t.Fatalf("failed to save. got %v", err)
+		}
+
+		if err := articleGateway.AddToUser(ctx, article.GenerateID(), usr.UserID); err == nil {
+			t.Error("error is nil")
+		}
+	})
+
+	t.Run("記事を存在しないユーザーに追加しようとするとエラーになる", func(t *testing.T) {
+		t.Parallel()
+
+		rdb, err := gateway.NewRDBClientMock(t).Of(uuid.NewString())
+		if err != nil {
+			t.Fatalf("failed to create rdb client. got %v", err)
+		}
+
+		articleGateway := gateway.NewArticle(rdb)
+
+		ctx := context.Background()
+
+		atc := model.CreateArticle(
+			article.URL("https://example.com"),
+			article.Title("title"),
+			article.Description("description"),
+			article.Thumbnail("https://example.com"),
+			article.TagList([]article.Tag{
+				article.Tag("tag1"),
+				article.Tag("tag2"),
+			}),
+		)
+
+		if err := articleGateway.Save(ctx, atc); err != nil {
+			t.Fatalf("failed to save. got %v", err)
+		}
+
+		if err := articleGateway.AddToUser(ctx, atc.ID, user.GenerateID()); err == nil {
+			t.Error("error is nil")
 		}
 	})
 }
