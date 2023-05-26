@@ -13,9 +13,9 @@ service ArticleService {
   // 削除
   rpc Delete(DeleteRequest) returns (DeleteResponse) {}
   // 追加
-  rpc Add(AddRequest) returns (AddResponse) {}
+  rpc AddToUser(AddToUserRequest) returns (AddToUserResponse) {}
   // 削除
-  rpc Remove(RemoveRequest) returns (RemoveResponse) {}
+  rpc RemoveFromUser(RemoveFromUserRequest) returns (RemoveFromUserResponse) {}
 }
 
 // 記事モデル
@@ -63,19 +63,19 @@ message DeleteRequest {
 message DeleteResponse {}
 
 // 追加リクエスト
-message AddRequest {
+message AddToUserRequest {
   string user_id = 1;
   string article_id = 2;
 }
 
 // 追加レスポンス
-message AddResponse {}
+message AddToUserResponse {}
 
 // 削除リクエスト
-message RemoveRequest {
+message RemoveFromUserRequest {
   string user_id = 1;
   string article_id = 2;
 }
 
 // 削除レスポンス
-message RemoveResponse {}
+message RemoveFromUserResponse {}

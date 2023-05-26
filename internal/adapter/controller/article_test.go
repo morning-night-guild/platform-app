@@ -14,6 +14,7 @@ import (
 	"github.com/morning-night-guild/platform-app/internal/domain/model"
 	"github.com/morning-night-guild/platform-app/internal/domain/model/article"
 	"github.com/morning-night-guild/platform-app/internal/domain/model/errors"
+	"github.com/morning-night-guild/platform-app/internal/domain/model/user"
 	"github.com/morning-night-guild/platform-app/internal/domain/value"
 	articlev1 "github.com/morning-night-guild/platform-app/pkg/connect/article/v1"
 )
@@ -435,8 +436,8 @@ func TestArticleList(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			a := controller.NewArticle(controller.New(), tt.fields.usecase(t))
-			got, err := a.List(tt.args.ctx, tt.args.req)
+			ctrl := controller.NewArticle(controller.New(), tt.fields.usecase(t))
+			got, err := ctrl.List(tt.args.ctx, tt.args.req)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Article.List() error = %v, wantErr %v", err, tt.wantErr)
 
@@ -521,13 +522,124 @@ func TestArticleDelete(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			a := controller.NewArticle(controller.New(), tt.fields.usecase(t))
-			got, err := a.Delete(tt.args.ctx, tt.args.req)
+			ctrl := controller.NewArticle(controller.New(), tt.fields.usecase(t))
+			got, err := ctrl.Delete(tt.args.ctx, tt.args.req)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Article.Delete() error = %v, wantErr %v", err, tt.wantErr)
 			}
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("Article.Delete() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestArticleAddToUser(t *testing.T) {
+	t.Parallel()
+
+	type fields struct {
+		usecase func(*testing.T) usecase.CoreArticle
+	}
+
+	type args struct {
+		ctx context.Context
+		req *connect.Request[articlev1.AddToUserRequest]
+	}
+
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		want    *connect.Response[articlev1.AddToUserResponse]
+		wantErr bool
+	}{
+		{
+			name: "記事をユーザーに追加できる",
+			fields: fields{
+				usecase: func(t *testing.T) usecase.CoreArticle {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := usecase.NewMockCoreArticle(ctrl)
+					mock.EXPECT().AddToUser(
+						gomock.Any(),
+						usecase.CoreArticleAddToUserInput{
+							ArticleID: article.ID(uuid.MustParse(aid)),
+							UserID:    user.ID(uuid.MustParse(uid)),
+						},
+					).Return(usecase.CoreArticleAddToUserOutput{}, nil)
+					return mock
+				},
+			},
+			args: args{
+				ctx: context.Background(),
+				req: &connect.Request[articlev1.AddToUserRequest]{
+					Msg: &articlev1.AddToUserRequest{
+						ArticleId: aid,
+						UserId:    uid,
+					},
+				},
+			},
+			want:    connect.NewResponse(&articlev1.AddToUserResponse{}),
+			wantErr: false,
+		},
+		{
+			name: "記事IDが不正な値でユーザーに記事を追加できない",
+			fields: fields{
+				usecase: func(t *testing.T) usecase.CoreArticle {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := usecase.NewMockCoreArticle(ctrl)
+					return mock
+				},
+			},
+			args: args{
+				ctx: context.Background(),
+				req: &connect.Request[articlev1.AddToUserRequest]{
+					Msg: &articlev1.AddToUserRequest{
+						ArticleId: "invalid",
+						UserId:    uid,
+					},
+				},
+			},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name: "ユーザーIDが不正な値でユーザーに記事を追加できない",
+			fields: fields{
+				usecase: func(t *testing.T) usecase.CoreArticle {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := usecase.NewMockCoreArticle(ctrl)
+					return mock
+				},
+			},
+			args: args{
+				ctx: context.Background(),
+				req: &connect.Request[articlev1.AddToUserRequest]{
+					Msg: &articlev1.AddToUserRequest{
+						ArticleId: aid,
+						UserId:    "invalid",
+					},
+				},
+			},
+			want:    nil,
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			ctrl := controller.NewArticle(controller.New(), tt.fields.usecase(t))
+			got, err := ctrl.AddToUser(tt.args.ctx, tt.args.req)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Article.AddToUser() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Article.AddToUser() = %v, want %v", got, tt.want)
 			}
 		})
 	}
