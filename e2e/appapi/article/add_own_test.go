@@ -45,4 +45,31 @@ func TestAppAPIE2EArticleAddOwn(t *testing.T) {
 			t.Fatalf("failed to add own article: %s", res.Status)
 		}
 	})
+
+	t.Run("認証に失敗して記事が追加できない", func(t *testing.T) {
+		t.Parallel()
+
+		db := helper.NewDatabase(t, helper.GetDSN(t))
+
+		aid := uuid.New()
+
+		db.BulkInsertArticles([]types.UUID{aid})
+
+		defer db.Close()
+
+		defer db.BulkDeleteArticles([]types.UUID{aid})
+
+		client := helper.NewOpenAPIClient(t, url)
+
+		res, err := client.Client.V1ArticleAddOwn(context.Background(), aid)
+		if err != nil {
+			t.Fatalf("failed to add own article: %s", err)
+		}
+
+		defer res.Body.Close()
+
+		if res.StatusCode != http.StatusUnauthorized {
+			t.Fatalf("succeed to add own article: %s", res.Status)
+		}
+	})
 }

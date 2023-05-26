@@ -118,4 +118,39 @@ func TestAppAPIE2EArticleList(t *testing.T) {
 			t.Errorf("Articles title = %v, want %v", (*article.Articles)[0].Title, fmt.Sprintf("title-%s", ids[0].String()))
 		}
 	})
+
+	t.Run("認証に失敗して記事を一覧できない", func(t *testing.T) {
+		t.Parallel()
+
+		user := helper.NewUser(t, url)
+
+		defer user.Delete(t)
+
+		db := helper.NewDatabase(t, helper.GetDSN(t))
+
+		ids := helper.NewIDs(t, int(size))
+
+		db.BulkInsertArticles(ids)
+
+		defer db.Close()
+
+		defer db.BulkDeleteArticles(ids)
+
+		client := helper.NewOpenAPIClient(t, url)
+
+		res, err := client.Client.V1ArticleList(context.Background(), &openapi.V1ArticleListParams{
+			PageToken:   nil,
+			MaxPageSize: helper.ToIntPointer(t, int(size)),
+			Title:       helper.ToStringPointer(t, ids[0].String()),
+		})
+		if err != nil {
+			t.Fatalf("failed to list article: %s", err)
+		}
+
+		defer res.Body.Close()
+
+		if res.StatusCode != http.StatusUnauthorized {
+			t.Fatalf("succeeded to list article: %s", res.Status)
+		}
+	})
 }
