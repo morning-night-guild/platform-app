@@ -450,6 +450,259 @@ func TestArticleList(t *testing.T) {
 	}
 }
 
+func TestArticleListByUser(t *testing.T) {
+	t.Parallel()
+
+	toPointer := func(s string) *string {
+		return &s
+	}
+
+	type fields struct {
+		usecase func(*testing.T) usecase.CoreArticle
+	}
+
+	type args struct {
+		ctx context.Context
+		req *connect.Request[articlev1.ListByUserRequest]
+	}
+
+	id := uuid.New()
+
+	uid := uuid.New()
+
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		want    *connect.Response[articlev1.ListByUserResponse]
+		wantErr bool
+	}{
+		{
+			name: "記事の一覧が取得できる（ネクストトークンあり）",
+			fields: fields{
+				usecase: func(t *testing.T) usecase.CoreArticle {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := usecase.NewMockCoreArticle(ctrl)
+					mock.EXPECT().ListByUser(gomock.Any(), usecase.CoreArticleListByUserInput{
+						UserID: user.ID(uid),
+						Index:  value.Index(0),
+						Size:   value.Size(1),
+					}).Return(usecase.CoreArticleListByUserOutput{
+						Articles: []model.Article{
+							{
+								ArticleID:   article.ID(id),
+								URL:         article.URL("https://example.com"),
+								Title:       article.Title("title"),
+								Description: article.Description("description"),
+								Thumbnail:   article.Thumbnail("https://example.com"),
+								TagList:     []article.Tag{},
+							},
+						},
+					}, nil)
+					return mock
+				},
+			},
+			args: args{
+				ctx: context.Background(),
+				req: &connect.Request[articlev1.ListByUserRequest]{
+					Msg: &articlev1.ListByUserRequest{
+						UserId:      uid.String(),
+						PageToken:   "",
+						MaxPageSize: 1,
+					},
+				},
+			},
+			want: connect.NewResponse(&articlev1.ListByUserResponse{
+				Articles: []*articlev1.Article{
+					{
+						ArticleId:   id.String(),
+						Title:       "title",
+						Url:         "https://example.com",
+						Description: "description",
+						Thumbnail:   "https://example.com",
+						Tags:        []string{},
+					},
+				},
+				NextPageToken: "MQ==",
+			}),
+			wantErr: false,
+		},
+		{
+			name: "記事の一覧が取得できる（ネクストトークンなし）",
+			fields: fields{
+				usecase: func(t *testing.T) usecase.CoreArticle {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := usecase.NewMockCoreArticle(ctrl)
+					mock.EXPECT().ListByUser(gomock.Any(), usecase.CoreArticleListByUserInput{
+						UserID: user.ID(uid),
+						Index:  value.Index(0),
+						Size:   value.Size(3),
+					}).Return(usecase.CoreArticleListByUserOutput{
+						Articles: []model.Article{
+							{
+								ArticleID:   article.ID(id),
+								URL:         article.URL("https://example.com"),
+								Title:       article.Title("title"),
+								Description: article.Description("description"),
+								Thumbnail:   article.Thumbnail("https://example.com"),
+								TagList:     []article.Tag{},
+							},
+						},
+					}, nil)
+					return mock
+				},
+			},
+			args: args{
+				ctx: context.Background(),
+				req: &connect.Request[articlev1.ListByUserRequest]{
+					Msg: &articlev1.ListByUserRequest{
+						UserId:      uid.String(),
+						PageToken:   "",
+						MaxPageSize: 3,
+					},
+				},
+			},
+			want: connect.NewResponse(&articlev1.ListByUserResponse{
+				Articles: []*articlev1.Article{
+					{
+						ArticleId:   id.String(),
+						Title:       "title",
+						Url:         "https://example.com",
+						Description: "description",
+						Thumbnail:   "https://example.com",
+						Tags:        []string{},
+					},
+				},
+				NextPageToken: "",
+			}),
+			wantErr: false,
+		},
+		{
+			name: "タイトルの部分一致検索で記事の一覧が取得できる",
+			fields: fields{
+				usecase: func(t *testing.T) usecase.CoreArticle {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := usecase.NewMockCoreArticle(ctrl)
+					mock.EXPECT().ListByUser(gomock.Any(), usecase.CoreArticleListByUserInput{
+						UserID: user.ID(uid),
+						Index:  value.Index(0),
+						Size:   value.Size(3),
+						Filter: []value.Filter{value.NewFilter("title", "title")},
+					}).Return(usecase.CoreArticleListByUserOutput{
+						Articles: []model.Article{
+							{
+								ArticleID:   article.ID(id),
+								URL:         article.URL("https://example.com"),
+								Title:       article.Title("title"),
+								Description: article.Description("description"),
+								Thumbnail:   article.Thumbnail("https://example.com"),
+								TagList:     []article.Tag{},
+							},
+						},
+					}, nil)
+					return mock
+				},
+			},
+			args: args{
+				ctx: context.Background(),
+				req: &connect.Request[articlev1.ListByUserRequest]{
+					Msg: &articlev1.ListByUserRequest{
+						UserId:      uid.String(),
+						PageToken:   "",
+						MaxPageSize: 3,
+						Title:       toPointer("title"),
+					},
+				},
+			},
+			want: connect.NewResponse(&articlev1.ListByUserResponse{
+				Articles: []*articlev1.Article{
+					{
+						ArticleId:   id.String(),
+						Title:       "title",
+						Url:         "https://example.com",
+						Description: "description",
+						Thumbnail:   "https://example.com",
+						Tags:        []string{},
+					},
+				},
+				NextPageToken: "",
+			}),
+			wantErr: false,
+		},
+		{
+			name: "usecaseでerrorが発生して記事の一覧が取得できない",
+			fields: fields{
+				usecase: func(t *testing.T) usecase.CoreArticle {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := usecase.NewMockCoreArticle(ctrl)
+					mock.EXPECT().ListByUser(gomock.Any(), usecase.CoreArticleListByUserInput{
+						UserID: user.ID(uid),
+						Index:  value.Index(0),
+						Size:   value.Size(3),
+					}).Return(usecase.CoreArticleListByUserOutput{}, fmt.Errorf("error"))
+					return mock
+				},
+			},
+			args: args{
+				ctx: context.Background(),
+				req: &connect.Request[articlev1.ListByUserRequest]{
+					Msg: &articlev1.ListByUserRequest{
+						UserId:      uid.String(),
+						PageToken:   "",
+						MaxPageSize: 3,
+					},
+				},
+			},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name: "不正なサイズを指定して記事の一覧が取得できない",
+			fields: fields{
+				usecase: func(t *testing.T) usecase.CoreArticle {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := usecase.NewMockCoreArticle(ctrl)
+					return mock
+				},
+			},
+			args: args{
+				ctx: context.Background(),
+				req: &connect.Request[articlev1.ListByUserRequest]{
+					Msg: &articlev1.ListByUserRequest{
+						UserId:      uid.String(),
+						PageToken:   "",
+						MaxPageSize: 1000,
+					},
+				},
+			},
+			want:    nil,
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			ctrl := controller.NewArticle(controller.New(), tt.fields.usecase(t))
+			got, err := ctrl.ListByUser(tt.args.ctx, tt.args.req)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Article.ListByUser() error = %v, wantErr %v", err, tt.wantErr)
+
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Article.ListByUser() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
 func TestArticleDelete(t *testing.T) {
 	t.Parallel()
 

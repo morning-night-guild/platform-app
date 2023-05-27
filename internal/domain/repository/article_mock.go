@@ -81,24 +81,44 @@ func (mr *MockArticleMockRecorder) Find(arg0, arg1 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Find", reflect.TypeOf((*MockArticle)(nil).Find), arg0, arg1)
 }
 
-// FindAll mocks base method.
-func (m *MockArticle) FindAll(arg0 context.Context, arg1 value.Index, arg2 value.Size, arg3 ...value.Filter) ([]model.Article, error) {
+// List mocks base method.
+func (m *MockArticle) List(arg0 context.Context, arg1 value.Index, arg2 value.Size, arg3 ...value.Filter) ([]model.Article, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1, arg2}
 	for _, a := range arg3 {
 		varargs = append(varargs, a)
 	}
-	ret := m.ctrl.Call(m, "FindAll", varargs...)
+	ret := m.ctrl.Call(m, "List", varargs...)
 	ret0, _ := ret[0].([]model.Article)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// FindAll indicates an expected call of FindAll.
-func (mr *MockArticleMockRecorder) FindAll(arg0, arg1, arg2 interface{}, arg3 ...interface{}) *gomock.Call {
+// List indicates an expected call of List.
+func (mr *MockArticleMockRecorder) List(arg0, arg1, arg2 interface{}, arg3 ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0, arg1, arg2}, arg3...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindAll", reflect.TypeOf((*MockArticle)(nil).FindAll), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*MockArticle)(nil).List), varargs...)
+}
+
+// ListByUser mocks base method.
+func (m *MockArticle) ListByUser(arg0 context.Context, arg1 user.ID, arg2 value.Index, arg3 value.Size, arg4 ...value.Filter) ([]model.Article, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1, arg2, arg3}
+	for _, a := range arg4 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "ListByUser", varargs...)
+	ret0, _ := ret[0].([]model.Article)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListByUser indicates an expected call of ListByUser.
+func (mr *MockArticleMockRecorder) ListByUser(arg0, arg1, arg2, arg3 interface{}, arg4 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1, arg2, arg3}, arg4...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListByUser", reflect.TypeOf((*MockArticle)(nil).ListByUser), varargs...)
 }
 
 // Save mocks base method.

@@ -37,6 +37,9 @@ const (
 	ArticleServiceShareProcedure = "/article.v1.ArticleService/Share"
 	// ArticleServiceListProcedure is the fully-qualified name of the ArticleService's List RPC.
 	ArticleServiceListProcedure = "/article.v1.ArticleService/List"
+	// ArticleServiceListByUserProcedure is the fully-qualified name of the ArticleService's ListByUser
+	// RPC.
+	ArticleServiceListByUserProcedure = "/article.v1.ArticleService/ListByUser"
 	// ArticleServiceDeleteProcedure is the fully-qualified name of the ArticleService's Delete RPC.
 	ArticleServiceDeleteProcedure = "/article.v1.ArticleService/Delete"
 	// ArticleServiceAddToUserProcedure is the fully-qualified name of the ArticleService's AddToUser
@@ -53,6 +56,8 @@ type ArticleServiceClient interface {
 	Share(context.Context, *connect_go.Request[v1.ShareRequest]) (*connect_go.Response[v1.ShareResponse], error)
 	// 一覧
 	List(context.Context, *connect_go.Request[v1.ListRequest]) (*connect_go.Response[v1.ListResponse], error)
+	// 一覧取得(ユーザーごと)
+	ListByUser(context.Context, *connect_go.Request[v1.ListByUserRequest]) (*connect_go.Response[v1.ListByUserResponse], error)
 	// 削除
 	Delete(context.Context, *connect_go.Request[v1.DeleteRequest]) (*connect_go.Response[v1.DeleteResponse], error)
 	// 追加
@@ -81,6 +86,11 @@ func NewArticleServiceClient(httpClient connect_go.HTTPClient, baseURL string, o
 			baseURL+ArticleServiceListProcedure,
 			opts...,
 		),
+		listByUser: connect_go.NewClient[v1.ListByUserRequest, v1.ListByUserResponse](
+			httpClient,
+			baseURL+ArticleServiceListByUserProcedure,
+			opts...,
+		),
 		delete: connect_go.NewClient[v1.DeleteRequest, v1.DeleteResponse](
 			httpClient,
 			baseURL+ArticleServiceDeleteProcedure,
@@ -103,6 +113,7 @@ func NewArticleServiceClient(httpClient connect_go.HTTPClient, baseURL string, o
 type articleServiceClient struct {
 	share          *connect_go.Client[v1.ShareRequest, v1.ShareResponse]
 	list           *connect_go.Client[v1.ListRequest, v1.ListResponse]
+	listByUser     *connect_go.Client[v1.ListByUserRequest, v1.ListByUserResponse]
 	delete         *connect_go.Client[v1.DeleteRequest, v1.DeleteResponse]
 	addToUser      *connect_go.Client[v1.AddToUserRequest, v1.AddToUserResponse]
 	removeFromUser *connect_go.Client[v1.RemoveFromUserRequest, v1.RemoveFromUserResponse]
@@ -116,6 +127,11 @@ func (c *articleServiceClient) Share(ctx context.Context, req *connect_go.Reques
 // List calls article.v1.ArticleService.List.
 func (c *articleServiceClient) List(ctx context.Context, req *connect_go.Request[v1.ListRequest]) (*connect_go.Response[v1.ListResponse], error) {
 	return c.list.CallUnary(ctx, req)
+}
+
+// ListByUser calls article.v1.ArticleService.ListByUser.
+func (c *articleServiceClient) ListByUser(ctx context.Context, req *connect_go.Request[v1.ListByUserRequest]) (*connect_go.Response[v1.ListByUserResponse], error) {
+	return c.listByUser.CallUnary(ctx, req)
 }
 
 // Delete calls article.v1.ArticleService.Delete.
@@ -139,6 +155,8 @@ type ArticleServiceHandler interface {
 	Share(context.Context, *connect_go.Request[v1.ShareRequest]) (*connect_go.Response[v1.ShareResponse], error)
 	// 一覧
 	List(context.Context, *connect_go.Request[v1.ListRequest]) (*connect_go.Response[v1.ListResponse], error)
+	// 一覧取得(ユーザーごと)
+	ListByUser(context.Context, *connect_go.Request[v1.ListByUserRequest]) (*connect_go.Response[v1.ListByUserResponse], error)
 	// 削除
 	Delete(context.Context, *connect_go.Request[v1.DeleteRequest]) (*connect_go.Response[v1.DeleteResponse], error)
 	// 追加
@@ -162,6 +180,11 @@ func NewArticleServiceHandler(svc ArticleServiceHandler, opts ...connect_go.Hand
 	mux.Handle(ArticleServiceListProcedure, connect_go.NewUnaryHandler(
 		ArticleServiceListProcedure,
 		svc.List,
+		opts...,
+	))
+	mux.Handle(ArticleServiceListByUserProcedure, connect_go.NewUnaryHandler(
+		ArticleServiceListByUserProcedure,
+		svc.ListByUser,
 		opts...,
 	))
 	mux.Handle(ArticleServiceDeleteProcedure, connect_go.NewUnaryHandler(
@@ -191,6 +214,10 @@ func (UnimplementedArticleServiceHandler) Share(context.Context, *connect_go.Req
 
 func (UnimplementedArticleServiceHandler) List(context.Context, *connect_go.Request[v1.ListRequest]) (*connect_go.Response[v1.ListResponse], error) {
 	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("article.v1.ArticleService.List is not implemented"))
+}
+
+func (UnimplementedArticleServiceHandler) ListByUser(context.Context, *connect_go.Request[v1.ListByUserRequest]) (*connect_go.Response[v1.ListByUserResponse], error) {
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("article.v1.ArticleService.ListByUser is not implemented"))
 }
 
 func (UnimplementedArticleServiceHandler) Delete(context.Context, *connect_go.Request[v1.DeleteRequest]) (*connect_go.Response[v1.DeleteResponse], error) {

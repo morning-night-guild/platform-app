@@ -407,6 +407,22 @@ func NewV1ArticleListRequest(server string, params *V1ArticleListParams) (*http.
 
 	queryValues := queryURL.Query()
 
+	if params.Scope != nil {
+
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "scope", runtime.ParamLocationQuery, *params.Scope); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+	}
+
 	if params.MaxPageSize != nil {
 
 		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "maxPageSize", runtime.ParamLocationQuery, *params.MaxPageSize); err != nil {

@@ -131,6 +131,202 @@ func TestCoreArticleShare(t *testing.T) {
 	}
 }
 
+func TestCoreArticleListByUser(t *testing.T) {
+	t.Parallel()
+
+	type fields struct {
+		userRepository    func(t *testing.T) repository.User
+		articleRepository func(t *testing.T) repository.Article
+	}
+
+	type args struct {
+		ctx   context.Context
+		input usecase.CoreArticleListByUserInput
+	}
+
+	id := uuid.New()
+
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		want    usecase.CoreArticleListByUserOutput
+		wantErr bool
+	}{
+		{
+			name: "ユーザーに紐づく記事一覧を取得できる",
+			fields: fields{
+				userRepository: func(t *testing.T) repository.User {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := repository.NewMockUser(ctrl)
+					mock.EXPECT().Find(
+						gomock.Any(),
+						user.ID(id),
+					).Return(model.User{
+						UserID: user.ID(id),
+					}, nil)
+					return mock
+				},
+				articleRepository: func(t *testing.T) repository.Article {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := repository.NewMockArticle(ctrl)
+					mock.EXPECT().ListByUser(
+						gomock.Any(),
+						user.ID(id),
+						value.Index(0),
+						value.Size(1),
+					).Return([]model.Article{
+						{
+							ArticleID:   article.ID(id),
+							Title:       article.Title("title"),
+							URL:         article.URL("https://example.com"),
+							Description: article.Description("description"),
+							Thumbnail:   article.Thumbnail("https://example.com"),
+							TagList:     article.TagList{},
+						},
+					}, nil)
+					return mock
+				},
+			},
+			args: args{
+				ctx: context.Background(),
+				input: usecase.CoreArticleListByUserInput{
+					UserID: user.ID(id),
+					Index:  value.Index(0),
+					Size:   value.Size(1),
+				},
+			},
+			want: usecase.CoreArticleListByUserOutput{
+				Articles: []model.Article{
+					{
+						ArticleID:   article.ID(id),
+						Title:       article.Title("title"),
+						URL:         article.URL("https://example.com"),
+						Description: article.Description("description"),
+						Thumbnail:   article.Thumbnail("https://example.com"),
+						TagList:     article.TagList{},
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "タイトル部分一致で記事一覧を取得できる",
+			fields: fields{
+				userRepository: func(t *testing.T) repository.User {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := repository.NewMockUser(ctrl)
+					mock.EXPECT().Find(
+						gomock.Any(),
+						user.ID(id),
+					).Return(model.User{
+						UserID: user.ID(id),
+					}, nil)
+					return mock
+				},
+				articleRepository: func(t *testing.T) repository.Article {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := repository.NewMockArticle(ctrl)
+					mock.EXPECT().ListByUser(
+						gomock.Any(),
+						user.ID(id),
+						value.Index(0),
+						value.Size(1),
+						[]value.Filter{value.NewFilter("title", "title")},
+					).Return([]model.Article{
+						{
+							ArticleID:   article.ID(id),
+							Title:       article.Title("title"),
+							URL:         article.URL("https://example.com"),
+							Description: article.Description("description"),
+							Thumbnail:   article.Thumbnail("https://example.com"),
+							TagList:     article.TagList{},
+						},
+					}, nil)
+					return mock
+				},
+			},
+			args: args{
+				ctx: context.Background(),
+				input: usecase.CoreArticleListByUserInput{
+					UserID: user.ID(id),
+					Index:  value.Index(0),
+					Size:   value.Size(1),
+					Filter: []value.Filter{value.NewFilter("title", "title")},
+				},
+			},
+			want: usecase.CoreArticleListByUserOutput{
+				Articles: []model.Article{
+					{
+						ArticleID:   article.ID(id),
+						Title:       article.Title("title"),
+						URL:         article.URL("https://example.com"),
+						Description: article.Description("description"),
+						Thumbnail:   article.Thumbnail("https://example.com"),
+						TagList:     article.TagList{},
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "ユーザーが存在せず記事一覧が取得できない",
+			fields: fields{
+				userRepository: func(t *testing.T) repository.User {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := repository.NewMockUser(ctrl)
+					mock.EXPECT().Find(
+						gomock.Any(),
+						user.ID(id),
+					).Return(model.User{}, fmt.Errorf("error"))
+					return mock
+				},
+				articleRepository: func(t *testing.T) repository.Article {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := repository.NewMockArticle(ctrl)
+					return mock
+				},
+			},
+			args: args{
+				ctx: context.Background(),
+				input: usecase.CoreArticleListByUserInput{
+					UserID: user.ID(id),
+					Index:  value.Index(0),
+					Size:   value.Size(1),
+					Filter: []value.Filter{value.NewFilter("title", "title")},
+				},
+			},
+			want:    usecase.CoreArticleListByUserOutput{},
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			itr := interactor.NewCoreArticle(
+				tt.fields.articleRepository(t),
+				tt.fields.userRepository(t),
+			)
+			got, err := itr.ListByUser(tt.args.ctx, tt.args.input)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("CoreArticle.ListByUser() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("CoreArticle.ListByUser() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
 func TestCoreArticleList(t *testing.T) {
 	t.Parallel()
 
@@ -159,7 +355,7 @@ func TestCoreArticleList(t *testing.T) {
 					t.Helper()
 					ctrl := gomock.NewController(t)
 					mock := repository.NewMockArticle(ctrl)
-					mock.EXPECT().FindAll(
+					mock.EXPECT().List(
 						gomock.Any(),
 						value.Index(0),
 						value.Size(1),
@@ -204,7 +400,7 @@ func TestCoreArticleList(t *testing.T) {
 					t.Helper()
 					ctrl := gomock.NewController(t)
 					mock := repository.NewMockArticle(ctrl)
-					mock.EXPECT().FindAll(
+					mock.EXPECT().List(
 						gomock.Any(),
 						value.Index(0),
 						value.Size(1),

@@ -15,6 +15,7 @@ import (
 type CoreArticle interface {
 	Share(context.Context, CoreArticleShareInput) (CoreArticleShareOutput, error)
 	List(context.Context, CoreArticleListInput) (CoreArticleListOutput, error)
+	ListByUser(context.Context, CoreArticleListByUserInput) (CoreArticleListByUserOutput, error)
 	Delete(context.Context, CoreArticleDeleteInput) (CoreArticleDeleteOutput, error)
 	AddToUser(context.Context, CoreArticleAddToUserInput) (CoreArticleAddToUserOutput, error)
 }
@@ -41,6 +42,19 @@ type CoreArticleListInput struct {
 
 // CoreArticleListOutput.
 type CoreArticleListOutput struct {
+	Articles []model.Article
+}
+
+// CoreArticleListByUserInput.
+type CoreArticleListByUserInput struct {
+	UserID user.ID
+	Index  value.Index
+	Size   value.Size
+	Filter []value.Filter
+}
+
+// CoreArticleListByUserOutput.
+type CoreArticleListByUserOutput struct {
 	Articles []model.Article
 }
 

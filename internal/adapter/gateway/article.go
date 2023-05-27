@@ -87,8 +87,8 @@ func (gtw *Article) Save(
 	return errors.Wrap(err, "failed to save")
 }
 
-// FindAll 記事を取得するメソッド.
-func (gtw *Article) FindAll(
+// List 記事一覧を取得するメソッド.
+func (gtw *Article) List(
 	ctx context.Context,
 	index value.Index,
 	size value.Size,
@@ -134,12 +134,13 @@ func (gtw *Article) FindAll(
 	return gtw.toModels(eas), nil
 }
 
-// FindAllByUser ユーザーに紐づく記事を取得するメソッド.
-func (gtw *Article) FindAllByUser(
+// ListByUser ユーザーに紐づく記事を取得するメソッド.
+func (gtw *Article) ListByUser(
 	ctx context.Context,
 	userID user.ID,
 	index value.Index,
 	size value.Size,
+	filter ...value.Filter,
 ) ([]model.Article, error) {
 	query := gtw.rdb.UserArticle.Query().
 		Where(entuserarticle.UserID(userID.Value())).
@@ -148,6 +149,14 @@ func (gtw *Article) FindAllByUser(
 		Order(ent.Desc(entarticle.FieldCreatedAt)).
 		Offset(index.Int()).
 		Limit(size.Int())
+
+	if len(filter) > 0 {
+		for _, f := range filter {
+			if f.Name == "title" {
+				query = query.Where(entarticle.TitleContains(f.Value))
+			}
+		}
+	}
 
 	eas, err := query.All(ctx)
 	if err != nil {

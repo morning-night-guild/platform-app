@@ -10,6 +10,8 @@ service ArticleService {
   rpc Share(ShareRequest) returns (ShareResponse) {}
   // 一覧
   rpc List(ListRequest) returns (ListResponse) {}
+  // 一覧取得(ユーザーごと)
+  rpc ListByUser(ListByUserRequest) returns (ListByUserResponse) {}
   // 削除
   rpc Delete(DeleteRequest) returns (DeleteResponse) {}
   // 追加
@@ -50,6 +52,20 @@ message ListRequest {
 
 // 一覧レスポンス
 message ListResponse {
+  repeated Article articles = 1;
+  string next_page_token = 2;
+}
+
+// 一覧リクエスト
+message ListByUserRequest {
+  string user_id = 1;
+  string page_token = 2;
+  uint32 max_page_size = 3;
+  optional string title = 4;
+}
+
+// 一覧レスポンス
+message ListByUserResponse {
   repeated Article articles = 1;
   string next_page_token = 2;
 }
