@@ -11,6 +11,7 @@ import (
 	"github.com/morning-night-guild/platform-app/pkg/ent/article"
 	"github.com/morning-night-guild/platform-app/pkg/ent/articletag"
 	"github.com/morning-night-guild/platform-app/pkg/ent/user"
+	"github.com/morning-night-guild/platform-app/pkg/ent/userarticle"
 	"github.com/morning-night-guild/platform-app/pkg/log"
 )
 
@@ -81,6 +82,7 @@ type Entity struct {
 	Users       []*ent.User
 	Articles    []*ent.Article
 	ArticleTags []*ent.ArticleTag
+	UserArticle []*ent.UserArticle
 }
 
 func Export(ctx context.Context, client *gateway.RDB) (Entity, error) {
@@ -101,10 +103,16 @@ func Export(ctx context.Context, client *gateway.RDB) (Entity, error) {
 		return Entity{}, fmt.Errorf("failed to query articles: %w", err)
 	}
 
+	userArticles, err := client.UserArticle.Query().All(ctx)
+	if err != nil {
+		return Entity{}, fmt.Errorf("failed to query user articles: %w", err)
+	}
+
 	return Entity{
 		Users:       users,
 		Articles:    articles,
 		ArticleTags: articleTags,
+		UserArticle: userArticles,
 	}, nil
 }
 
@@ -123,6 +131,10 @@ func ResetTable(ctx context.Context, tx *ent.Tx) error {
 
 	if _, err := tx.ExecContext(ctx, fmt.Sprintf(dropTableQuery, articletag.Table)); err != nil {
 		return fmt.Errorf("failed to drop article tag table: %w", err)
+	}
+
+	if _, err := tx.ExecContext(ctx, fmt.Sprintf(dropTableQuery, userarticle.Table)); err != nil {
+		return fmt.Errorf("failed to drop user article table: %w", err)
 	}
 
 	if err := tx.Client().Debug().Schema.Create(ctx); err != nil {
@@ -175,6 +187,20 @@ func Import(ctx context.Context, tx *ent.Tx, entity Entity) error {
 
 	if _, err := tx.ArticleTag.CreateBulk(articleTagBulk...).Save(ctx); err != nil {
 		return fmt.Errorf("failed to bulk create article tags: %w", err)
+	}
+
+	userArticleBulk := make([]*ent.UserArticleCreate, len(entity.UserArticle))
+	for i, userArticle := range entity.UserArticle {
+		userArticleBulk[i] = tx.UserArticle.Create().
+			SetID(userArticle.ID).
+			SetUserID(userArticle.UserID).
+			SetArticleID(userArticle.ArticleID).
+			SetCreatedAt(userArticle.CreatedAt).
+			SetUpdatedAt(userArticle.UpdatedAt)
+	}
+
+	if _, err := tx.UserArticle.CreateBulk(userArticleBulk...).Save(ctx); err != nil {
+		return fmt.Errorf("failed to bulk create user articles: %w", err)
 	}
 
 	log.GetLogCtx(ctx).Info("end import data")
