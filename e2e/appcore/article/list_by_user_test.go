@@ -130,4 +130,29 @@ func TestAppCoreE2EArticleListByUser(t *testing.T) {
 			t.Errorf("Articles Title = %v, want %v", res.Msg.Articles[0].Title, fmt.Sprintf("title-%s", ids[0].String()))
 		}
 	})
+
+	t.Run("ユーザーが存在しないので紐づく記事が一覧できない", func(t *testing.T) {
+		t.Parallel()
+
+		db := helper.NewDatabase(t, helper.GetDSN(t))
+
+		ids := helper.NewIDs(t, int(articleCount))
+
+		defer db.Close()
+
+		db.BulkInsertArticles(ids)
+
+		defer db.BulkDeleteArticles(ids)
+
+		client := helper.NewConnectClient(t, &http.Client{}, url)
+
+		req := &articlev1.ListByUserRequest{
+			UserId:      uuid.New().String(),
+			MaxPageSize: articleCount,
+		}
+
+		if _, err := client.Article.ListByUser(context.Background(), connect.NewRequest(req)); err == nil {
+			t.Error("error is nil")
+		}
+	})
 }
