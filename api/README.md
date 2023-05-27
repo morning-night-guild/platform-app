@@ -355,29 +355,133 @@ To perform this operation, you must be authenticated by means of one of the foll
 apiKey
 </aside>
 
-## v1ArticleDelete
+## v1ArticleAddOwn
 
-<a id="opIdv1ArticleDelete"></a>
+<a id="opIdv1ArticleAddOwn"></a>
 
-`DELETE /v1/articles/{articleId}`
+`POST /v1/articles/{articleId}`
 
-*記事削除*
+*記事追加*
 
-記事を削除する
+操作者が管理する記事として追加する
 
-<h3 id="v1articledelete-parameters">Parameters</h3>
+<h3 id="v1articleaddown-parameters">Parameters</h3>
 
 |Name|In|Type|Required|Description|
 |---|---|---|---|---|
 |articleId|path|string(uuid)|true|記事ID|
 
-<h3 id="v1articledelete-responses">Responses</h3>
+<h3 id="v1articleaddown-responses">Responses</h3>
+
+|Status|Meaning|Description|Schema|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|OK|None|
+|400|[Bad Request](https://tools.ietf.org/html/rfc7231#section-6.5.1)|Bad Request|None|
+|403|[Forbidden](https://tools.ietf.org/html/rfc7231#section-6.5.3)|Forbidden|None|
+|404|[Not Found](https://tools.ietf.org/html/rfc7231#section-6.5.4)|Not Found|None|
+|500|[Internal Server Error](https://tools.ietf.org/html/rfc7231#section-6.6.1)|Internal Server Error|None|
+
+<aside class="warning">
+To perform this operation, you must be authenticated by means of one of the following methods:
+authTokenCookie, sessionTokenCookie
+</aside>
+
+## v1ArticleRemoveOwn
+
+<a id="opIdv1ArticleRemoveOwn"></a>
+
+`DELETE /v1/articles/{articleId}`
+
+*記事削除*
+
+操作者が管理する記事から削除する
+
+<h3 id="v1articleremoveown-parameters">Parameters</h3>
+
+|Name|In|Type|Required|Description|
+|---|---|---|---|---|
+|articleId|path|string(uuid)|true|記事ID|
+
+<h3 id="v1articleremoveown-responses">Responses</h3>
+
+|Status|Meaning|Description|Schema|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|OK|None|
+|400|[Bad Request](https://tools.ietf.org/html/rfc7231#section-6.5.1)|Bad Request|None|
+|403|[Forbidden](https://tools.ietf.org/html/rfc7231#section-6.5.3)|Forbidden|None|
+|404|[Not Found](https://tools.ietf.org/html/rfc7231#section-6.5.4)|Not Found|None|
+|500|[Internal Server Error](https://tools.ietf.org/html/rfc7231#section-6.6.1)|Internal Server Error|None|
+
+<aside class="warning">
+To perform this operation, you must be authenticated by means of one of the following methods:
+authTokenCookie, sessionTokenCookie
+</aside>
+
+## v1InternalArticleShare
+
+<a id="opIdv1InternalArticleShare"></a>
+
+`POST /v1/internal/articles`
+
+*記事共有*
+
+記事を共有する
+
+> Body parameter
+
+```json
+{
+  "url": "https://example.com",
+  "title": "title",
+  "description": "description",
+  "thumbnail": "https://example.com"
+}
+```
+
+<h3 id="v1internalarticleshare-parameters">Parameters</h3>
+
+|Name|In|Type|Required|Description|
+|---|---|---|---|---|
+|body|body|[V1ArticleShareRequestSchema](#schemav1articlesharerequestschema)|true|記事共有リクエストボディ|
+
+<h3 id="v1internalarticleshare-responses">Responses</h3>
+
+|Status|Meaning|Description|Schema|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|成功|None|
+|400|[Bad Request](https://tools.ietf.org/html/rfc7231#section-6.5.1)|Bad Request|None|
+|403|[Forbidden](https://tools.ietf.org/html/rfc7231#section-6.5.3)|Forbidden|None|
+|500|[Internal Server Error](https://tools.ietf.org/html/rfc7231#section-6.6.1)|Internal Server Error|None|
+
+<aside class="warning">
+To perform this operation, you must be authenticated by means of one of the following methods:
+apiKey
+</aside>
+
+## v1InternalArticleDelete
+
+<a id="opIdv1InternalArticleDelete"></a>
+
+`DELETE /v1/internal/articles/{articleId}`
+
+*記事削除*
+
+記事を削除する
+
+<h3 id="v1internalarticledelete-parameters">Parameters</h3>
+
+|Name|In|Type|Required|Description|
+|---|---|---|---|---|
+|articleId|path|string(uuid)|true|記事ID|
+
+<h3 id="v1internalarticledelete-responses">Responses</h3>
 
 |Status|Meaning|Description|Schema|
 |---|---|---|---|
 |200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|成功、指定した記事IDが存在しない場合も成功扱いとなる|None|
 |400|[Bad Request](https://tools.ietf.org/html/rfc7231#section-6.5.1)|Bad Request|None|
 |403|[Forbidden](https://tools.ietf.org/html/rfc7231#section-6.5.3)|Forbidden|None|
+|404|[Not Found](https://tools.ietf.org/html/rfc7231#section-6.5.4)|Not Found|None|
 |500|[Internal Server Error](https://tools.ietf.org/html/rfc7231#section-6.6.1)|Internal Server Error|None|
 
 <aside class="warning">

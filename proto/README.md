@@ -4,11 +4,15 @@
 ## Table of Contents
 
 - [proto/article/v1/article.proto](#proto_article_v1_article-proto)
+    - [AddToUserRequest](#article-v1-AddToUserRequest)
+    - [AddToUserResponse](#article-v1-AddToUserResponse)
     - [Article](#article-v1-Article)
     - [DeleteRequest](#article-v1-DeleteRequest)
     - [DeleteResponse](#article-v1-DeleteResponse)
     - [ListRequest](#article-v1-ListRequest)
     - [ListResponse](#article-v1-ListResponse)
+    - [RemoveFromUserRequest](#article-v1-RemoveFromUserRequest)
+    - [RemoveFromUserResponse](#article-v1-RemoveFromUserResponse)
     - [ShareRequest](#article-v1-ShareRequest)
     - [ShareResponse](#article-v1-ShareResponse)
   
@@ -37,6 +41,32 @@
 <p align="right"><a href="#top">Top</a></p>
 
 ## proto/article/v1/article.proto
+
+
+
+<a name="article-v1-AddToUserRequest"></a>
+
+### AddToUserRequest
+追加リクエスト
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| user_id | [string](#string) |  |  |
+| article_id | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="article-v1-AddToUserResponse"></a>
+
+### AddToUserResponse
+追加レスポンス
+
+
+
 
 
 
@@ -118,6 +148,32 @@
 
 
 
+<a name="article-v1-RemoveFromUserRequest"></a>
+
+### RemoveFromUserRequest
+削除リクエスト
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| user_id | [string](#string) |  |  |
+| article_id | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="article-v1-RemoveFromUserResponse"></a>
+
+### RemoveFromUserResponse
+削除レスポンス
+
+
+
+
+
+
 <a name="article-v1-ShareRequest"></a>
 
 ### ShareRequest
@@ -164,9 +220,11 @@
 
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
-| Share | [ShareRequest](#article-v1-ShareRequest) | [ShareResponse](#article-v1-ShareResponse) | 共有 Need X-Api-Key Header |
+| Share | [ShareRequest](#article-v1-ShareRequest) | [ShareResponse](#article-v1-ShareResponse) | 共有 |
 | List | [ListRequest](#article-v1-ListRequest) | [ListResponse](#article-v1-ListResponse) | 一覧 |
 | Delete | [DeleteRequest](#article-v1-DeleteRequest) | [DeleteResponse](#article-v1-DeleteResponse) | 削除 |
+| AddToUser | [AddToUserRequest](#article-v1-AddToUserRequest) | [AddToUserResponse](#article-v1-AddToUserResponse) | 追加 |
+| RemoveFromUser | [RemoveFromUserRequest](#article-v1-RemoveFromUserRequest) | [RemoveFromUserResponse](#article-v1-RemoveFromUserResponse) | 削除 |
 
  
 
