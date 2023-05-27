@@ -324,7 +324,7 @@ func TestCoreArticleDelete(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "存在しない記事を削除してもエラーにならない",
+			name: "存在しない記事を削除できない",
 			fields: fields{
 				articleRepository: func(t *testing.T) repository.Article {
 					t.Helper()
@@ -344,7 +344,7 @@ func TestCoreArticleDelete(t *testing.T) {
 				},
 			},
 			want:    usecase.CoreArticleDeleteOutput{},
-			wantErr: false,
+			wantErr: true,
 		},
 		{
 			name: "記事削除のerrorを握りつぶさない",

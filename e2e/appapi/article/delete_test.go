@@ -39,7 +39,7 @@ func TestAppAPIE2EArticleDelete(t *testing.T) {
 		}
 	})
 
-	t.Run("存在しない記事を指定した場合も成功する", func(t *testing.T) {
+	t.Run("存在しない記事は削除できない", func(t *testing.T) {
 		t.Parallel()
 
 		id := uuid.New()
@@ -53,7 +53,7 @@ func TestAppAPIE2EArticleDelete(t *testing.T) {
 
 		defer res.Body.Close()
 
-		if res.StatusCode != http.StatusOK {
+		if res.StatusCode != http.StatusNotFound {
 			t.Errorf("unexpected status code: %d", res.StatusCode)
 		}
 	})
