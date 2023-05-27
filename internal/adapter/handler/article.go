@@ -18,7 +18,7 @@ import (
 
 // 記事一覧
 // (GET /v1/articles).
-func (hdl *Handler) V1ArticleList(
+func (hdl *Handler) V1ArticleList( //nolint:cyclop
 	w http.ResponseWriter,
 	r *http.Request,
 	params openapi.V1ArticleListParams,
@@ -37,6 +37,7 @@ func (hdl *Handler) V1ArticleList(
 	ctx = user.SetUIDCtx(ctx, uid)
 
 	scope := article.All
+
 	if params.Scope != nil {
 		s, err := article.NewScope(string(*params.Scope))
 		if err != nil {
@@ -46,6 +47,7 @@ func (hdl *Handler) V1ArticleList(
 
 			return
 		}
+
 		scope = s
 	}
 
