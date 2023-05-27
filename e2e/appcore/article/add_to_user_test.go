@@ -33,8 +33,6 @@ func TestAppCoreE2EArticleAddToUser(t *testing.T) {
 
 		db.BulkInsertArticles([]uuid.UUID{aid})
 
-		// NOTE: 記事またはユーザーを削除すればユーザーに紐づく記事も削除される
-
 		defer db.BulkDeleteArticles([]uuid.UUID{})
 
 		defer db.DeleteUser(uid)
@@ -88,8 +86,6 @@ func TestAppCoreE2EArticleAddToUser(t *testing.T) {
 		uid := uuid.New()
 
 		db.InsertUser(uid)
-
-		// NOTE: 記事またはユーザーを削除すればユーザーに紐づく記事も削除される
 
 		defer db.BulkDeleteArticles([]uuid.UUID{})
 
