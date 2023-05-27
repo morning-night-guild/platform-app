@@ -84,6 +84,14 @@ func (siw *ServerInterfaceWrapper) V1ArticleList(w http.ResponseWriter, r *http.
 	// Parameter object where we will unmarshal all parameters from the context
 	var params V1ArticleListParams
 
+	// ------------- Optional query parameter "scope" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "scope", r.URL.Query(), &params.Scope)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "scope", Err: err})
+		return
+	}
+
 	// ------------- Optional query parameter "maxPageSize" -------------
 
 	err = runtime.BindQueryParameter("form", true, false, "maxPageSize", r.URL.Query(), &params.MaxPageSize)

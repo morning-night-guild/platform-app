@@ -13,6 +13,12 @@ const (
 	SessionTokenCookieScopes = "sessionTokenCookie.Scopes"
 )
 
+// Defines values for V1ArticleListParamsScope.
+const (
+	All V1ArticleListParamsScope = "all"
+	Own V1ArticleListParamsScope = "own"
+)
+
 // ArticleSchema defines model for ArticleSchema.
 type ArticleSchema struct {
 	// Description description
@@ -106,6 +112,9 @@ type V1AuthVerifyUnauthorizedResponseSchema struct {
 
 // V1ArticleListParams defines parameters for V1ArticleList.
 type V1ArticleListParams struct {
+	// Scope 取得範囲
+	Scope *V1ArticleListParamsScope `form:"scope,omitempty" json:"scope,omitempty"`
+
 	// MaxPageSize ページサイズ
 	MaxPageSize *int `form:"maxPageSize,omitempty" json:"maxPageSize,omitempty"`
 
@@ -115,6 +124,9 @@ type V1ArticleListParams struct {
 	// Title タイトルによる部分一致検索
 	Title *string `form:"title,omitempty" json:"title,omitempty"`
 }
+
+// V1ArticleListParamsScope defines parameters for V1ArticleList.
+type V1ArticleListParamsScope string
 
 // V1AuthRefreshParams defines parameters for V1AuthRefresh.
 type V1AuthRefreshParams struct {

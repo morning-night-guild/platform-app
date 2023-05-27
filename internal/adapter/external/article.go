@@ -95,20 +95,39 @@ func (ext *Article) List(
 		return nil, ext.external.HandleError(ctx, err)
 	}
 
-	articles := make([]model.Article, len(res.Msg.Articles))
+	return ext.toModels(res.Msg.Articles), nil
+}
 
-	for i, article := range res.Msg.Articles {
-		articles[i] = model.ReconstructArticle(
-			uuid.MustParse(article.ArticleId),
-			article.Url,
-			article.Title,
-			article.Description,
-			article.Thumbnail,
-			article.Tags,
-		)
+func (ext *Article) ListByUser(
+	ctx context.Context,
+	userID user.ID,
+	index value.Index,
+	size value.Size,
+	filter ...value.Filter,
+) ([]model.Article, error) {
+	req := NewRequest(ctx, &articlev1.ListByUserRequest{
+		UserId:      userID.String(),
+		PageToken:   string(value.CreateNextTokenFromIndex(index)),
+		MaxPageSize: uint32(size),
+	})
+
+	if len(filter) > 0 {
+		for _, f := range filter {
+			val := f.Value
+			if f.Name == "title" {
+				req.Msg.Title = &val
+			}
+		}
 	}
 
-	return articles, nil
+	res, err := ext.connect.ListByUser(ctx, req)
+	if err != nil {
+		log.GetLogCtx(ctx).Warn("failed to list articles", log.ErrorField(err))
+
+		return nil, ext.external.HandleError(ctx, err)
+	}
+
+	return ext.toModels(res.Msg.Articles), nil
 }
 
 func (ext *Article) Delete(
@@ -147,4 +166,23 @@ func (ext *Article) AddToUser(
 	}
 
 	return nil
+}
+
+func (ext *Article) toModels(
+	articles []*articlev1.Article,
+) []model.Article {
+	res := make([]model.Article, len(articles))
+
+	for i, article := range articles {
+		res[i] = model.ReconstructArticle(
+			uuid.MustParse(article.ArticleId),
+			article.Url,
+			article.Title,
+			article.Description,
+			article.Thumbnail,
+			article.Tags,
+		)
+	}
+
+	return res
 }

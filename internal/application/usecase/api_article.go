@@ -35,6 +35,7 @@ type APIArticleShareOutput struct {
 // APIArticleListInput.
 type APIArticleListInput struct {
 	UserID user.ID
+	Scope  article.Scope
 	Index  value.Index
 	Size   value.Size
 	Filter []value.Filter

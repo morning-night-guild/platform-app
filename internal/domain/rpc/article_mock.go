@@ -86,6 +86,26 @@ func (mr *MockArticleMockRecorder) List(arg0, arg1, arg2 interface{}, arg3 ...in
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*MockArticle)(nil).List), varargs...)
 }
 
+// ListByUser mocks base method.
+func (m *MockArticle) ListByUser(arg0 context.Context, arg1 user.ID, arg2 value.Index, arg3 value.Size, arg4 ...value.Filter) ([]model.Article, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1, arg2, arg3}
+	for _, a := range arg4 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "ListByUser", varargs...)
+	ret0, _ := ret[0].([]model.Article)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListByUser indicates an expected call of ListByUser.
+func (mr *MockArticleMockRecorder) ListByUser(arg0, arg1, arg2, arg3 interface{}, arg4 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1, arg2, arg3}, arg4...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListByUser", reflect.TypeOf((*MockArticle)(nil).ListByUser), varargs...)
+}
+
 // Share mocks base method.
 func (m *MockArticle) Share(arg0 context.Context, arg1 article.URL, arg2 article.Title, arg3 article.Description, arg4 article.Thumbnail) (model.Article, error) {
 	m.ctrl.T.Helper()

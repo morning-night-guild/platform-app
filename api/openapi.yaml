@@ -201,6 +201,16 @@ paths:
         - authTokenCookie: []
         - sessionTokenCookie: []    
       parameters:
+        - name: scope
+          in: query
+          description: 取得範囲
+          required: false # TODO 必須にする
+          explode: true
+          schema:
+            type: string
+            enum:
+              - all
+              - own
         - name: maxPageSize
           in: query
           description: ページサイズ

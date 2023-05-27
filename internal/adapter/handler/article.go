@@ -18,7 +18,7 @@ import (
 
 // 記事一覧
 // (GET /v1/articles).
-func (hdl *Handler) V1ArticleList(
+func (hdl *Handler) V1ArticleList( //nolint:cyclop
 	w http.ResponseWriter,
 	r *http.Request,
 	params openapi.V1ArticleListParams,
@@ -35,6 +35,21 @@ func (hdl *Handler) V1ArticleList(
 	}
 
 	ctx = user.SetUIDCtx(ctx, uid)
+
+	scope := article.All
+
+	if params.Scope != nil {
+		s, err := article.NewScope(string(*params.Scope))
+		if err != nil {
+			log.GetLogCtx(ctx).Warn("failed to list articles", log.ErrorField(err))
+
+			w.WriteHeader(http.StatusBadRequest)
+
+			return
+		}
+
+		scope = s
+	}
 
 	pageToken := ""
 	if params.PageToken != nil {
@@ -59,6 +74,7 @@ func (hdl *Handler) V1ArticleList(
 	}
 
 	input := usecase.APIArticleListInput{
+		Scope:  scope,
 		UserID: uid,
 		Index:  token.ToIndex(),
 		Size:   size,

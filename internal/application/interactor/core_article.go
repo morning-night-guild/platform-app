@@ -50,12 +50,31 @@ func (itr *CoreArticle) List(
 	ctx context.Context,
 	input usecase.CoreArticleListInput,
 ) (usecase.CoreArticleListOutput, error) {
-	articles, err := itr.articleRepository.FindAll(ctx, input.Index, input.Size, input.Filter...)
+	articles, err := itr.articleRepository.List(ctx, input.Index, input.Size, input.Filter...)
 	if err != nil {
 		return usecase.CoreArticleListOutput{}, err
 	}
 
 	return usecase.CoreArticleListOutput{
+		Articles: articles,
+	}, nil
+}
+
+// ListByUser.
+func (itr *CoreArticle) ListByUser(
+	ctx context.Context,
+	input usecase.CoreArticleListByUserInput,
+) (usecase.CoreArticleListByUserOutput, error) {
+	if _, err := itr.userRepository.Find(ctx, input.UserID); err != nil {
+		return usecase.CoreArticleListByUserOutput{}, err
+	}
+
+	articles, err := itr.articleRepository.ListByUser(ctx, input.UserID, input.Index, input.Size, input.Filter...)
+	if err != nil {
+		return usecase.CoreArticleListByUserOutput{}, err
+	}
+
+	return usecase.CoreArticleListByUserOutput{
 		Articles: articles,
 	}, nil
 }

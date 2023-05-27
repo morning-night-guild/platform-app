@@ -165,7 +165,7 @@ func TestCoreArticleSave(t *testing.T) {
 	})
 }
 
-func TestArticleFindAll(t *testing.T) {
+func TestArticleList(t *testing.T) {
 	t.Parallel()
 
 	t.Run("記事を一覧できる（単数）", func(t *testing.T) {
@@ -210,7 +210,7 @@ func TestArticleFindAll(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		got, err := articleGateway.FindAll(ctx, value.Index(0), value.Size(1))
+		got, err := articleGateway.List(ctx, value.Index(0), value.Size(1))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -218,7 +218,7 @@ func TestArticleFindAll(t *testing.T) {
 		articles := []model.Article{item2}
 
 		if !reflect.DeepEqual(got, articles) {
-			t.Errorf("FindAll() = %v, want %v", got, articles)
+			t.Errorf("List() = %v, want %v", got, articles)
 		}
 	})
 
@@ -264,7 +264,7 @@ func TestArticleFindAll(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		got, err := articleGateway.FindAll(ctx, value.Index(1), value.Size(1))
+		got, err := articleGateway.List(ctx, value.Index(1), value.Size(1))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -272,7 +272,7 @@ func TestArticleFindAll(t *testing.T) {
 		articles := []model.Article{item1}
 
 		if !reflect.DeepEqual(got, articles) {
-			t.Errorf("FindAll() = %v, want %v", got, articles)
+			t.Errorf("List() = %v, want %v", got, articles)
 		}
 	})
 
@@ -318,7 +318,7 @@ func TestArticleFindAll(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		got, err := articleGateway.FindAll(ctx, value.Index(0), value.Size(2))
+		got, err := articleGateway.List(ctx, value.Index(0), value.Size(2))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -326,7 +326,7 @@ func TestArticleFindAll(t *testing.T) {
 		articles := []model.Article{item2, item1}
 
 		if !reflect.DeepEqual(got, articles) {
-			t.Errorf("FindAll() = %v, want %v", got, articles)
+			t.Errorf("List() = %v, want %v", got, articles)
 		}
 	})
 
@@ -357,7 +357,7 @@ func TestArticleFindAll(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		got, err := articleGateway.FindAll(ctx, value.Index(0), value.Size(2))
+		got, err := articleGateway.List(ctx, value.Index(0), value.Size(2))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -365,7 +365,7 @@ func TestArticleFindAll(t *testing.T) {
 		articles := []model.Article{item}
 
 		if !reflect.DeepEqual(got, articles) {
-			t.Errorf("FindAll() = %v, want %v", got, articles)
+			t.Errorf("List() = %v, want %v", got, articles)
 		}
 	})
 
@@ -396,7 +396,7 @@ func TestArticleFindAll(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		got, err := articleGateway.FindAll(ctx, value.Index(2), value.Size(2))
+		got, err := articleGateway.List(ctx, value.Index(2), value.Size(2))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -404,7 +404,7 @@ func TestArticleFindAll(t *testing.T) {
 		articles := []model.Article{}
 
 		if !reflect.DeepEqual(got, articles) {
-			t.Errorf("FindAll() = %v, want %v", got, articles)
+			t.Errorf("List() = %v, want %v", got, articles)
 		}
 	})
 
@@ -450,7 +450,7 @@ func TestArticleFindAll(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		got, err := articleGateway.FindAll(ctx, value.Index(0), value.Size(2), value.NewFilter("title", "target"))
+		got, err := articleGateway.List(ctx, value.Index(0), value.Size(2), value.NewFilter("title", "target"))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -458,7 +458,7 @@ func TestArticleFindAll(t *testing.T) {
 		articles := []model.Article{item1}
 
 		if !reflect.DeepEqual(got, articles) {
-			t.Errorf("FindAll() = %v, want %v", got, articles)
+			t.Errorf("List() = %v, want %v", got, articles)
 		}
 	})
 }
@@ -712,7 +712,7 @@ func TestArticleAddToUser(t *testing.T) {
 	})
 }
 
-func TestArticleFindAllByUser(t *testing.T) {
+func TestArticleListByUser(t *testing.T) {
 	t.Parallel()
 
 	t.Run("ユーザーに紐づく記事を全て取得できる", func(t *testing.T) {
@@ -771,7 +771,7 @@ func TestArticleFindAllByUser(t *testing.T) {
 			t.Fatalf("failed to add to user. got %v", err)
 		}
 
-		got, err := articleGateway.FindAllByUser(ctx, usr.UserID, value.Index(0), value.Size(2))
+		got, err := articleGateway.ListByUser(ctx, usr.UserID, value.Index(0), value.Size(2))
 		if err != nil {
 			t.Fatalf("unexpected error while find. got %v", err)
 		}
@@ -779,7 +779,7 @@ func TestArticleFindAllByUser(t *testing.T) {
 		want := []model.Article{item1}
 
 		if !reflect.DeepEqual(got, want) {
-			t.Errorf("FindAll() = %v, want %v", got, want)
+			t.Errorf("List() = %v, want %v", got, want)
 		}
 	})
 }

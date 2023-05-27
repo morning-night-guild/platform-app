@@ -136,6 +136,66 @@ func (ctrl *Article) List(
 	}), nil
 }
 
+// ListByUser ユーザーが保有する記事を取得するコントローラメソッド.
+func (ctrl *Article) ListByUser(
+	ctx context.Context,
+	req *connect.Request[articlev1.ListByUserRequest],
+) (*connect.Response[articlev1.ListByUserResponse], error) {
+	userID, err := user.NewID(req.Msg.UserId)
+	if err != nil {
+		return nil, ctrl.controller.HandleConnectError(ctx, err)
+	}
+
+	token := value.NewNextToken(req.Msg.PageToken)
+
+	index := token.ToIndex()
+
+	size, err := value.NewSize(int(req.Msg.MaxPageSize))
+	if err != nil {
+		return nil, ctrl.controller.HandleConnectError(ctx, err)
+	}
+
+	input := usecase.CoreArticleListByUserInput{
+		UserID: userID,
+		Index:  index,
+		Size:   size,
+	}
+
+	if req.Msg.Title != nil {
+		input.Filter = []value.Filter{
+			value.NewFilter("title", *req.Msg.Title),
+		}
+	}
+
+	output, err := ctrl.usecase.ListByUser(ctx, input)
+	if err != nil {
+		return nil, ctrl.controller.HandleConnectError(ctx, err)
+	}
+
+	result := make([]*articlev1.Article, len(output.Articles))
+
+	for i, article := range output.Articles {
+		result[i] = &articlev1.Article{
+			ArticleId:   article.ArticleID.String(),
+			Title:       article.Title.String(),
+			Url:         article.URL.String(),
+			Description: article.Description.String(),
+			Thumbnail:   article.Thumbnail.String(),
+			Tags:        article.TagList.StringSlice(),
+		}
+	}
+
+	next := token.CreateNextToken(size).String()
+	if len(output.Articles) < size.Int() {
+		next = ""
+	}
+
+	return connect.NewResponse(&articlev1.ListByUserResponse{
+		Articles:      result,
+		NextPageToken: next,
+	}), nil
+}
+
 // Delete 記事を削除するコントローラメソッド.
 func (ctrl *Article) Delete(
 	ctx context.Context,

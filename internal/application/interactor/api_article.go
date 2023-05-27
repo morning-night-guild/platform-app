@@ -6,6 +6,7 @@ import (
 	"github.com/morning-night-guild/platform-app/internal/application/usecase"
 	"github.com/morning-night-guild/platform-app/internal/domain/cache"
 	"github.com/morning-night-guild/platform-app/internal/domain/model"
+	"github.com/morning-night-guild/platform-app/internal/domain/model/article"
 	"github.com/morning-night-guild/platform-app/internal/domain/model/errors"
 	"github.com/morning-night-guild/platform-app/internal/domain/rpc"
 	"github.com/morning-night-guild/platform-app/pkg/log"
@@ -58,14 +59,28 @@ func (itr *APIArticle) List(
 		return usecase.APIArticleListOutput{}, errors.NewUnauthorizedError("auth token is expired")
 	}
 
-	articles, err := itr.articleRPC.List(ctx, input.Index, input.Size, input.Filter...)
-	if err != nil {
-		return usecase.APIArticleListOutput{}, err
+	switch input.Scope {
+	case article.All:
+		articles, err := itr.articleRPC.List(ctx, input.Index, input.Size, input.Filter...)
+		if err != nil {
+			return usecase.APIArticleListOutput{}, err
+		}
+
+		return usecase.APIArticleListOutput{
+			Articles: articles,
+		}, nil
+	case article.Own:
+		articles, err := itr.articleRPC.ListByUser(ctx, input.UserID, input.Index, input.Size, input.Filter...)
+		if err != nil {
+			return usecase.APIArticleListOutput{}, err
+		}
+
+		return usecase.APIArticleListOutput{
+			Articles: articles,
+		}, nil
 	}
 
-	return usecase.APIArticleListOutput{
-		Articles: articles,
-	}, nil
+	return usecase.APIArticleListOutput{}, errors.NewValidationError("unknown scope")
 }
 
 func (itr *APIArticle) Delete(
