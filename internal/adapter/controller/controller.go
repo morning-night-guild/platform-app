@@ -42,6 +42,8 @@ func New() *Controller {
 func (ctrl *Controller) HandleConnectError(ctx context.Context, err error) error {
 	logger := log.GetLogCtx(ctx)
 
+	logger.Info("error", log.ErrorField(err))
+
 	switch {
 	case
 		errors.AsValidationError(err),

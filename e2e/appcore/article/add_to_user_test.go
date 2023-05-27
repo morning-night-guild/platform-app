@@ -45,7 +45,7 @@ func TestAppCoreE2EArticleAddToUser(t *testing.T) {
 		}
 
 		if _, err := client.Article.AddToUser(context.Background(), connect.NewRequest(req)); err != nil {
-			t.Fatalf("failed to share article: %s", err)
+			t.Fatalf("failed to add article: %s", err)
 		}
 	})
 }

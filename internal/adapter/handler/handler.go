@@ -47,14 +47,19 @@ func New(
 func (hdl *Handler) HandleConnectError(ctx context.Context, err error) int {
 	if connectErr := new(connect.Error); errors.As(err, &connectErr) {
 		code := connect.CodeOf(connectErr)
-		if code == connect.CodeInvalidArgument {
+		switch code {
+		case connect.CodeInvalidArgument:
 			log.GetLogCtx(ctx).Warn("invalid argument.", log.ErrorField(err))
 
 			return http.StatusBadRequest
+		case connect.CodeNotFound:
+			log.GetLogCtx(ctx).Warn("not found.", log.ErrorField(err))
+
+			return http.StatusNotFound
 		}
 	}
 
-	log.GetLogCtx(ctx).Error("failed to share article", log.ErrorField(err))
+	log.GetLogCtx(ctx).Error("unknown error", log.ErrorField(err))
 
 	return http.StatusInternalServerError
 }

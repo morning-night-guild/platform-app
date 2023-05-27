@@ -13,6 +13,7 @@ import (
 	"github.com/morning-night-guild/platform-app/pkg/ent"
 	entarticle "github.com/morning-night-guild/platform-app/pkg/ent/article"
 	entuserarticle "github.com/morning-night-guild/platform-app/pkg/ent/userarticle"
+	"github.com/morning-night-guild/platform-app/pkg/log"
 	"github.com/pkg/errors"
 )
 
@@ -166,6 +167,8 @@ func (gtw *Article) Find(
 		WithTags().
 		First(ctx)
 	if err != nil {
+		log.GetLogCtx(ctx).Warn("failed to find article", log.ErrorField(err))
+
 		if ent.IsNotFound(err) {
 			return model.Article{}, domainerrors.NewNotFoundError("article not found")
 		}
