@@ -175,7 +175,7 @@ func (hdl *Handler) V1ArticleRemoveOwn(
 }
 
 // 記事共有
-// (POST /v1/articles).
+// (POST /v1/internal/articles).
 func (hdl *Handler) V1InternalArticleShare(
 	w http.ResponseWriter,
 	r *http.Request,
