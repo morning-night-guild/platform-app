@@ -21,8 +21,6 @@ tags:
     description: 記事
   - name: health
     description: ヘルスチェック
-  - name: internal
-    description: 内部的な呼び出し(with Api-Key)機能
 paths:
   /v1/auth/signup:
     post:
@@ -322,34 +320,10 @@ paths:
           description: Not Found
         '500':
           description: Internal Server Error
-  /v1/health/api:
-    get:
-      tags:
-        - health
-      summary: apiヘルスチェック
-      description: ヘルスチェック
-      operationId: v1HealthAPI
-      responses:
-        '200':
-          description: OK
-        '500':
-          description: Internal Server Error
-  /v1/health/core:
-    get:
-      tags:
-        - health
-      summary: coreヘルスチェック
-      description: ヘルスチェック
-      operationId: v1HealthCore
-      responses:
-        '200':
-          description: OK
-        '500':
-          description: Internal Server Error
   /v1/internal/articles:
     post:
       tags:
-        - internal
+        - article
       summary: 記事共有
       description: 記事を共有する
       operationId: v1InternalArticleShare
@@ -374,7 +348,7 @@ paths:
   /v1/internal/articles/{articleId}:
     delete:
       tags:
-        - internal
+        - article
       summary: 記事削除
       description: 記事を削除する
       operationId: v1InternalArticleDelete
@@ -399,6 +373,30 @@ paths:
           description: Forbidden
         '404':
           description: Not Found
+        '500':
+          description: Internal Server Error
+  /v1/health/api:
+    get:
+      tags:
+        - health
+      summary: apiヘルスチェック
+      description: ヘルスチェック
+      operationId: v1HealthAPI
+      responses:
+        '200':
+          description: OK
+        '500':
+          description: Internal Server Error
+  /v1/health/core:
+    get:
+      tags:
+        - health
+      summary: coreヘルスチェック
+      description: ヘルスチェック
+      operationId: v1HealthCore
+      responses:
+        '200':
+          description: OK
         '500':
           description: Internal Server Error
 components:
