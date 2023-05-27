@@ -24,7 +24,7 @@ import (
 
 const aid = "01234567-0123-0123-0123-0123456789ab"
 
-func TestHandlerV1ListArticles(t *testing.T) {
+func TestHandlerV1ArticleList(t *testing.T) {
 	t.Parallel()
 
 	toIntPointer := func(v int) *int {
@@ -233,7 +233,7 @@ func TestHandlerV1ListArticles(t *testing.T) {
 	}
 }
 
-func TestHandlerV1ShareArticle(t *testing.T) {
+func TestHandlerV1V1InternalArticleShare(t *testing.T) {
 	t.Parallel()
 
 	toPointer := func(s string) *string {
@@ -383,7 +383,7 @@ func TestHandlerV1ShareArticle(t *testing.T) {
 			got := httptest.NewRecorder()
 			buf, _ := json.Marshal(tt.args.body)
 			tt.args.r.Body = io.NopCloser(bytes.NewBuffer(buf))
-			hdl.V1ArticleShare(got, tt.args.r)
+			hdl.V1InternalArticleShare(got, tt.args.r)
 			if got.Code != tt.status {
 				t.Errorf("V1ShareArticle() = %v, want %v", got.Code, tt.status)
 			}
@@ -391,7 +391,7 @@ func TestHandlerV1ShareArticle(t *testing.T) {
 	}
 }
 
-func TestHandlerV1DeleteArticle(t *testing.T) {
+func TestHandlerV1InternalArticleDelete(t *testing.T) {
 	t.Parallel()
 
 	type fields struct {
