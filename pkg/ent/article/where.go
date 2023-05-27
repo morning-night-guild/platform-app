@@ -449,6 +449,29 @@ func HasTagsWith(preds ...predicate.ArticleTag) predicate.Article {
 	})
 }
 
+// HasUserArticles applies the HasEdge predicate on the "user_articles" edge.
+func HasUserArticles() predicate.Article {
+	return predicate.Article(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, UserArticlesTable, UserArticlesColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasUserArticlesWith applies the HasEdge predicate on the "user_articles" edge with a given conditions (other predicates).
+func HasUserArticlesWith(preds ...predicate.UserArticle) predicate.Article {
+	return predicate.Article(func(s *sql.Selector) {
+		step := newUserArticlesStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.Article) predicate.Article {
 	return predicate.Article(func(s *sql.Selector) {

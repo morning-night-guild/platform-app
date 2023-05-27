@@ -18,6 +18,7 @@ import (
 	"github.com/morning-night-guild/platform-app/pkg/ent/article"
 	"github.com/morning-night-guild/platform-app/pkg/ent/articletag"
 	"github.com/morning-night-guild/platform-app/pkg/ent/user"
+	"github.com/morning-night-guild/platform-app/pkg/ent/userarticle"
 
 	stdsql "database/sql"
 )
@@ -33,6 +34,8 @@ type Client struct {
 	ArticleTag *ArticleTagClient
 	// User is the client for interacting with the User builders.
 	User *UserClient
+	// UserArticle is the client for interacting with the UserArticle builders.
+	UserArticle *UserArticleClient
 }
 
 // NewClient creates a new client configured with the given options.
@@ -49,6 +52,7 @@ func (c *Client) init() {
 	c.Article = NewArticleClient(c.config)
 	c.ArticleTag = NewArticleTagClient(c.config)
 	c.User = NewUserClient(c.config)
+	c.UserArticle = NewUserArticleClient(c.config)
 }
 
 type (
@@ -129,11 +133,12 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	cfg := c.config
 	cfg.driver = tx
 	return &Tx{
-		ctx:        ctx,
-		config:     cfg,
-		Article:    NewArticleClient(cfg),
-		ArticleTag: NewArticleTagClient(cfg),
-		User:       NewUserClient(cfg),
+		ctx:         ctx,
+		config:      cfg,
+		Article:     NewArticleClient(cfg),
+		ArticleTag:  NewArticleTagClient(cfg),
+		User:        NewUserClient(cfg),
+		UserArticle: NewUserArticleClient(cfg),
 	}, nil
 }
 
@@ -151,11 +156,12 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	cfg := c.config
 	cfg.driver = &txDriver{tx: tx, drv: c.driver}
 	return &Tx{
-		ctx:        ctx,
-		config:     cfg,
-		Article:    NewArticleClient(cfg),
-		ArticleTag: NewArticleTagClient(cfg),
-		User:       NewUserClient(cfg),
+		ctx:         ctx,
+		config:      cfg,
+		Article:     NewArticleClient(cfg),
+		ArticleTag:  NewArticleTagClient(cfg),
+		User:        NewUserClient(cfg),
+		UserArticle: NewUserArticleClient(cfg),
 	}, nil
 }
 
@@ -187,6 +193,7 @@ func (c *Client) Use(hooks ...Hook) {
 	c.Article.Use(hooks...)
 	c.ArticleTag.Use(hooks...)
 	c.User.Use(hooks...)
+	c.UserArticle.Use(hooks...)
 }
 
 // Intercept adds the query interceptors to all the entity clients.
@@ -195,6 +202,7 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 	c.Article.Intercept(interceptors...)
 	c.ArticleTag.Intercept(interceptors...)
 	c.User.Intercept(interceptors...)
+	c.UserArticle.Intercept(interceptors...)
 }
 
 // Mutate implements the ent.Mutator interface.
@@ -206,6 +214,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.ArticleTag.mutate(ctx, m)
 	case *UserMutation:
 		return c.User.mutate(ctx, m)
+	case *UserArticleMutation:
+		return c.UserArticle.mutate(ctx, m)
 	default:
 		return nil, fmt.Errorf("ent: unknown mutation type %T", m)
 	}
@@ -313,6 +323,22 @@ func (c *ArticleClient) QueryTags(a *Article) *ArticleTagQuery {
 			sqlgraph.From(article.Table, article.FieldID, id),
 			sqlgraph.To(articletag.Table, articletag.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, article.TagsTable, article.TagsColumn),
+		)
+		fromV = sqlgraph.Neighbors(a.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryUserArticles queries the user_articles edge of a Article.
+func (c *ArticleClient) QueryUserArticles(a *Article) *UserArticleQuery {
+	query := (&UserArticleClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := a.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(article.Table, article.FieldID, id),
+			sqlgraph.To(userarticle.Table, userarticle.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, article.UserArticlesTable, article.UserArticlesColumn),
 		)
 		fromV = sqlgraph.Neighbors(a.driver.Dialect(), step)
 		return fromV, nil
@@ -572,6 +598,22 @@ func (c *UserClient) GetX(ctx context.Context, id uuid.UUID) *User {
 	return obj
 }
 
+// QueryUserArticles queries the user_articles edge of a User.
+func (c *UserClient) QueryUserArticles(u *User) *UserArticleQuery {
+	query := (&UserArticleClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := u.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, id),
+			sqlgraph.To(userarticle.Table, userarticle.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, user.UserArticlesTable, user.UserArticlesColumn),
+		)
+		fromV = sqlgraph.Neighbors(u.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *UserClient) Hooks() []Hook {
 	return c.hooks.User
@@ -597,13 +639,163 @@ func (c *UserClient) mutate(ctx context.Context, m *UserMutation) (Value, error)
 	}
 }
 
+// UserArticleClient is a client for the UserArticle schema.
+type UserArticleClient struct {
+	config
+}
+
+// NewUserArticleClient returns a client for the UserArticle from the given config.
+func NewUserArticleClient(c config) *UserArticleClient {
+	return &UserArticleClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `userarticle.Hooks(f(g(h())))`.
+func (c *UserArticleClient) Use(hooks ...Hook) {
+	c.hooks.UserArticle = append(c.hooks.UserArticle, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `userarticle.Intercept(f(g(h())))`.
+func (c *UserArticleClient) Intercept(interceptors ...Interceptor) {
+	c.inters.UserArticle = append(c.inters.UserArticle, interceptors...)
+}
+
+// Create returns a builder for creating a UserArticle entity.
+func (c *UserArticleClient) Create() *UserArticleCreate {
+	mutation := newUserArticleMutation(c.config, OpCreate)
+	return &UserArticleCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of UserArticle entities.
+func (c *UserArticleClient) CreateBulk(builders ...*UserArticleCreate) *UserArticleCreateBulk {
+	return &UserArticleCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for UserArticle.
+func (c *UserArticleClient) Update() *UserArticleUpdate {
+	mutation := newUserArticleMutation(c.config, OpUpdate)
+	return &UserArticleUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *UserArticleClient) UpdateOne(ua *UserArticle) *UserArticleUpdateOne {
+	mutation := newUserArticleMutation(c.config, OpUpdateOne, withUserArticle(ua))
+	return &UserArticleUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *UserArticleClient) UpdateOneID(id uuid.UUID) *UserArticleUpdateOne {
+	mutation := newUserArticleMutation(c.config, OpUpdateOne, withUserArticleID(id))
+	return &UserArticleUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for UserArticle.
+func (c *UserArticleClient) Delete() *UserArticleDelete {
+	mutation := newUserArticleMutation(c.config, OpDelete)
+	return &UserArticleDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *UserArticleClient) DeleteOne(ua *UserArticle) *UserArticleDeleteOne {
+	return c.DeleteOneID(ua.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *UserArticleClient) DeleteOneID(id uuid.UUID) *UserArticleDeleteOne {
+	builder := c.Delete().Where(userarticle.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &UserArticleDeleteOne{builder}
+}
+
+// Query returns a query builder for UserArticle.
+func (c *UserArticleClient) Query() *UserArticleQuery {
+	return &UserArticleQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeUserArticle},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a UserArticle entity by its id.
+func (c *UserArticleClient) Get(ctx context.Context, id uuid.UUID) (*UserArticle, error) {
+	return c.Query().Where(userarticle.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *UserArticleClient) GetX(ctx context.Context, id uuid.UUID) *UserArticle {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryArticle queries the article edge of a UserArticle.
+func (c *UserArticleClient) QueryArticle(ua *UserArticle) *ArticleQuery {
+	query := (&ArticleClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := ua.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(userarticle.Table, userarticle.FieldID, id),
+			sqlgraph.To(article.Table, article.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, userarticle.ArticleTable, userarticle.ArticleColumn),
+		)
+		fromV = sqlgraph.Neighbors(ua.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryUser queries the user edge of a UserArticle.
+func (c *UserArticleClient) QueryUser(ua *UserArticle) *UserQuery {
+	query := (&UserClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := ua.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(userarticle.Table, userarticle.FieldID, id),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, userarticle.UserTable, userarticle.UserColumn),
+		)
+		fromV = sqlgraph.Neighbors(ua.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *UserArticleClient) Hooks() []Hook {
+	return c.hooks.UserArticle
+}
+
+// Interceptors returns the client interceptors.
+func (c *UserArticleClient) Interceptors() []Interceptor {
+	return c.inters.UserArticle
+}
+
+func (c *UserArticleClient) mutate(ctx context.Context, m *UserArticleMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&UserArticleCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&UserArticleUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&UserArticleUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&UserArticleDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown UserArticle mutation op: %q", m.Op())
+	}
+}
+
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		Article, ArticleTag, User []ent.Hook
+		Article, ArticleTag, User, UserArticle []ent.Hook
 	}
 	inters struct {
-		Article, ArticleTag, User []ent.Interceptor
+		Article, ArticleTag, User, UserArticle []ent.Interceptor
 	}
 )
 

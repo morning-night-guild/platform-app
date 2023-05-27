@@ -16,6 +16,7 @@ type APIArticle interface {
 	Share(context.Context, APIArticleShareInput) (APIArticleShareOutput, error)
 	List(context.Context, APIArticleListInput) (APIArticleListOutput, error)
 	Delete(context.Context, APIArticleDeleteInput) (APIArticleDeleteOutput, error)
+	AddToUser(context.Context, APIArticleAddToUserInput) (APIArticleAddToUserOutput, error)
 }
 
 // APIArticleShareInput.
@@ -51,3 +52,12 @@ type APIArticleDeleteInput struct {
 
 // APIArticleDeleteOutput.
 type APIArticleDeleteOutput struct{}
+
+// APIArticleAddToUserInput.
+type APIArticleAddToUserInput struct {
+	ArticleID article.ID
+	UserID    user.ID
+}
+
+// APIArticleAddToUserOutput.
+type APIArticleAddToUserOutput struct{}

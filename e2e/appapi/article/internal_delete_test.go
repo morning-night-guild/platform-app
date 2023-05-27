@@ -9,7 +9,7 @@ import (
 	"github.com/morning-night-guild/platform-app/e2e/helper"
 )
 
-func TestAppAPIE2EArticleDelete(t *testing.T) {
+func TestAppAPIE2EInternalArticleDelete(t *testing.T) {
 	t.Parallel()
 
 	url := helper.GetAppAPIEndpoint(t)
@@ -27,7 +27,7 @@ func TestAppAPIE2EArticleDelete(t *testing.T) {
 
 		client := helper.NewOpenAPIClientWithAPIKey(t, url, helper.GetAPIKey(t))
 
-		res, err := client.Client.V1ArticleDelete(context.Background(), id)
+		res, err := client.Client.V1InternalArticleDelete(context.Background(), id)
 		if err != nil {
 			t.Fatalf("failed to delete article: %s", err)
 		}
@@ -39,21 +39,21 @@ func TestAppAPIE2EArticleDelete(t *testing.T) {
 		}
 	})
 
-	t.Run("存在しない記事を指定した場合も成功する", func(t *testing.T) {
+	t.Run("存在しない記事は削除できない", func(t *testing.T) {
 		t.Parallel()
 
 		id := uuid.New()
 
 		client := helper.NewOpenAPIClientWithAPIKey(t, url, helper.GetAPIKey(t))
 
-		res, err := client.Client.V1ArticleDelete(context.Background(), id)
+		res, err := client.Client.V1InternalArticleDelete(context.Background(), id)
 		if err != nil {
 			t.Fatalf("failed to delete article: %s", err)
 		}
 
 		defer res.Body.Close()
 
-		if res.StatusCode != http.StatusOK {
+		if res.StatusCode != http.StatusNotFound {
 			t.Errorf("unexpected status code: %d", res.StatusCode)
 		}
 	})
@@ -65,7 +65,7 @@ func TestAppAPIE2EArticleDelete(t *testing.T) {
 
 		client := helper.NewOpenAPIClient(t, url)
 
-		res, err := client.Client.V1ArticleDelete(context.Background(), id)
+		res, err := client.Client.V1InternalArticleDelete(context.Background(), id)
 		if err != nil {
 			t.Fatalf("failed to delete article: %s", err)
 		}

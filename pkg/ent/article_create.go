@@ -15,6 +15,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/morning-night-guild/platform-app/pkg/ent/article"
 	"github.com/morning-night-guild/platform-app/pkg/ent/articletag"
+	"github.com/morning-night-guild/platform-app/pkg/ent/userarticle"
 )
 
 // ArticleCreate is the builder for creating a Article entity.
@@ -104,6 +105,21 @@ func (ac *ArticleCreate) AddTags(a ...*ArticleTag) *ArticleCreate {
 		ids[i] = a[i].ID
 	}
 	return ac.AddTagIDs(ids...)
+}
+
+// AddUserArticleIDs adds the "user_articles" edge to the UserArticle entity by IDs.
+func (ac *ArticleCreate) AddUserArticleIDs(ids ...uuid.UUID) *ArticleCreate {
+	ac.mutation.AddUserArticleIDs(ids...)
+	return ac
+}
+
+// AddUserArticles adds the "user_articles" edges to the UserArticle entity.
+func (ac *ArticleCreate) AddUserArticles(u ...*UserArticle) *ArticleCreate {
+	ids := make([]uuid.UUID, len(u))
+	for i := range u {
+		ids[i] = u[i].ID
+	}
+	return ac.AddUserArticleIDs(ids...)
 }
 
 // Mutation returns the ArticleMutation object of the builder.
@@ -244,6 +260,22 @@ func (ac *ArticleCreate) createSpec() (*Article, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(articletag.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := ac.mutation.UserArticlesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   article.UserArticlesTable,
+			Columns: []string{article.UserArticlesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(userarticle.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

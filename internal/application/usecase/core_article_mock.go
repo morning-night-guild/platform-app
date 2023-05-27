@@ -34,6 +34,21 @@ func (m *MockCoreArticle) EXPECT() *MockCoreArticleMockRecorder {
 	return m.recorder
 }
 
+// AddToUser mocks base method.
+func (m *MockCoreArticle) AddToUser(arg0 context.Context, arg1 CoreArticleAddToUserInput) (CoreArticleAddToUserOutput, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AddToUser", arg0, arg1)
+	ret0, _ := ret[0].(CoreArticleAddToUserOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// AddToUser indicates an expected call of AddToUser.
+func (mr *MockCoreArticleMockRecorder) AddToUser(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddToUser", reflect.TypeOf((*MockCoreArticle)(nil).AddToUser), arg0, arg1)
+}
+
 // Delete mocks base method.
 func (m *MockCoreArticle) Delete(arg0 context.Context, arg1 CoreArticleDeleteInput) (CoreArticleDeleteOutput, error) {
 	m.ctrl.T.Helper()

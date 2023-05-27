@@ -45,6 +45,18 @@ func (f UserFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error)
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.UserMutation", m)
 }
 
+// The UserArticleFunc type is an adapter to allow the use of ordinary
+// function as UserArticle mutator.
+type UserArticleFunc func(context.Context, *ent.UserArticleMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f UserArticleFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.UserArticleMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.UserArticleMutation", m)
+}
+
 // Condition is a hook condition function.
 type Condition func(context.Context, ent.Mutation) bool
 

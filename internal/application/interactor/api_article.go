@@ -78,3 +78,14 @@ func (itr *APIArticle) Delete(
 
 	return usecase.APIArticleDeleteOutput{}, nil
 }
+
+func (itr *APIArticle) AddToUser(
+	ctx context.Context,
+	input usecase.APIArticleAddToUserInput,
+) (usecase.APIArticleAddToUserOutput, error) {
+	if err := itr.articleRPC.AddToUser(ctx, input.ArticleID, input.UserID); err != nil {
+		return usecase.APIArticleAddToUserOutput{}, err
+	}
+
+	return usecase.APIArticleAddToUserOutput{}, nil
+}

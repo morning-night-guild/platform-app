@@ -39,17 +39,26 @@ const (
 	ArticleServiceListProcedure = "/article.v1.ArticleService/List"
 	// ArticleServiceDeleteProcedure is the fully-qualified name of the ArticleService's Delete RPC.
 	ArticleServiceDeleteProcedure = "/article.v1.ArticleService/Delete"
+	// ArticleServiceAddToUserProcedure is the fully-qualified name of the ArticleService's AddToUser
+	// RPC.
+	ArticleServiceAddToUserProcedure = "/article.v1.ArticleService/AddToUser"
+	// ArticleServiceRemoveFromUserProcedure is the fully-qualified name of the ArticleService's
+	// RemoveFromUser RPC.
+	ArticleServiceRemoveFromUserProcedure = "/article.v1.ArticleService/RemoveFromUser"
 )
 
 // ArticleServiceClient is a client for the article.v1.ArticleService service.
 type ArticleServiceClient interface {
 	// 共有
-	// Need X-Api-Key Header
 	Share(context.Context, *connect_go.Request[v1.ShareRequest]) (*connect_go.Response[v1.ShareResponse], error)
 	// 一覧
 	List(context.Context, *connect_go.Request[v1.ListRequest]) (*connect_go.Response[v1.ListResponse], error)
 	// 削除
 	Delete(context.Context, *connect_go.Request[v1.DeleteRequest]) (*connect_go.Response[v1.DeleteResponse], error)
+	// 追加
+	AddToUser(context.Context, *connect_go.Request[v1.AddToUserRequest]) (*connect_go.Response[v1.AddToUserResponse], error)
+	// 削除
+	RemoveFromUser(context.Context, *connect_go.Request[v1.RemoveFromUserRequest]) (*connect_go.Response[v1.RemoveFromUserResponse], error)
 }
 
 // NewArticleServiceClient constructs a client for the article.v1.ArticleService service. By
@@ -77,14 +86,26 @@ func NewArticleServiceClient(httpClient connect_go.HTTPClient, baseURL string, o
 			baseURL+ArticleServiceDeleteProcedure,
 			opts...,
 		),
+		addToUser: connect_go.NewClient[v1.AddToUserRequest, v1.AddToUserResponse](
+			httpClient,
+			baseURL+ArticleServiceAddToUserProcedure,
+			opts...,
+		),
+		removeFromUser: connect_go.NewClient[v1.RemoveFromUserRequest, v1.RemoveFromUserResponse](
+			httpClient,
+			baseURL+ArticleServiceRemoveFromUserProcedure,
+			opts...,
+		),
 	}
 }
 
 // articleServiceClient implements ArticleServiceClient.
 type articleServiceClient struct {
-	share  *connect_go.Client[v1.ShareRequest, v1.ShareResponse]
-	list   *connect_go.Client[v1.ListRequest, v1.ListResponse]
-	delete *connect_go.Client[v1.DeleteRequest, v1.DeleteResponse]
+	share          *connect_go.Client[v1.ShareRequest, v1.ShareResponse]
+	list           *connect_go.Client[v1.ListRequest, v1.ListResponse]
+	delete         *connect_go.Client[v1.DeleteRequest, v1.DeleteResponse]
+	addToUser      *connect_go.Client[v1.AddToUserRequest, v1.AddToUserResponse]
+	removeFromUser *connect_go.Client[v1.RemoveFromUserRequest, v1.RemoveFromUserResponse]
 }
 
 // Share calls article.v1.ArticleService.Share.
@@ -102,15 +123,28 @@ func (c *articleServiceClient) Delete(ctx context.Context, req *connect_go.Reque
 	return c.delete.CallUnary(ctx, req)
 }
 
+// AddToUser calls article.v1.ArticleService.AddToUser.
+func (c *articleServiceClient) AddToUser(ctx context.Context, req *connect_go.Request[v1.AddToUserRequest]) (*connect_go.Response[v1.AddToUserResponse], error) {
+	return c.addToUser.CallUnary(ctx, req)
+}
+
+// RemoveFromUser calls article.v1.ArticleService.RemoveFromUser.
+func (c *articleServiceClient) RemoveFromUser(ctx context.Context, req *connect_go.Request[v1.RemoveFromUserRequest]) (*connect_go.Response[v1.RemoveFromUserResponse], error) {
+	return c.removeFromUser.CallUnary(ctx, req)
+}
+
 // ArticleServiceHandler is an implementation of the article.v1.ArticleService service.
 type ArticleServiceHandler interface {
 	// 共有
-	// Need X-Api-Key Header
 	Share(context.Context, *connect_go.Request[v1.ShareRequest]) (*connect_go.Response[v1.ShareResponse], error)
 	// 一覧
 	List(context.Context, *connect_go.Request[v1.ListRequest]) (*connect_go.Response[v1.ListResponse], error)
 	// 削除
 	Delete(context.Context, *connect_go.Request[v1.DeleteRequest]) (*connect_go.Response[v1.DeleteResponse], error)
+	// 追加
+	AddToUser(context.Context, *connect_go.Request[v1.AddToUserRequest]) (*connect_go.Response[v1.AddToUserResponse], error)
+	// 削除
+	RemoveFromUser(context.Context, *connect_go.Request[v1.RemoveFromUserRequest]) (*connect_go.Response[v1.RemoveFromUserResponse], error)
 }
 
 // NewArticleServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -135,6 +169,16 @@ func NewArticleServiceHandler(svc ArticleServiceHandler, opts ...connect_go.Hand
 		svc.Delete,
 		opts...,
 	))
+	mux.Handle(ArticleServiceAddToUserProcedure, connect_go.NewUnaryHandler(
+		ArticleServiceAddToUserProcedure,
+		svc.AddToUser,
+		opts...,
+	))
+	mux.Handle(ArticleServiceRemoveFromUserProcedure, connect_go.NewUnaryHandler(
+		ArticleServiceRemoveFromUserProcedure,
+		svc.RemoveFromUser,
+		opts...,
+	))
 	return "/article.v1.ArticleService/", mux
 }
 
@@ -151,4 +195,12 @@ func (UnimplementedArticleServiceHandler) List(context.Context, *connect_go.Requ
 
 func (UnimplementedArticleServiceHandler) Delete(context.Context, *connect_go.Request[v1.DeleteRequest]) (*connect_go.Response[v1.DeleteResponse], error) {
 	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("article.v1.ArticleService.Delete is not implemented"))
+}
+
+func (UnimplementedArticleServiceHandler) AddToUser(context.Context, *connect_go.Request[v1.AddToUserRequest]) (*connect_go.Response[v1.AddToUserResponse], error) {
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("article.v1.ArticleService.AddToUser is not implemented"))
+}
+
+func (UnimplementedArticleServiceHandler) RemoveFromUser(context.Context, *connect_go.Request[v1.RemoveFromUserRequest]) (*connect_go.Response[v1.RemoveFromUserResponse], error) {
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("article.v1.ArticleService.RemoveFromUser is not implemented"))
 }

@@ -18,7 +18,11 @@ import (
 
 // 記事一覧
 // (GET /v1/articles).
-func (hdl *Handler) V1ArticleList(w http.ResponseWriter, r *http.Request, params openapi.V1ArticleListParams) {
+func (hdl *Handler) V1ArticleList(
+	w http.ResponseWriter,
+	r *http.Request,
+	params openapi.V1ArticleListParams,
+) {
 	ctx := r.Context()
 
 	uid, err := hdl.ExtractUserID(ctx, r)
@@ -78,7 +82,7 @@ func (hdl *Handler) V1ArticleList(w http.ResponseWriter, r *http.Request, params
 	articles := make([]openapi.ArticleSchema, len(output.Articles))
 
 	for i, article := range output.Articles {
-		id := uuid.MustParse(article.ID.String())
+		id := uuid.MustParse(article.ArticleID.String())
 		tags := article.TagList.StringSlice()
 		articles[i] = openapi.ArticleSchema{
 			Id:          &id,
@@ -106,7 +110,76 @@ func (hdl *Handler) V1ArticleList(w http.ResponseWriter, r *http.Request, params
 
 // 記事共有
 // (POST /v1/articles).
-func (hdl *Handler) V1ArticleShare(w http.ResponseWriter, r *http.Request) {
+func (hdl *Handler) V1ArticleShare(
+	w http.ResponseWriter,
+	r *http.Request,
+) {
+	hdl.V1InternalArticleShare(w, r)
+}
+
+// 記事追加
+// (POST /v1/articles/{articleId}).
+func (hdl *Handler) V1ArticleAddOwn(
+	w http.ResponseWriter,
+	r *http.Request,
+	articleID types.UUID,
+) {
+	ctx := r.Context()
+
+	uid, err := hdl.ExtractUserID(ctx, r)
+	if err != nil {
+		log.GetLogCtx(ctx).Warn("failed to extract user id", log.ErrorField(err))
+
+		w.WriteHeader(http.StatusUnauthorized)
+
+		return
+	}
+
+	ctx = user.SetUIDCtx(ctx, uid)
+
+	aid, err := article.NewID(articleID.String())
+	if err != nil {
+		log.GetLogCtx(ctx).Warn("failed to add article", log.ErrorField(err))
+
+		w.WriteHeader(http.StatusBadRequest)
+
+		return
+	}
+
+	input := usecase.APIArticleAddToUserInput{
+		ArticleID: aid,
+		UserID:    uid,
+	}
+
+	if _, err := hdl.article.AddToUser(ctx, input); err != nil {
+		log.GetLogCtx(ctx).Warn("failed to add article", log.ErrorField(err))
+
+		w.WriteHeader(hdl.HandleConnectError(ctx, err))
+
+		return
+	}
+}
+
+// 記事削除
+// (DELETE /v1/articles/{articleId}).
+func (hdl *Handler) V1ArticleRemoveOwn(
+	w http.ResponseWriter,
+	r *http.Request,
+	articleID types.UUID,
+) {
+	ctx := r.Context()
+
+	log.GetLogCtx(ctx).Debug(fmt.Sprintf("%v %v %v", w, r, articleID))
+
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// 記事共有
+// (POST /v1/internal/articles).
+func (hdl *Handler) V1InternalArticleShare(
+	w http.ResponseWriter,
+	r *http.Request,
+) {
 	ctx := r.Context()
 
 	key := r.Header.Get("Api-Key")
@@ -143,8 +216,8 @@ func (hdl *Handler) V1ArticleShare(w http.ResponseWriter, r *http.Request) {
 }
 
 // 記事削除
-// (DELETE /v1/articles/{articleId}).
-func (hdl *Handler) V1ArticleDelete(
+// (DELETE /v1/internal/articles/{articleId}).
+func (hdl *Handler) V1InternalArticleDelete(
 	w http.ResponseWriter,
 	r *http.Request,
 	articleID types.UUID,

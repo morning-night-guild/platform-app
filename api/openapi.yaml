@@ -235,6 +235,7 @@ paths:
         '500':
           description: Internal Server Error
     post:
+      deprecated: true
       tags:
         - article
       summary: 記事共有
@@ -259,12 +260,98 @@ paths:
         '500':
           description: Internal Server Error
   /v1/articles/{articleId}:
+    post:
+      tags:
+        - article
+      summary: 記事追加
+      description: 操作者が管理する記事として追加する
+      operationId: v1ArticleAddOwn
+      security:
+        - authTokenCookie: []
+        - sessionTokenCookie: []
+      parameters:
+        - name: articleId
+          in: path
+          description: 記事ID
+          required: true
+          explode: true
+          schema:
+            type: string
+            format: uuid
+          example: 00000000-0000-0000-0000-000000000000
+      responses:
+        '200':
+          description: OK
+        '400':
+          description: Bad Request
+        '403':
+          description: Forbidden
+        '404':
+          description: Not Found
+        '500':
+          description: Internal Server Error
+    delete:
+      tags:
+        - article
+      summary: 記事削除
+      description: 操作者が管理する記事から削除する
+      operationId: v1ArticleRemoveOwn
+      security:
+        - authTokenCookie: []
+        - sessionTokenCookie: []
+      parameters:
+        - name: articleId
+          in: path
+          description: 記事ID
+          required: true
+          explode: true
+          schema:
+            type: string
+            format: uuid
+          example: 00000000-0000-0000-0000-000000000000
+      responses:
+        '200':
+          description: OK
+        '400':
+          description: Bad Request
+        '403':
+          description: Forbidden
+        '404':
+          description: Not Found
+        '500':
+          description: Internal Server Error
+  /v1/internal/articles:
+    post:
+      tags:
+        - article
+      summary: 記事共有
+      description: 記事を共有する
+      operationId: v1InternalArticleShare
+      security:
+        - apiKey: []
+      requestBody:
+        required: true
+        description: 記事共有リクエストボディ
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/V1ArticleShareRequestSchema'
+      responses:
+        '200':
+          description: 成功
+        '400':
+          description: Bad Request
+        '403':
+          description: Forbidden
+        '500':
+          description: Internal Server Error
+  /v1/internal/articles/{articleId}:
     delete:
       tags:
         - article
       summary: 記事削除
       description: 記事を削除する
-      operationId: v1ArticleDelete
+      operationId: v1InternalArticleDelete
       security:
         - apiKey: []
       parameters:
@@ -284,6 +371,8 @@ paths:
           description: Bad Request
         '403':
           description: Forbidden
+        '404':
+          description: Not Found
         '500':
           description: Internal Server Error
   /v1/health/api:

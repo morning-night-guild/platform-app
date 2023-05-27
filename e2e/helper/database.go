@@ -11,6 +11,7 @@ import (
 	"github.com/morning-night-guild/platform-app/pkg/ent"
 	"github.com/morning-night-guild/platform-app/pkg/ent/article"
 	"github.com/morning-night-guild/platform-app/pkg/ent/user"
+	"github.com/morning-night-guild/platform-app/pkg/ent/userarticle"
 )
 
 type Database struct {
@@ -92,6 +93,29 @@ func (db *Database) DeleteArticleByTitle(title string) {
 
 	if _, err := db.client.Article.Delete().Where(article.TitleEQ(title)).Exec(context.Background()); err != nil {
 		db.T.Error(err)
+	}
+}
+
+func (db *Database) DeleteUserArticle(
+	uid uuid.UUID,
+	aid uuid.UUID,
+) {
+	db.T.Helper()
+
+	if _, err := db.client.UserArticle.Delete().
+		Where(
+			userarticle.ArticleIDEQ(aid),
+			userarticle.UserIDEQ(uid),
+		).Exec(context.Background()); err != nil {
+		db.T.Error(err)
+	}
+}
+
+func (db *Database) InsertUser(uid uuid.UUID) {
+	db.T.Helper()
+
+	if err := db.client.User.Create().SetID(uid).Exec(context.Background()); err != nil {
+		db.T.Fatal(err)
 	}
 }
 

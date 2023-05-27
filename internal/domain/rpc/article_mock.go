@@ -11,6 +11,7 @@ import (
 	gomock "github.com/golang/mock/gomock"
 	model "github.com/morning-night-guild/platform-app/internal/domain/model"
 	article "github.com/morning-night-guild/platform-app/internal/domain/model/article"
+	user "github.com/morning-night-guild/platform-app/internal/domain/model/user"
 	value "github.com/morning-night-guild/platform-app/internal/domain/value"
 )
 
@@ -35,6 +36,20 @@ func NewMockArticle(ctrl *gomock.Controller) *MockArticle {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockArticle) EXPECT() *MockArticleMockRecorder {
 	return m.recorder
+}
+
+// AddToUser mocks base method.
+func (m *MockArticle) AddToUser(arg0 context.Context, arg1 article.ID, arg2 user.ID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AddToUser", arg0, arg1, arg2)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// AddToUser indicates an expected call of AddToUser.
+func (mr *MockArticleMockRecorder) AddToUser(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddToUser", reflect.TypeOf((*MockArticle)(nil).AddToUser), arg0, arg1, arg2)
 }
 
 // Delete mocks base method.

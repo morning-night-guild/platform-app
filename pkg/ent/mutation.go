@@ -16,6 +16,7 @@ import (
 	"github.com/morning-night-guild/platform-app/pkg/ent/articletag"
 	"github.com/morning-night-guild/platform-app/pkg/ent/predicate"
 	"github.com/morning-night-guild/platform-app/pkg/ent/user"
+	"github.com/morning-night-guild/platform-app/pkg/ent/userarticle"
 )
 
 const (
@@ -27,30 +28,34 @@ const (
 	OpUpdateOne = ent.OpUpdateOne
 
 	// Node types.
-	TypeArticle    = "Article"
-	TypeArticleTag = "ArticleTag"
-	TypeUser       = "User"
+	TypeArticle     = "Article"
+	TypeArticleTag  = "ArticleTag"
+	TypeUser        = "User"
+	TypeUserArticle = "UserArticle"
 )
 
 // ArticleMutation represents an operation that mutates the Article nodes in the graph.
 type ArticleMutation struct {
 	config
-	op            Op
-	typ           string
-	id            *uuid.UUID
-	title         *string
-	url           *string
-	description   *string
-	thumbnail     *string
-	created_at    *time.Time
-	updated_at    *time.Time
-	clearedFields map[string]struct{}
-	tags          map[uuid.UUID]struct{}
-	removedtags   map[uuid.UUID]struct{}
-	clearedtags   bool
-	done          bool
-	oldValue      func(context.Context) (*Article, error)
-	predicates    []predicate.Article
+	op                   Op
+	typ                  string
+	id                   *uuid.UUID
+	title                *string
+	url                  *string
+	description          *string
+	thumbnail            *string
+	created_at           *time.Time
+	updated_at           *time.Time
+	clearedFields        map[string]struct{}
+	tags                 map[uuid.UUID]struct{}
+	removedtags          map[uuid.UUID]struct{}
+	clearedtags          bool
+	user_articles        map[uuid.UUID]struct{}
+	removeduser_articles map[uuid.UUID]struct{}
+	cleareduser_articles bool
+	done                 bool
+	oldValue             func(context.Context) (*Article, error)
+	predicates           []predicate.Article
 }
 
 var _ ent.Mutation = (*ArticleMutation)(nil)
@@ -427,6 +432,60 @@ func (m *ArticleMutation) ResetTags() {
 	m.removedtags = nil
 }
 
+// AddUserArticleIDs adds the "user_articles" edge to the UserArticle entity by ids.
+func (m *ArticleMutation) AddUserArticleIDs(ids ...uuid.UUID) {
+	if m.user_articles == nil {
+		m.user_articles = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.user_articles[ids[i]] = struct{}{}
+	}
+}
+
+// ClearUserArticles clears the "user_articles" edge to the UserArticle entity.
+func (m *ArticleMutation) ClearUserArticles() {
+	m.cleareduser_articles = true
+}
+
+// UserArticlesCleared reports if the "user_articles" edge to the UserArticle entity was cleared.
+func (m *ArticleMutation) UserArticlesCleared() bool {
+	return m.cleareduser_articles
+}
+
+// RemoveUserArticleIDs removes the "user_articles" edge to the UserArticle entity by IDs.
+func (m *ArticleMutation) RemoveUserArticleIDs(ids ...uuid.UUID) {
+	if m.removeduser_articles == nil {
+		m.removeduser_articles = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.user_articles, ids[i])
+		m.removeduser_articles[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedUserArticles returns the removed IDs of the "user_articles" edge to the UserArticle entity.
+func (m *ArticleMutation) RemovedUserArticlesIDs() (ids []uuid.UUID) {
+	for id := range m.removeduser_articles {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// UserArticlesIDs returns the "user_articles" edge IDs in the mutation.
+func (m *ArticleMutation) UserArticlesIDs() (ids []uuid.UUID) {
+	for id := range m.user_articles {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetUserArticles resets all changes to the "user_articles" edge.
+func (m *ArticleMutation) ResetUserArticles() {
+	m.user_articles = nil
+	m.cleareduser_articles = false
+	m.removeduser_articles = nil
+}
+
 // Where appends a list predicates to the ArticleMutation builder.
 func (m *ArticleMutation) Where(ps ...predicate.Article) {
 	m.predicates = append(m.predicates, ps...)
@@ -645,9 +704,12 @@ func (m *ArticleMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *ArticleMutation) AddedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.tags != nil {
 		edges = append(edges, article.EdgeTags)
+	}
+	if m.user_articles != nil {
+		edges = append(edges, article.EdgeUserArticles)
 	}
 	return edges
 }
@@ -662,15 +724,24 @@ func (m *ArticleMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case article.EdgeUserArticles:
+		ids := make([]ent.Value, 0, len(m.user_articles))
+		for id := range m.user_articles {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *ArticleMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.removedtags != nil {
 		edges = append(edges, article.EdgeTags)
+	}
+	if m.removeduser_articles != nil {
+		edges = append(edges, article.EdgeUserArticles)
 	}
 	return edges
 }
@@ -685,15 +756,24 @@ func (m *ArticleMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case article.EdgeUserArticles:
+		ids := make([]ent.Value, 0, len(m.removeduser_articles))
+		for id := range m.removeduser_articles {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *ArticleMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.clearedtags {
 		edges = append(edges, article.EdgeTags)
+	}
+	if m.cleareduser_articles {
+		edges = append(edges, article.EdgeUserArticles)
 	}
 	return edges
 }
@@ -704,6 +784,8 @@ func (m *ArticleMutation) EdgeCleared(name string) bool {
 	switch name {
 	case article.EdgeTags:
 		return m.clearedtags
+	case article.EdgeUserArticles:
+		return m.cleareduser_articles
 	}
 	return false
 }
@@ -722,6 +804,9 @@ func (m *ArticleMutation) ResetEdge(name string) error {
 	switch name {
 	case article.EdgeTags:
 		m.ResetTags()
+		return nil
+	case article.EdgeUserArticles:
+		m.ResetUserArticles()
 		return nil
 	}
 	return fmt.Errorf("unknown Article edge %s", name)
@@ -1169,15 +1254,18 @@ func (m *ArticleTagMutation) ResetEdge(name string) error {
 // UserMutation represents an operation that mutates the User nodes in the graph.
 type UserMutation struct {
 	config
-	op            Op
-	typ           string
-	id            *uuid.UUID
-	created_at    *time.Time
-	updated_at    *time.Time
-	clearedFields map[string]struct{}
-	done          bool
-	oldValue      func(context.Context) (*User, error)
-	predicates    []predicate.User
+	op                   Op
+	typ                  string
+	id                   *uuid.UUID
+	created_at           *time.Time
+	updated_at           *time.Time
+	clearedFields        map[string]struct{}
+	user_articles        map[uuid.UUID]struct{}
+	removeduser_articles map[uuid.UUID]struct{}
+	cleareduser_articles bool
+	done                 bool
+	oldValue             func(context.Context) (*User, error)
+	predicates           []predicate.User
 }
 
 var _ ent.Mutation = (*UserMutation)(nil)
@@ -1356,6 +1444,60 @@ func (m *UserMutation) ResetUpdatedAt() {
 	m.updated_at = nil
 }
 
+// AddUserArticleIDs adds the "user_articles" edge to the UserArticle entity by ids.
+func (m *UserMutation) AddUserArticleIDs(ids ...uuid.UUID) {
+	if m.user_articles == nil {
+		m.user_articles = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.user_articles[ids[i]] = struct{}{}
+	}
+}
+
+// ClearUserArticles clears the "user_articles" edge to the UserArticle entity.
+func (m *UserMutation) ClearUserArticles() {
+	m.cleareduser_articles = true
+}
+
+// UserArticlesCleared reports if the "user_articles" edge to the UserArticle entity was cleared.
+func (m *UserMutation) UserArticlesCleared() bool {
+	return m.cleareduser_articles
+}
+
+// RemoveUserArticleIDs removes the "user_articles" edge to the UserArticle entity by IDs.
+func (m *UserMutation) RemoveUserArticleIDs(ids ...uuid.UUID) {
+	if m.removeduser_articles == nil {
+		m.removeduser_articles = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.user_articles, ids[i])
+		m.removeduser_articles[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedUserArticles returns the removed IDs of the "user_articles" edge to the UserArticle entity.
+func (m *UserMutation) RemovedUserArticlesIDs() (ids []uuid.UUID) {
+	for id := range m.removeduser_articles {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// UserArticlesIDs returns the "user_articles" edge IDs in the mutation.
+func (m *UserMutation) UserArticlesIDs() (ids []uuid.UUID) {
+	for id := range m.user_articles {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetUserArticles resets all changes to the "user_articles" edge.
+func (m *UserMutation) ResetUserArticles() {
+	m.user_articles = nil
+	m.cleareduser_articles = false
+	m.removeduser_articles = nil
+}
+
 // Where appends a list predicates to the UserMutation builder.
 func (m *UserMutation) Where(ps ...predicate.User) {
 	m.predicates = append(m.predicates, ps...)
@@ -1506,48 +1648,676 @@ func (m *UserMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *UserMutation) AddedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 1)
+	if m.user_articles != nil {
+		edges = append(edges, user.EdgeUserArticles)
+	}
 	return edges
 }
 
 // AddedIDs returns all IDs (to other nodes) that were added for the given edge
 // name in this mutation.
 func (m *UserMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case user.EdgeUserArticles:
+		ids := make([]ent.Value, 0, len(m.user_articles))
+		for id := range m.user_articles {
+			ids = append(ids, id)
+		}
+		return ids
+	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *UserMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 1)
+	if m.removeduser_articles != nil {
+		edges = append(edges, user.EdgeUserArticles)
+	}
 	return edges
 }
 
 // RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
 // the given name in this mutation.
 func (m *UserMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case user.EdgeUserArticles:
+		ids := make([]ent.Value, 0, len(m.removeduser_articles))
+		for id := range m.removeduser_articles {
+			ids = append(ids, id)
+		}
+		return ids
+	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *UserMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 1)
+	if m.cleareduser_articles {
+		edges = append(edges, user.EdgeUserArticles)
+	}
 	return edges
 }
 
 // EdgeCleared returns a boolean which indicates if the edge with the given name
 // was cleared in this mutation.
 func (m *UserMutation) EdgeCleared(name string) bool {
+	switch name {
+	case user.EdgeUserArticles:
+		return m.cleareduser_articles
+	}
 	return false
 }
 
 // ClearEdge clears the value of the edge with the given name. It returns an error
 // if that edge is not defined in the schema.
 func (m *UserMutation) ClearEdge(name string) error {
+	switch name {
+	}
 	return fmt.Errorf("unknown User unique edge %s", name)
 }
 
 // ResetEdge resets all changes to the edge with the given name in this mutation.
 // It returns an error if the edge is not defined in the schema.
 func (m *UserMutation) ResetEdge(name string) error {
+	switch name {
+	case user.EdgeUserArticles:
+		m.ResetUserArticles()
+		return nil
+	}
 	return fmt.Errorf("unknown User edge %s", name)
+}
+
+// UserArticleMutation represents an operation that mutates the UserArticle nodes in the graph.
+type UserArticleMutation struct {
+	config
+	op             Op
+	typ            string
+	id             *uuid.UUID
+	created_at     *time.Time
+	updated_at     *time.Time
+	clearedFields  map[string]struct{}
+	article        *uuid.UUID
+	clearedarticle bool
+	user           *uuid.UUID
+	cleareduser    bool
+	done           bool
+	oldValue       func(context.Context) (*UserArticle, error)
+	predicates     []predicate.UserArticle
+}
+
+var _ ent.Mutation = (*UserArticleMutation)(nil)
+
+// userarticleOption allows management of the mutation configuration using functional options.
+type userarticleOption func(*UserArticleMutation)
+
+// newUserArticleMutation creates new mutation for the UserArticle entity.
+func newUserArticleMutation(c config, op Op, opts ...userarticleOption) *UserArticleMutation {
+	m := &UserArticleMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeUserArticle,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withUserArticleID sets the ID field of the mutation.
+func withUserArticleID(id uuid.UUID) userarticleOption {
+	return func(m *UserArticleMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *UserArticle
+		)
+		m.oldValue = func(ctx context.Context) (*UserArticle, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().UserArticle.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withUserArticle sets the old UserArticle of the mutation.
+func withUserArticle(node *UserArticle) userarticleOption {
+	return func(m *UserArticleMutation) {
+		m.oldValue = func(context.Context) (*UserArticle, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m UserArticleMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m UserArticleMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of UserArticle entities.
+func (m *UserArticleMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *UserArticleMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *UserArticleMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().UserArticle.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetArticleID sets the "article_id" field.
+func (m *UserArticleMutation) SetArticleID(u uuid.UUID) {
+	m.article = &u
+}
+
+// ArticleID returns the value of the "article_id" field in the mutation.
+func (m *UserArticleMutation) ArticleID() (r uuid.UUID, exists bool) {
+	v := m.article
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldArticleID returns the old "article_id" field's value of the UserArticle entity.
+// If the UserArticle object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserArticleMutation) OldArticleID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldArticleID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldArticleID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldArticleID: %w", err)
+	}
+	return oldValue.ArticleID, nil
+}
+
+// ResetArticleID resets all changes to the "article_id" field.
+func (m *UserArticleMutation) ResetArticleID() {
+	m.article = nil
+}
+
+// SetUserID sets the "user_id" field.
+func (m *UserArticleMutation) SetUserID(u uuid.UUID) {
+	m.user = &u
+}
+
+// UserID returns the value of the "user_id" field in the mutation.
+func (m *UserArticleMutation) UserID() (r uuid.UUID, exists bool) {
+	v := m.user
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUserID returns the old "user_id" field's value of the UserArticle entity.
+// If the UserArticle object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserArticleMutation) OldUserID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUserID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUserID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUserID: %w", err)
+	}
+	return oldValue.UserID, nil
+}
+
+// ResetUserID resets all changes to the "user_id" field.
+func (m *UserArticleMutation) ResetUserID() {
+	m.user = nil
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *UserArticleMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *UserArticleMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the UserArticle entity.
+// If the UserArticle object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserArticleMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *UserArticleMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *UserArticleMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *UserArticleMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the UserArticle entity.
+// If the UserArticle object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserArticleMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *UserArticleMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// ClearArticle clears the "article" edge to the Article entity.
+func (m *UserArticleMutation) ClearArticle() {
+	m.clearedarticle = true
+}
+
+// ArticleCleared reports if the "article" edge to the Article entity was cleared.
+func (m *UserArticleMutation) ArticleCleared() bool {
+	return m.clearedarticle
+}
+
+// ArticleIDs returns the "article" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// ArticleID instead. It exists only for internal usage by the builders.
+func (m *UserArticleMutation) ArticleIDs() (ids []uuid.UUID) {
+	if id := m.article; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetArticle resets all changes to the "article" edge.
+func (m *UserArticleMutation) ResetArticle() {
+	m.article = nil
+	m.clearedarticle = false
+}
+
+// ClearUser clears the "user" edge to the User entity.
+func (m *UserArticleMutation) ClearUser() {
+	m.cleareduser = true
+}
+
+// UserCleared reports if the "user" edge to the User entity was cleared.
+func (m *UserArticleMutation) UserCleared() bool {
+	return m.cleareduser
+}
+
+// UserIDs returns the "user" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// UserID instead. It exists only for internal usage by the builders.
+func (m *UserArticleMutation) UserIDs() (ids []uuid.UUID) {
+	if id := m.user; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetUser resets all changes to the "user" edge.
+func (m *UserArticleMutation) ResetUser() {
+	m.user = nil
+	m.cleareduser = false
+}
+
+// Where appends a list predicates to the UserArticleMutation builder.
+func (m *UserArticleMutation) Where(ps ...predicate.UserArticle) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the UserArticleMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *UserArticleMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.UserArticle, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *UserArticleMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *UserArticleMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (UserArticle).
+func (m *UserArticleMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *UserArticleMutation) Fields() []string {
+	fields := make([]string, 0, 4)
+	if m.article != nil {
+		fields = append(fields, userarticle.FieldArticleID)
+	}
+	if m.user != nil {
+		fields = append(fields, userarticle.FieldUserID)
+	}
+	if m.created_at != nil {
+		fields = append(fields, userarticle.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, userarticle.FieldUpdatedAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *UserArticleMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case userarticle.FieldArticleID:
+		return m.ArticleID()
+	case userarticle.FieldUserID:
+		return m.UserID()
+	case userarticle.FieldCreatedAt:
+		return m.CreatedAt()
+	case userarticle.FieldUpdatedAt:
+		return m.UpdatedAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *UserArticleMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case userarticle.FieldArticleID:
+		return m.OldArticleID(ctx)
+	case userarticle.FieldUserID:
+		return m.OldUserID(ctx)
+	case userarticle.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case userarticle.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown UserArticle field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *UserArticleMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case userarticle.FieldArticleID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetArticleID(v)
+		return nil
+	case userarticle.FieldUserID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUserID(v)
+		return nil
+	case userarticle.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case userarticle.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown UserArticle field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *UserArticleMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *UserArticleMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *UserArticleMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown UserArticle numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *UserArticleMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *UserArticleMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *UserArticleMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown UserArticle nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *UserArticleMutation) ResetField(name string) error {
+	switch name {
+	case userarticle.FieldArticleID:
+		m.ResetArticleID()
+		return nil
+	case userarticle.FieldUserID:
+		m.ResetUserID()
+		return nil
+	case userarticle.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case userarticle.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown UserArticle field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *UserArticleMutation) AddedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.article != nil {
+		edges = append(edges, userarticle.EdgeArticle)
+	}
+	if m.user != nil {
+		edges = append(edges, userarticle.EdgeUser)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *UserArticleMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case userarticle.EdgeArticle:
+		if id := m.article; id != nil {
+			return []ent.Value{*id}
+		}
+	case userarticle.EdgeUser:
+		if id := m.user; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *UserArticleMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 2)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *UserArticleMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *UserArticleMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.clearedarticle {
+		edges = append(edges, userarticle.EdgeArticle)
+	}
+	if m.cleareduser {
+		edges = append(edges, userarticle.EdgeUser)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *UserArticleMutation) EdgeCleared(name string) bool {
+	switch name {
+	case userarticle.EdgeArticle:
+		return m.clearedarticle
+	case userarticle.EdgeUser:
+		return m.cleareduser
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *UserArticleMutation) ClearEdge(name string) error {
+	switch name {
+	case userarticle.EdgeArticle:
+		m.ClearArticle()
+		return nil
+	case userarticle.EdgeUser:
+		m.ClearUser()
+		return nil
+	}
+	return fmt.Errorf("unknown UserArticle unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *UserArticleMutation) ResetEdge(name string) error {
+	switch name {
+	case userarticle.EdgeArticle:
+		m.ResetArticle()
+		return nil
+	case userarticle.EdgeUser:
+		m.ResetUser()
+		return nil
+	}
+	return fmt.Errorf("unknown UserArticle edge %s", name)
 }

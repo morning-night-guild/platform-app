@@ -2,13 +2,16 @@ package controller
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/bufbuild/connect-go"
 	"github.com/morning-night-guild/platform-app/internal/application/usecase"
 	"github.com/morning-night-guild/platform-app/internal/domain/model/article"
+	"github.com/morning-night-guild/platform-app/internal/domain/model/user"
 	"github.com/morning-night-guild/platform-app/internal/domain/value"
 	articlev1 "github.com/morning-night-guild/platform-app/pkg/connect/article/v1"
 	"github.com/morning-night-guild/platform-app/pkg/connect/article/v1/articlev1connect"
+	"github.com/morning-night-guild/platform-app/pkg/log"
 )
 
 var _ articlev1connect.ArticleServiceHandler = (*Article)(nil)
@@ -69,7 +72,7 @@ func (ctrl *Article) Share(
 
 	return connect.NewResponse(&articlev1.ShareResponse{
 		Article: &articlev1.Article{
-			ArticleId:   output.Article.ID.String(),
+			ArticleId:   output.Article.ArticleID.String(),
 			Title:       output.Article.Title.String(),
 			Url:         output.Article.URL.String(),
 			Description: output.Article.Description.String(),
@@ -113,7 +116,7 @@ func (ctrl *Article) List(
 
 	for i, article := range output.Articles {
 		result[i] = &articlev1.Article{
-			ArticleId:   article.ID.String(),
+			ArticleId:   article.ArticleID.String(),
 			Title:       article.Title.String(),
 			Url:         article.URL.String(),
 			Description: article.Description.String(),
@@ -152,4 +155,39 @@ func (ctrl *Article) Delete(
 	}
 
 	return connect.NewResponse(&articlev1.DeleteResponse{}), nil
+}
+
+func (ctrl *Article) AddToUser(
+	ctx context.Context,
+	req *connect.Request[articlev1.AddToUserRequest],
+) (*connect.Response[articlev1.AddToUserResponse], error) {
+	articleID, err := article.NewID(req.Msg.ArticleId)
+	if err != nil {
+		return nil, ctrl.controller.HandleConnectError(ctx, err)
+	}
+
+	userID, err := user.NewID(req.Msg.UserId)
+	if err != nil {
+		return nil, ctrl.controller.HandleConnectError(ctx, err)
+	}
+
+	input := usecase.CoreArticleAddToUserInput{
+		ArticleID: articleID,
+		UserID:    userID,
+	}
+
+	if _, err := ctrl.usecase.AddToUser(ctx, input); err != nil {
+		return nil, ctrl.controller.HandleConnectError(ctx, err)
+	}
+
+	return connect.NewResponse(&articlev1.AddToUserResponse{}), nil
+}
+
+func (ctrl *Article) RemoveFromUser(
+	ctx context.Context,
+	req *connect.Request[articlev1.RemoveFromUserRequest],
+) (*connect.Response[articlev1.RemoveFromUserResponse], error) {
+	log.GetLogCtx(ctx).Debug(fmt.Sprintf("%+v", req))
+
+	return connect.NewResponse(&articlev1.RemoveFromUserResponse{}), nil
 }

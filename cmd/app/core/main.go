@@ -27,7 +27,7 @@ func main() {
 
 	userRepo := gateway.NewUser(rdb)
 
-	articleUsecase := interactor.NewCoreArticle(articleRepo)
+	articleUsecase := interactor.NewCoreArticle(articleRepo, userRepo)
 
 	userUsecase := interactor.NewCoreUser(userRepo)
 

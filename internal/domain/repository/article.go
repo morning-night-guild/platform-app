@@ -5,6 +5,7 @@ import (
 
 	"github.com/morning-night-guild/platform-app/internal/domain/model"
 	"github.com/morning-night-guild/platform-app/internal/domain/model/article"
+	"github.com/morning-night-guild/platform-app/internal/domain/model/user"
 	"github.com/morning-night-guild/platform-app/internal/domain/value"
 )
 
@@ -15,4 +16,5 @@ type Article interface {
 	FindAll(context.Context, value.Index, value.Size, ...value.Filter) ([]model.Article, error)
 	Find(context.Context, article.ID) (model.Article, error)
 	Delete(context.Context, article.ID) error
+	AddToUser(context.Context, article.ID, user.ID) error
 }

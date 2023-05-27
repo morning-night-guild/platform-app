@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/google/uuid"
 )
 
@@ -18,8 +19,17 @@ const (
 	FieldCreatedAt = "created_at"
 	// FieldUpdatedAt holds the string denoting the updated_at field in the database.
 	FieldUpdatedAt = "updated_at"
+	// EdgeUserArticles holds the string denoting the user_articles edge name in mutations.
+	EdgeUserArticles = "user_articles"
 	// Table holds the table name of the user in the database.
 	Table = "users"
+	// UserArticlesTable is the table that holds the user_articles relation/edge.
+	UserArticlesTable = "user_articles"
+	// UserArticlesInverseTable is the table name for the UserArticle entity.
+	// It exists in this package in order to avoid circular dependency with the "userarticle" package.
+	UserArticlesInverseTable = "user_articles"
+	// UserArticlesColumn is the table column denoting the user_articles relation/edge.
+	UserArticlesColumn = "user_id"
 )
 
 // Columns holds all SQL columns for user fields.
@@ -66,4 +76,25 @@ func ByCreatedAt(opts ...sql.OrderTermOption) OrderOption {
 // ByUpdatedAt orders the results by the updated_at field.
 func ByUpdatedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldUpdatedAt, opts...).ToFunc()
+}
+
+// ByUserArticlesCount orders the results by user_articles count.
+func ByUserArticlesCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newUserArticlesStep(), opts...)
+	}
+}
+
+// ByUserArticles orders the results by user_articles terms.
+func ByUserArticles(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newUserArticlesStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+func newUserArticlesStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(UserArticlesInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, UserArticlesTable, UserArticlesColumn),
+	)
 }

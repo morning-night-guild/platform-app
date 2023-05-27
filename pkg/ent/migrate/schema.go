@@ -80,14 +80,57 @@ var (
 		Columns:    UsersColumns,
 		PrimaryKey: []*schema.Column{UsersColumns[0]},
 	}
+	// UserArticlesColumns holds the columns for the "user_articles" table.
+	UserArticlesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "article_id", Type: field.TypeUUID},
+		{Name: "user_id", Type: field.TypeUUID},
+	}
+	// UserArticlesTable holds the schema information for the "user_articles" table.
+	UserArticlesTable = &schema.Table{
+		Name:       "user_articles",
+		Columns:    UserArticlesColumns,
+		PrimaryKey: []*schema.Column{UserArticlesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "user_articles_articles_user_articles",
+				Columns:    []*schema.Column{UserArticlesColumns[3]},
+				RefColumns: []*schema.Column{ArticlesColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "user_articles_users_user_articles",
+				Columns:    []*schema.Column{UserArticlesColumns[4]},
+				RefColumns: []*schema.Column{UsersColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "userarticle_user_id_article_id",
+				Unique:  true,
+				Columns: []*schema.Column{UserArticlesColumns[4], UserArticlesColumns[3]},
+			},
+			{
+				Name:    "userarticle_user_id",
+				Unique:  false,
+				Columns: []*schema.Column{UserArticlesColumns[4]},
+			},
+		},
+	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
 		ArticlesTable,
 		ArticleTagsTable,
 		UsersTable,
+		UserArticlesTable,
 	}
 )
 
 func init() {
 	ArticleTagsTable.ForeignKeys[0].RefTable = ArticlesTable
+	UserArticlesTable.ForeignKeys[0].RefTable = ArticlesTable
+	UserArticlesTable.ForeignKeys[1].RefTable = UsersTable
 }

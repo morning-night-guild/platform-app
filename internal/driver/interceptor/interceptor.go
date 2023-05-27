@@ -2,6 +2,7 @@ package interceptor
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/bufbuild/connect-go"
@@ -10,7 +11,6 @@ import (
 	"github.com/morning-night-guild/platform-app/pkg/log"
 	"github.com/morning-night-guild/platform-app/pkg/trace"
 	"go.uber.org/zap"
-	"google.golang.org/grpc/status"
 )
 
 // New.
@@ -38,6 +38,20 @@ func New() connect.UnaryInterceptorFunc {
 
 			res, err := next(ctx, req)
 
+			code := func(err error) string {
+				if err == nil {
+					return "ok"
+				}
+
+				connectErr := new(connect.Error)
+
+				if !errors.As(err, &connectErr) {
+					return "unknown"
+				}
+
+				return connect.CodeOf(connectErr).String()
+			}
+
 			logger.Info(
 				"access-log",
 				zap.String("uid", uid),
@@ -45,7 +59,7 @@ func New() connect.UnaryInterceptorFunc {
 				zap.String("protocol", req.Peer().Protocol),
 				zap.String("addr", req.Peer().Addr),
 				zap.String("user-agent", req.Header().Get("User-Agent")),
-				zap.String("status-code", status.Code(err).String()),
+				zap.String("status-code", code(err)),
 				zap.String("elapsed", time.Since(now).String()),
 				zap.Int64("elapsed(ms)", time.Since(now).Milliseconds()),
 			)

@@ -13,6 +13,7 @@ import (
 	"github.com/morning-night-guild/platform-app/internal/domain/model"
 	"github.com/morning-night-guild/platform-app/internal/domain/model/article"
 	"github.com/morning-night-guild/platform-app/internal/domain/model/errors"
+	"github.com/morning-night-guild/platform-app/internal/domain/model/user"
 	"github.com/morning-night-guild/platform-app/internal/domain/repository"
 	"github.com/morning-night-guild/platform-app/internal/domain/value"
 )
@@ -61,7 +62,7 @@ func TestCoreArticleShare(t *testing.T) {
 			},
 			want: usecase.CoreArticleShareOutput{
 				Article: model.Article{
-					ID:          article.ID(uuid.New()),
+					ArticleID:   article.ID(uuid.New()),
 					URL:         article.URL("https://example.com"),
 					Title:       article.Title("title"),
 					Description: article.Description("description"),
@@ -102,14 +103,17 @@ func TestCoreArticleShare(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			itr := interactor.NewCoreArticle(tt.fields.articleRepository(t))
+			itr := interactor.NewCoreArticle(
+				tt.fields.articleRepository(t),
+				nil,
+			)
 			got, err := itr.Share(tt.args.ctx, tt.args.input)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("CoreArticle.Share() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if _, err := uuid.Parse(got.Article.ID.String()); err != nil {
-				t.Errorf("CoreArticle.Share() got Article.ID = %v, err %v", got.Article.ID, err)
+			if _, err := uuid.Parse(got.Article.ArticleID.String()); err != nil {
+				t.Errorf("CoreArticle.Share() got Article.ID = %v, err %v", got.Article.ArticleID, err)
 			}
 			if !reflect.DeepEqual(got.Article.URL, tt.want.Article.URL) {
 				t.Errorf("CoreArticle.Share() got Article.URL = %v, want %v", got.Article.URL, tt.want.Article.URL)
@@ -161,7 +165,7 @@ func TestCoreArticleList(t *testing.T) {
 						value.Size(1),
 					).Return([]model.Article{
 						{
-							ID:          article.ID(id),
+							ArticleID:   article.ID(id),
 							Title:       article.Title("title"),
 							URL:         article.URL("https://example.com"),
 							Description: article.Description("description"),
@@ -182,7 +186,7 @@ func TestCoreArticleList(t *testing.T) {
 			want: usecase.CoreArticleListOutput{
 				Articles: []model.Article{
 					{
-						ID:          article.ID(id),
+						ArticleID:   article.ID(id),
 						Title:       article.Title("title"),
 						URL:         article.URL("https://example.com"),
 						Description: article.Description("description"),
@@ -207,7 +211,7 @@ func TestCoreArticleList(t *testing.T) {
 						[]value.Filter{value.NewFilter("title", "title")},
 					).Return([]model.Article{
 						{
-							ID:          article.ID(id),
+							ArticleID:   article.ID(id),
 							Title:       article.Title("title"),
 							URL:         article.URL("https://example.com"),
 							Description: article.Description("description"),
@@ -229,7 +233,7 @@ func TestCoreArticleList(t *testing.T) {
 			want: usecase.CoreArticleListOutput{
 				Articles: []model.Article{
 					{
-						ID:          article.ID(id),
+						ArticleID:   article.ID(id),
 						Title:       article.Title("title"),
 						URL:         article.URL("https://example.com"),
 						Description: article.Description("description"),
@@ -246,7 +250,10 @@ func TestCoreArticleList(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			itr := interactor.NewCoreArticle(tt.fields.articleRepository(t))
+			itr := interactor.NewCoreArticle(
+				tt.fields.articleRepository(t),
+				nil,
+			)
 			got, err := itr.List(tt.args.ctx, tt.args.input)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("CoreArticle.List() error = %v, wantErr %v", err, tt.wantErr)
@@ -274,7 +281,7 @@ func TestCoreArticleDelete(t *testing.T) {
 	id := article.ID(uuid.New())
 
 	article := model.Article{
-		ID:          id,
+		ArticleID:   id,
 		Title:       article.Title("title"),
 		URL:         article.URL("https://example.com"),
 		Description: article.Description("description"),
@@ -317,7 +324,7 @@ func TestCoreArticleDelete(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "存在しない記事を削除してもエラーにならない",
+			name: "存在しない記事を削除できない",
 			fields: fields{
 				articleRepository: func(t *testing.T) repository.Article {
 					t.Helper()
@@ -337,7 +344,7 @@ func TestCoreArticleDelete(t *testing.T) {
 				},
 			},
 			want:    usecase.CoreArticleDeleteOutput{},
-			wantErr: false,
+			wantErr: true,
 		},
 		{
 			name: "記事削除のerrorを握りつぶさない",
@@ -372,7 +379,10 @@ func TestCoreArticleDelete(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			itr := interactor.NewCoreArticle(tt.fields.articleRepository(t))
+			itr := interactor.NewCoreArticle(
+				tt.fields.articleRepository(t),
+				nil,
+			)
 			got, err := itr.Delete(tt.args.ctx, tt.args.input)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("CoreArticle.Delete() error = %v, wantErr %v", err, tt.wantErr)
@@ -380,6 +390,168 @@ func TestCoreArticleDelete(t *testing.T) {
 			}
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("CoreArticle.Delete() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestCoreArticleAddToUser(t *testing.T) {
+	t.Parallel()
+
+	type fields struct {
+		articleRepository func(*testing.T) repository.Article
+		userRepository    func(*testing.T) repository.User
+	}
+
+	type args struct {
+		ctx   context.Context
+		input usecase.CoreArticleAddToUserInput
+	}
+
+	uid := user.ID(uuid.New())
+
+	aid := article.ID(uuid.New())
+
+	article := model.Article{
+		ArticleID:   aid,
+		Title:       article.Title("title"),
+		URL:         article.URL("https://example.com"),
+		Description: article.Description("description"),
+		Thumbnail:   article.Thumbnail("https://example.com"),
+		TagList:     article.TagList{},
+	}
+
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		want    usecase.CoreArticleAddToUserOutput
+		wantErr bool
+	}{
+		{
+			name: "記事をユーザーに追加できる",
+			fields: fields{
+				articleRepository: func(t *testing.T) repository.Article {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := repository.NewMockArticle(ctrl)
+					mock.EXPECT().Find(
+						gomock.Any(),
+						aid,
+					).Return(article, nil)
+					mock.EXPECT().AddToUser(
+						gomock.Any(),
+						aid,
+						uid,
+					).Return(nil)
+					return mock
+				},
+				userRepository: func(t *testing.T) repository.User {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := repository.NewMockUser(ctrl)
+					mock.EXPECT().Find(
+						gomock.Any(),
+						uid,
+					).Return(model.User{
+						UserID: uid,
+					}, nil)
+					return mock
+				},
+			},
+			args: args{
+				ctx: context.Background(),
+				input: usecase.CoreArticleAddToUserInput{
+					ArticleID: aid,
+					UserID:    uid,
+				},
+			},
+			want:    usecase.CoreArticleAddToUserOutput{},
+			wantErr: false,
+		},
+		{
+			name: "指定したユーザーが存在しない",
+			fields: fields{
+				articleRepository: func(t *testing.T) repository.Article {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := repository.NewMockArticle(ctrl)
+					return mock
+				},
+				userRepository: func(t *testing.T) repository.User {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := repository.NewMockUser(ctrl)
+					mock.EXPECT().Find(
+						gomock.Any(),
+						uid,
+					).Return(model.User{}, fmt.Errorf("error"))
+					return mock
+				},
+			},
+			args: args{
+				ctx: context.Background(),
+				input: usecase.CoreArticleAddToUserInput{
+					ArticleID: aid,
+					UserID:    uid,
+				},
+			},
+			want:    usecase.CoreArticleAddToUserOutput{},
+			wantErr: true,
+		},
+		{
+			name: "指定した記事が存在しない",
+			fields: fields{
+				articleRepository: func(t *testing.T) repository.Article {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := repository.NewMockArticle(ctrl)
+					mock.EXPECT().Find(
+						gomock.Any(),
+						aid,
+					).Return(model.Article{}, fmt.Errorf("error"))
+					return mock
+				},
+				userRepository: func(t *testing.T) repository.User {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := repository.NewMockUser(ctrl)
+					mock.EXPECT().Find(
+						gomock.Any(),
+						uid,
+					).Return(model.User{
+						UserID: uid,
+					}, nil)
+					return mock
+				},
+			},
+			args: args{
+				ctx: context.Background(),
+				input: usecase.CoreArticleAddToUserInput{
+					ArticleID: aid,
+					UserID:    uid,
+				},
+			},
+			want:    usecase.CoreArticleAddToUserOutput{},
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			itr := interactor.NewCoreArticle(
+				tt.fields.articleRepository(t),
+				tt.fields.userRepository(t),
+			)
+			got, err := itr.AddToUser(tt.args.ctx, tt.args.input)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("CoreArticle.AddToUser() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("CoreArticle.AddToUser() = %v, want %v", got, tt.want)
 			}
 		})
 	}

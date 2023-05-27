@@ -38,7 +38,7 @@ func TestNewArticle(t *testing.T) {
 				tags:        article.TagList{},
 			},
 			want: model.Article{
-				ID:          article.ID(uuid.MustParse("2f8e01fb-bf67-45cc-83b0-4cfa0548a9b2")),
+				ArticleID:   article.ID(uuid.MustParse("2f8e01fb-bf67-45cc-83b0-4cfa0548a9b2")),
 				URL:         article.URL("https://example.com"),
 				Title:       article.Title("タイトル"),
 				Description: article.Description("説明"),

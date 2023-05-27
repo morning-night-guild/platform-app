@@ -10,6 +10,7 @@ import (
 	"github.com/morning-night-guild/platform-app/pkg/ent/articletag"
 	"github.com/morning-night-guild/platform-app/pkg/ent/schema"
 	"github.com/morning-night-guild/platform-app/pkg/ent/user"
+	"github.com/morning-night-guild/platform-app/pkg/ent/userarticle"
 )
 
 // The init function reads all schema descriptors with runtime code
@@ -54,4 +55,20 @@ func init() {
 	userDescID := userFields[0].Descriptor()
 	// user.DefaultID holds the default value on creation for the id field.
 	user.DefaultID = userDescID.Default.(func() uuid.UUID)
+	userarticleFields := schema.UserArticle{}.Fields()
+	_ = userarticleFields
+	// userarticleDescCreatedAt is the schema descriptor for created_at field.
+	userarticleDescCreatedAt := userarticleFields[3].Descriptor()
+	// userarticle.DefaultCreatedAt holds the default value on creation for the created_at field.
+	userarticle.DefaultCreatedAt = userarticleDescCreatedAt.Default.(func() time.Time)
+	// userarticleDescUpdatedAt is the schema descriptor for updated_at field.
+	userarticleDescUpdatedAt := userarticleFields[4].Descriptor()
+	// userarticle.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	userarticle.DefaultUpdatedAt = userarticleDescUpdatedAt.Default.(func() time.Time)
+	// userarticle.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	userarticle.UpdateDefaultUpdatedAt = userarticleDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// userarticleDescID is the schema descriptor for id field.
+	userarticleDescID := userarticleFields[0].Descriptor()
+	// userarticle.DefaultID holds the default value on creation for the id field.
+	userarticle.DefaultID = userarticleDescID.Default.(func() uuid.UUID)
 }

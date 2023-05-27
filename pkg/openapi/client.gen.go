@@ -98,8 +98,11 @@ type ClientInterface interface {
 
 	V1ArticleShare(ctx context.Context, body V1ArticleShareJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// V1ArticleDelete request
-	V1ArticleDelete(ctx context.Context, articleId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// V1ArticleRemoveOwn request
+	V1ArticleRemoveOwn(ctx context.Context, articleId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// V1ArticleAddOwn request
+	V1ArticleAddOwn(ctx context.Context, articleId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// V1AuthChangePassword request with any body
 	V1AuthChangePasswordWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -133,6 +136,14 @@ type ClientInterface interface {
 
 	// V1HealthCore request
 	V1HealthCore(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// V1InternalArticleShare request with any body
+	V1InternalArticleShareWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	V1InternalArticleShare(ctx context.Context, body V1InternalArticleShareJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// V1InternalArticleDelete request
+	V1InternalArticleDelete(ctx context.Context, articleId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
 }
 
 func (c *Client) V1ArticleList(ctx context.Context, params *V1ArticleListParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -171,8 +182,20 @@ func (c *Client) V1ArticleShare(ctx context.Context, body V1ArticleShareJSONRequ
 	return c.Client.Do(req)
 }
 
-func (c *Client) V1ArticleDelete(ctx context.Context, articleId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewV1ArticleDeleteRequest(c.Server, articleId)
+func (c *Client) V1ArticleRemoveOwn(ctx context.Context, articleId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewV1ArticleRemoveOwnRequest(c.Server, articleId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) V1ArticleAddOwn(ctx context.Context, articleId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewV1ArticleAddOwnRequest(c.Server, articleId)
 	if err != nil {
 		return nil, err
 	}
@@ -327,6 +350,42 @@ func (c *Client) V1HealthCore(ctx context.Context, reqEditors ...RequestEditorFn
 	return c.Client.Do(req)
 }
 
+func (c *Client) V1InternalArticleShareWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewV1InternalArticleShareRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) V1InternalArticleShare(ctx context.Context, body V1InternalArticleShareJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewV1InternalArticleShareRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) V1InternalArticleDelete(ctx context.Context, articleId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewV1InternalArticleDeleteRequest(c.Server, articleId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 // NewV1ArticleListRequest generates requests for V1ArticleList
 func NewV1ArticleListRequest(server string, params *V1ArticleListParams) (*http.Request, error) {
 	var err error
@@ -446,8 +505,8 @@ func NewV1ArticleShareRequestWithBody(server string, contentType string, body io
 	return req, nil
 }
 
-// NewV1ArticleDeleteRequest generates requests for V1ArticleDelete
-func NewV1ArticleDeleteRequest(server string, articleId openapi_types.UUID) (*http.Request, error) {
+// NewV1ArticleRemoveOwnRequest generates requests for V1ArticleRemoveOwn
+func NewV1ArticleRemoveOwnRequest(server string, articleId openapi_types.UUID) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -473,6 +532,40 @@ func NewV1ArticleDeleteRequest(server string, articleId openapi_types.UUID) (*ht
 	}
 
 	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewV1ArticleAddOwnRequest generates requests for V1ArticleAddOwn
+func NewV1ArticleAddOwnRequest(server string, articleId openapi_types.UUID) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", true, "articleId", runtime.ParamLocationPath, articleId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v1/articles/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -806,6 +899,80 @@ func NewV1HealthCoreRequest(server string) (*http.Request, error) {
 	return req, nil
 }
 
+// NewV1InternalArticleShareRequest calls the generic V1InternalArticleShare builder with application/json body
+func NewV1InternalArticleShareRequest(server string, body V1InternalArticleShareJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewV1InternalArticleShareRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewV1InternalArticleShareRequestWithBody generates requests for V1InternalArticleShare with any type of body
+func NewV1InternalArticleShareRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v1/internal/articles")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewV1InternalArticleDeleteRequest generates requests for V1InternalArticleDelete
+func NewV1InternalArticleDeleteRequest(server string, articleId openapi_types.UUID) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", true, "articleId", runtime.ParamLocationPath, articleId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v1/internal/articles/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 func (c *Client) applyEditors(ctx context.Context, req *http.Request, additionalEditors []RequestEditorFn) error {
 	for _, r := range c.RequestEditors {
 		if err := r(ctx, req); err != nil {
@@ -857,8 +1024,11 @@ type ClientWithResponsesInterface interface {
 
 	V1ArticleShareWithResponse(ctx context.Context, body V1ArticleShareJSONRequestBody, reqEditors ...RequestEditorFn) (*V1ArticleShareResponse, error)
 
-	// V1ArticleDelete request
-	V1ArticleDeleteWithResponse(ctx context.Context, articleId openapi_types.UUID, reqEditors ...RequestEditorFn) (*V1ArticleDeleteResponse, error)
+	// V1ArticleRemoveOwn request
+	V1ArticleRemoveOwnWithResponse(ctx context.Context, articleId openapi_types.UUID, reqEditors ...RequestEditorFn) (*V1ArticleRemoveOwnResponse, error)
+
+	// V1ArticleAddOwn request
+	V1ArticleAddOwnWithResponse(ctx context.Context, articleId openapi_types.UUID, reqEditors ...RequestEditorFn) (*V1ArticleAddOwnResponse, error)
 
 	// V1AuthChangePassword request with any body
 	V1AuthChangePasswordWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*V1AuthChangePasswordResponse, error)
@@ -892,6 +1062,14 @@ type ClientWithResponsesInterface interface {
 
 	// V1HealthCore request
 	V1HealthCoreWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*V1HealthCoreResponse, error)
+
+	// V1InternalArticleShare request with any body
+	V1InternalArticleShareWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*V1InternalArticleShareResponse, error)
+
+	V1InternalArticleShareWithResponse(ctx context.Context, body V1InternalArticleShareJSONRequestBody, reqEditors ...RequestEditorFn) (*V1InternalArticleShareResponse, error)
+
+	// V1InternalArticleDelete request
+	V1InternalArticleDeleteWithResponse(ctx context.Context, articleId openapi_types.UUID, reqEditors ...RequestEditorFn) (*V1InternalArticleDeleteResponse, error)
 }
 
 type V1ArticleListResponse struct {
@@ -937,13 +1115,13 @@ func (r V1ArticleShareResponse) StatusCode() int {
 	return 0
 }
 
-type V1ArticleDeleteResponse struct {
+type V1ArticleRemoveOwnResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 }
 
 // Status returns HTTPResponse.Status
-func (r V1ArticleDeleteResponse) Status() string {
+func (r V1ArticleRemoveOwnResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -951,7 +1129,28 @@ func (r V1ArticleDeleteResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r V1ArticleDeleteResponse) StatusCode() int {
+func (r V1ArticleRemoveOwnResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type V1ArticleAddOwnResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+}
+
+// Status returns HTTPResponse.Status
+func (r V1ArticleAddOwnResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r V1ArticleAddOwnResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -1148,6 +1347,48 @@ func (r V1HealthCoreResponse) StatusCode() int {
 	return 0
 }
 
+type V1InternalArticleShareResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+}
+
+// Status returns HTTPResponse.Status
+func (r V1InternalArticleShareResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r V1InternalArticleShareResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type V1InternalArticleDeleteResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+}
+
+// Status returns HTTPResponse.Status
+func (r V1InternalArticleDeleteResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r V1InternalArticleDeleteResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 // V1ArticleListWithResponse request returning *V1ArticleListResponse
 func (c *ClientWithResponses) V1ArticleListWithResponse(ctx context.Context, params *V1ArticleListParams, reqEditors ...RequestEditorFn) (*V1ArticleListResponse, error) {
 	rsp, err := c.V1ArticleList(ctx, params, reqEditors...)
@@ -1174,13 +1415,22 @@ func (c *ClientWithResponses) V1ArticleShareWithResponse(ctx context.Context, bo
 	return ParseV1ArticleShareResponse(rsp)
 }
 
-// V1ArticleDeleteWithResponse request returning *V1ArticleDeleteResponse
-func (c *ClientWithResponses) V1ArticleDeleteWithResponse(ctx context.Context, articleId openapi_types.UUID, reqEditors ...RequestEditorFn) (*V1ArticleDeleteResponse, error) {
-	rsp, err := c.V1ArticleDelete(ctx, articleId, reqEditors...)
+// V1ArticleRemoveOwnWithResponse request returning *V1ArticleRemoveOwnResponse
+func (c *ClientWithResponses) V1ArticleRemoveOwnWithResponse(ctx context.Context, articleId openapi_types.UUID, reqEditors ...RequestEditorFn) (*V1ArticleRemoveOwnResponse, error) {
+	rsp, err := c.V1ArticleRemoveOwn(ctx, articleId, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseV1ArticleDeleteResponse(rsp)
+	return ParseV1ArticleRemoveOwnResponse(rsp)
+}
+
+// V1ArticleAddOwnWithResponse request returning *V1ArticleAddOwnResponse
+func (c *ClientWithResponses) V1ArticleAddOwnWithResponse(ctx context.Context, articleId openapi_types.UUID, reqEditors ...RequestEditorFn) (*V1ArticleAddOwnResponse, error) {
+	rsp, err := c.V1ArticleAddOwn(ctx, articleId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseV1ArticleAddOwnResponse(rsp)
 }
 
 // V1AuthChangePasswordWithBodyWithResponse request with arbitrary body returning *V1AuthChangePasswordResponse
@@ -1288,6 +1538,32 @@ func (c *ClientWithResponses) V1HealthCoreWithResponse(ctx context.Context, reqE
 	return ParseV1HealthCoreResponse(rsp)
 }
 
+// V1InternalArticleShareWithBodyWithResponse request with arbitrary body returning *V1InternalArticleShareResponse
+func (c *ClientWithResponses) V1InternalArticleShareWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*V1InternalArticleShareResponse, error) {
+	rsp, err := c.V1InternalArticleShareWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseV1InternalArticleShareResponse(rsp)
+}
+
+func (c *ClientWithResponses) V1InternalArticleShareWithResponse(ctx context.Context, body V1InternalArticleShareJSONRequestBody, reqEditors ...RequestEditorFn) (*V1InternalArticleShareResponse, error) {
+	rsp, err := c.V1InternalArticleShare(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseV1InternalArticleShareResponse(rsp)
+}
+
+// V1InternalArticleDeleteWithResponse request returning *V1InternalArticleDeleteResponse
+func (c *ClientWithResponses) V1InternalArticleDeleteWithResponse(ctx context.Context, articleId openapi_types.UUID, reqEditors ...RequestEditorFn) (*V1InternalArticleDeleteResponse, error) {
+	rsp, err := c.V1InternalArticleDelete(ctx, articleId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseV1InternalArticleDeleteResponse(rsp)
+}
+
 // ParseV1ArticleListResponse parses an HTTP response from a V1ArticleListWithResponse call
 func ParseV1ArticleListResponse(rsp *http.Response) (*V1ArticleListResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -1330,15 +1606,31 @@ func ParseV1ArticleShareResponse(rsp *http.Response) (*V1ArticleShareResponse, e
 	return response, nil
 }
 
-// ParseV1ArticleDeleteResponse parses an HTTP response from a V1ArticleDeleteWithResponse call
-func ParseV1ArticleDeleteResponse(rsp *http.Response) (*V1ArticleDeleteResponse, error) {
+// ParseV1ArticleRemoveOwnResponse parses an HTTP response from a V1ArticleRemoveOwnWithResponse call
+func ParseV1ArticleRemoveOwnResponse(rsp *http.Response) (*V1ArticleRemoveOwnResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &V1ArticleDeleteResponse{
+	response := &V1ArticleRemoveOwnResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	return response, nil
+}
+
+// ParseV1ArticleAddOwnResponse parses an HTTP response from a V1ArticleAddOwnWithResponse call
+func ParseV1ArticleAddOwnResponse(rsp *http.Response) (*V1ArticleAddOwnResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &V1ArticleAddOwnResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
@@ -1493,6 +1785,38 @@ func ParseV1HealthCoreResponse(rsp *http.Response) (*V1HealthCoreResponse, error
 	}
 
 	response := &V1HealthCoreResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	return response, nil
+}
+
+// ParseV1InternalArticleShareResponse parses an HTTP response from a V1InternalArticleShareWithResponse call
+func ParseV1InternalArticleShareResponse(rsp *http.Response) (*V1InternalArticleShareResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &V1InternalArticleShareResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	return response, nil
+}
+
+// ParseV1InternalArticleDeleteResponse parses an HTTP response from a V1InternalArticleDeleteWithResponse call
+func ParseV1InternalArticleDeleteResponse(rsp *http.Response) (*V1InternalArticleDeleteResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &V1InternalArticleDeleteResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
