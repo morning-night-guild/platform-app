@@ -52,6 +52,12 @@ func TestHandlerV1ArticleList(t *testing.T) {
 
 	token := GenerateToken(t)
 
+	all := openapi.V1ArticleListParamsScope("all")
+
+	own := openapi.V1ArticleListParamsScope("own")
+
+	invalid := openapi.V1ArticleListParamsScope("invalid")
+
 	tests := []struct {
 		name   string
 		fields fields
@@ -67,6 +73,7 @@ func TestHandlerV1ArticleList(t *testing.T) {
 					mock := usecase.NewMockAPIArticle(ctrl)
 					mock.EXPECT().List(gomock.Any(), usecase.APIArticleListInput{
 						UserID: token.UserID,
+						Scope:  article.All,
 						Index:  value.Index(0),
 						Size:   value.Size(5),
 					}).Return(usecase.APIArticleListOutput{
@@ -91,6 +98,89 @@ func TestHandlerV1ArticleList(t *testing.T) {
 					},
 				},
 				params: openapi.V1ArticleListParams{
+					Scope:       &all,
+					PageToken:   &next,
+					MaxPageSize: toIntPointer(5),
+				},
+			},
+			status: http.StatusOK,
+		},
+		{
+			name: "ユーザーに紐づく記事が一覧できる",
+			fields: fields{
+				article: func(t *testing.T) usecase.APIArticle {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := usecase.NewMockAPIArticle(ctrl)
+					mock.EXPECT().List(gomock.Any(), usecase.APIArticleListInput{
+						UserID: token.UserID,
+						Scope:  article.Own,
+						Index:  value.Index(0),
+						Size:   value.Size(5),
+					}).Return(usecase.APIArticleListOutput{
+						Articles: []model.Article{},
+					}, nil)
+					return mock
+				},
+			},
+			args: args{
+				r: &http.Request{
+					Method: http.MethodGet,
+					Header: http.Header{},
+				},
+				cookies: []*http.Cookie{
+					{
+						Name:  auth.AuthTokenKey,
+						Value: token.AuthTokenString,
+					},
+					{
+						Name:  auth.SessionTokenKey,
+						Value: token.SessionTokenString,
+					},
+				},
+				params: openapi.V1ArticleListParams{
+					Scope:       &own,
+					PageToken:   &next,
+					MaxPageSize: toIntPointer(5),
+				},
+			},
+			status: http.StatusOK,
+		},
+		{
+			name: "Scopeを指定しなくても記事が一覧できる",
+			fields: fields{
+				article: func(t *testing.T) usecase.APIArticle {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := usecase.NewMockAPIArticle(ctrl)
+					mock.EXPECT().List(gomock.Any(), usecase.APIArticleListInput{
+						UserID: token.UserID,
+						Scope:  article.All,
+						Index:  value.Index(0),
+						Size:   value.Size(5),
+					}).Return(usecase.APIArticleListOutput{
+						Articles: []model.Article{},
+					}, nil)
+					return mock
+				},
+			},
+			args: args{
+				r: &http.Request{
+					Method: http.MethodGet,
+					Header: http.Header{},
+				},
+				cookies: []*http.Cookie{
+					{
+						Name:  auth.AuthTokenKey,
+						Value: token.AuthTokenString,
+					},
+					{
+						Name:  auth.SessionTokenKey,
+						Value: token.SessionTokenString,
+					},
+				},
+				params: openapi.V1ArticleListParams{
+					Scope:       &all,
 					PageToken:   &next,
 					MaxPageSize: toIntPointer(5),
 				},
@@ -106,6 +196,7 @@ func TestHandlerV1ArticleList(t *testing.T) {
 					mock := usecase.NewMockAPIArticle(ctrl)
 					mock.EXPECT().List(gomock.Any(), usecase.APIArticleListInput{
 						UserID: token.UserID,
+						Scope:  article.All,
 						Index:  value.Index(0),
 						Size:   value.Size(5),
 						Filter: []value.Filter{value.NewFilter("title", "title")},
@@ -131,6 +222,7 @@ func TestHandlerV1ArticleList(t *testing.T) {
 					},
 				},
 				params: openapi.V1ArticleListParams{
+					Scope:       &all,
 					PageToken:   &next,
 					MaxPageSize: toIntPointer(5),
 					Title:       toStringPointer("title"),
@@ -164,8 +256,42 @@ func TestHandlerV1ArticleList(t *testing.T) {
 					},
 				},
 				params: openapi.V1ArticleListParams{
+					Scope:       &all,
 					PageToken:   &next,
 					MaxPageSize: toIntPointer(-5),
+				},
+			},
+			status: http.StatusBadRequest,
+		},
+		{
+			name: "scopeが不正な値で記事が一覧できない",
+			fields: fields{
+				article: func(t *testing.T) usecase.APIArticle {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := usecase.NewMockAPIArticle(ctrl)
+					return mock
+				},
+			},
+			args: args{
+				r: &http.Request{
+					Method: http.MethodGet,
+					Header: http.Header{},
+				},
+				cookies: []*http.Cookie{
+					{
+						Name:  auth.AuthTokenKey,
+						Value: token.AuthTokenString,
+					},
+					{
+						Name:  auth.SessionTokenKey,
+						Value: token.SessionTokenString,
+					},
+				},
+				params: openapi.V1ArticleListParams{
+					Scope:       &invalid,
+					PageToken:   &next,
+					MaxPageSize: toIntPointer(5),
 				},
 			},
 			status: http.StatusBadRequest,
@@ -179,6 +305,7 @@ func TestHandlerV1ArticleList(t *testing.T) {
 					mock := usecase.NewMockAPIArticle(ctrl)
 					mock.EXPECT().List(gomock.Any(), usecase.APIArticleListInput{
 						UserID: token.UserID,
+						Scope:  article.All,
 						Index:  value.Index(0),
 						Size:   value.Size(5),
 					}).Return(usecase.APIArticleListOutput{}, fmt.Errorf("error"))
@@ -201,6 +328,7 @@ func TestHandlerV1ArticleList(t *testing.T) {
 					},
 				},
 				params: openapi.V1ArticleListParams{
+					Scope:       &all,
 					PageToken:   &next,
 					MaxPageSize: toIntPointer(5),
 				},

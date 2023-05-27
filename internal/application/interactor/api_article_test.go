@@ -202,6 +202,49 @@ func TestAPIArticleList(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				input: usecase.APIArticleListInput{
+					Scope:  article.All,
+					UserID: user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+					Index:  value.Index(0),
+					Size:   value.Size(2),
+				},
+			},
+			want: usecase.APIArticleListOutput{
+				Articles: articles,
+			},
+			wantErr: false,
+		},
+		{
+			name: "ユーザーに紐づく記事が一覧取得できる",
+			fields: fields{
+				authCache: &cache.CacheMock[model.Auth]{
+					T: t,
+					Value: model.Auth{
+						AuthID:    user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+						UserID:    user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+						IssuedAt:  now,
+						ExpiresAt: now.Add(time.Hour * 24 * 30),
+					},
+					GetAssert: func(t *testing.T, key string) {
+						t.Helper()
+					},
+				},
+				articleRPC: func(t *testing.T) rpc.Article {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := rpc.NewMockArticle(ctrl)
+					mock.EXPECT().ListByUser(
+						gomock.Any(),
+						user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+						value.Index(0),
+						value.Size(2),
+					).Return(articles, nil)
+					return mock
+				},
+			},
+			args: args{
+				ctx: context.Background(),
+				input: usecase.APIArticleListInput{
+					Scope:  article.Own,
 					UserID: user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
 					Index:  value.Index(0),
 					Size:   value.Size(2),
@@ -238,6 +281,51 @@ func TestAPIArticleList(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				input: usecase.APIArticleListInput{
+					Scope:  article.All,
+					UserID: user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+					Index:  value.Index(0),
+					Size:   value.Size(2),
+					Filter: []value.Filter{value.NewFilter("title", "title")},
+				},
+			},
+			want: usecase.APIArticleListOutput{
+				Articles: articles,
+			},
+			wantErr: false,
+		},
+		{
+			name: "ユーザーに紐づくタイトルの部分一致で記事一覧が取得できる",
+			fields: fields{
+				authCache: &cache.CacheMock[model.Auth]{
+					T: t,
+					Value: model.Auth{
+						AuthID:    user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+						UserID:    user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+						IssuedAt:  now,
+						ExpiresAt: now.Add(time.Hour * 24 * 30),
+					},
+					GetAssert: func(t *testing.T, key string) {
+						t.Helper()
+					},
+				},
+				articleRPC: func(t *testing.T) rpc.Article {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := rpc.NewMockArticle(ctrl)
+					mock.EXPECT().ListByUser(
+						gomock.Any(),
+						user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+						value.Index(0),
+						value.Size(2),
+						[]value.Filter{value.NewFilter("title", "title")},
+					).Return(articles, nil)
+					return mock
+				},
+			},
+			args: args{
+				ctx: context.Background(),
+				input: usecase.APIArticleListInput{
+					Scope:  article.Own,
 					UserID: user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
 					Index:  value.Index(0),
 					Size:   value.Size(2),
@@ -270,6 +358,7 @@ func TestAPIArticleList(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				input: usecase.APIArticleListInput{
+					Scope:  article.All,
 					UserID: user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
 					Index:  value.Index(0),
 					Size:   value.Size(2),
@@ -304,6 +393,47 @@ func TestAPIArticleList(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				input: usecase.APIArticleListInput{
+					Scope:  article.All,
+					UserID: user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+					Index:  value.Index(0),
+					Size:   value.Size(2),
+				},
+			},
+			want:    usecase.APIArticleListOutput{},
+			wantErr: true,
+		},
+		{
+			name: "rpcでerrorが発生してユーザーに紐づく記事一覧が取得できない",
+			fields: fields{
+				authCache: &cache.CacheMock[model.Auth]{
+					T: t,
+					Value: model.Auth{
+						AuthID:    user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+						UserID:    user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+						IssuedAt:  now,
+						ExpiresAt: now.Add(time.Hour * 24 * 30),
+					},
+					GetAssert: func(t *testing.T, key string) {
+						t.Helper()
+					},
+				},
+				articleRPC: func(t *testing.T) rpc.Article {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := rpc.NewMockArticle(ctrl)
+					mock.EXPECT().ListByUser(
+						gomock.Any(),
+						user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+						value.Index(0),
+						value.Size(2),
+					).Return(nil, fmt.Errorf("test"))
+					return mock
+				},
+			},
+			args: args{
+				ctx: context.Background(),
+				input: usecase.APIArticleListInput{
+					Scope:  article.Own,
 					UserID: user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
 					Index:  value.Index(0),
 					Size:   value.Size(2),

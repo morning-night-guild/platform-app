@@ -36,6 +36,19 @@ func (hdl *Handler) V1ArticleList(
 
 	ctx = user.SetUIDCtx(ctx, uid)
 
+	scope := article.All
+	if params.Scope != nil {
+		s, err := article.NewScope(string(*params.Scope))
+		if err != nil {
+			log.GetLogCtx(ctx).Warn("failed to list articles", log.ErrorField(err))
+
+			w.WriteHeader(http.StatusBadRequest)
+
+			return
+		}
+		scope = s
+	}
+
 	pageToken := ""
 	if params.PageToken != nil {
 		pageToken = *params.PageToken
@@ -59,6 +72,7 @@ func (hdl *Handler) V1ArticleList(
 	}
 
 	input := usecase.APIArticleListInput{
+		Scope:  scope,
 		UserID: uid,
 		Index:  token.ToIndex(),
 		Size:   size,
