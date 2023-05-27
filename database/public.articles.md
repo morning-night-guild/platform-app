@@ -6,7 +6,7 @@
 
 | Name | Type | Default | Nullable | Children | Parents | Comment |
 | ---- | ---- | ------- | -------- | -------- | ------- | ------- |
-| id | uuid |  | false | [public.user_articles](public.user_articles.md) [public.article_tags](public.article_tags.md) |  |  |
+| id | uuid |  | false | [public.article_tags](public.article_tags.md) [public.user_articles](public.user_articles.md) |  |  |
 | title | varchar |  | false |  |  |  |
 | url | varchar |  | false |  |  |  |
 | description | varchar |  | false |  |  |  |

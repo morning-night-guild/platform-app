@@ -276,9 +276,17 @@ authTokenCookie, sessionTokenCookie
 
 |Name|In|Type|Required|Description|
 |---|---|---|---|---|
+|scope|query|string|false|取得範囲|
 |maxPageSize|query|integer|false|ページサイズ|
 |pageToken|query|string|false|トークン|
 |title|query|string|false|タイトルによる部分一致検索|
+
+#### Enumerated Values
+
+|Parameter|Value|
+|---|---|
+|scope|all|
+|scope|own|
 
 > Example responses
 

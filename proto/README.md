@@ -9,6 +9,8 @@
     - [Article](#article-v1-Article)
     - [DeleteRequest](#article-v1-DeleteRequest)
     - [DeleteResponse](#article-v1-DeleteResponse)
+    - [ListByUserRequest](#article-v1-ListByUserRequest)
+    - [ListByUserResponse](#article-v1-ListByUserResponse)
     - [ListRequest](#article-v1-ListRequest)
     - [ListResponse](#article-v1-ListResponse)
     - [RemoveFromUserRequest](#article-v1-RemoveFromUserRequest)
@@ -109,6 +111,40 @@
 
 ### DeleteResponse
 削除レスポンス
+
+
+
+
+
+
+<a name="article-v1-ListByUserRequest"></a>
+
+### ListByUserRequest
+一覧リクエスト
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| user_id | [string](#string) |  |  |
+| page_token | [string](#string) |  |  |
+| max_page_size | [uint32](#uint32) |  |  |
+| title | [string](#string) | optional |  |
+
+
+
+
+
+
+<a name="article-v1-ListByUserResponse"></a>
+
+### ListByUserResponse
+一覧レスポンス
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| articles | [Article](#article-v1-Article) | repeated |  |
+| next_page_token | [string](#string) |  |  |
 
 
 
@@ -222,6 +258,7 @@
 | ----------- | ------------ | ------------- | ------------|
 | Share | [ShareRequest](#article-v1-ShareRequest) | [ShareResponse](#article-v1-ShareResponse) | 共有 |
 | List | [ListRequest](#article-v1-ListRequest) | [ListResponse](#article-v1-ListResponse) | 一覧 |
+| ListByUser | [ListByUserRequest](#article-v1-ListByUserRequest) | [ListByUserResponse](#article-v1-ListByUserResponse) | 一覧取得(ユーザーごと) |
 | Delete | [DeleteRequest](#article-v1-DeleteRequest) | [DeleteResponse](#article-v1-DeleteResponse) | 削除 |
 | AddToUser | [AddToUserRequest](#article-v1-AddToUserRequest) | [AddToUserResponse](#article-v1-AddToUserResponse) | 追加 |
 | RemoveFromUser | [RemoveFromUserRequest](#article-v1-RemoveFromUserRequest) | [RemoveFromUserResponse](#article-v1-RemoveFromUserResponse) | 削除 |
