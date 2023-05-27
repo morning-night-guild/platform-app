@@ -44,18 +44,54 @@ func New(
 	}
 }
 
-func (hdl *Handler) HandleConnectError(ctx context.Context, err error) int {
+func (hdl *Handler) HandleConnectError(ctx context.Context, err error) int { //nolint:cyclop
 	if connectErr := new(connect.Error); errors.As(err, &connectErr) {
 		code := connect.CodeOf(connectErr)
 		switch code {
-		case connect.CodeInvalidArgument:
-			log.GetLogCtx(ctx).Warn("invalid argument.", log.ErrorField(err))
+		case connect.CodeInvalidArgument, connect.CodeOutOfRange, connect.CodeFailedPrecondition, connect.CodeAborted:
+			log.GetLogCtx(ctx).Warn("invalid argument", log.ErrorField(err))
 
 			return http.StatusBadRequest
+		case connect.CodeUnauthenticated:
+			log.GetLogCtx(ctx).Warn("unauthenticated", log.ErrorField(err))
+
+			return http.StatusUnauthorized
+		case connect.CodePermissionDenied:
+			log.GetLogCtx(ctx).Warn("permission denied", log.ErrorField(err))
+
+			return http.StatusForbidden
+		case connect.CodeCanceled:
+			log.GetLogCtx(ctx).Warn("canceled", log.ErrorField(err))
+
+			return http.StatusRequestTimeout
+		case connect.CodeAlreadyExists:
+			log.GetLogCtx(ctx).Warn("already exists", log.ErrorField(err))
+
+			return http.StatusConflict
 		case connect.CodeNotFound:
-			log.GetLogCtx(ctx).Warn("not found.", log.ErrorField(err))
+			log.GetLogCtx(ctx).Warn("not found", log.ErrorField(err))
 
 			return http.StatusNotFound
+		case connect.CodeResourceExhausted:
+			log.GetLogCtx(ctx).Warn("resource exhausted", log.ErrorField(err))
+
+			return http.StatusTooManyRequests
+		case connect.CodeUnimplemented:
+			log.GetLogCtx(ctx).Error("unimplemented", log.ErrorField(err))
+
+			return http.StatusNotImplemented
+		case connect.CodeUnknown, connect.CodeInternal, connect.CodeDataLoss:
+			log.GetLogCtx(ctx).Error("unknown", log.ErrorField(err))
+
+			return http.StatusInternalServerError
+		case connect.CodeUnavailable:
+			log.GetLogCtx(ctx).Error("unavailable", log.ErrorField(err))
+
+			return http.StatusServiceUnavailable
+		case connect.CodeDeadlineExceeded:
+			log.GetLogCtx(ctx).Error("deadline exceeded", log.ErrorField(err))
+
+			return http.StatusGatewayTimeout
 		}
 	}
 

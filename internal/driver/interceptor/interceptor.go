@@ -42,10 +42,13 @@ func New() connect.UnaryInterceptorFunc {
 				if err == nil {
 					return "ok"
 				}
+
 				connectErr := new(connect.Error)
+
 				if !errors.As(err, &connectErr) {
 					return "unknown"
 				}
+
 				return connect.CodeOf(connectErr).String()
 			}
 
