@@ -9,7 +9,7 @@ import (
 	"github.com/morning-night-guild/platform-app/e2e/helper"
 )
 
-func TestAppAPIE2EArticleDelete(t *testing.T) {
+func TestAppAPIE2EInternalArticleDelete(t *testing.T) {
 	t.Parallel()
 
 	url := helper.GetAppAPIEndpoint(t)
