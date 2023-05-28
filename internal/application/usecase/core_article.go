@@ -18,6 +18,7 @@ type CoreArticle interface {
 	ListByUser(context.Context, CoreArticleListByUserInput) (CoreArticleListByUserOutput, error)
 	Delete(context.Context, CoreArticleDeleteInput) (CoreArticleDeleteOutput, error)
 	AddToUser(context.Context, CoreArticleAddToUserInput) (CoreArticleAddToUserOutput, error)
+	RemoveFromUser(context.Context, CoreArticleRemoveFromUserInput) (CoreArticleRemoveFromUserOutput, error)
 }
 
 // CoreArticleShareInput.
@@ -74,3 +75,12 @@ type CoreArticleAddToUserInput struct {
 
 // CoreArticleAddToUserOutput.
 type CoreArticleAddToUserOutput struct{}
+
+// CoreArticleRemoveFromUserInput.
+type CoreArticleRemoveFromUserInput struct {
+	ArticleID article.ID
+	UserID    user.ID
+}
+
+// CoreArticleRemoveFromUserOutput.
+type CoreArticleRemoveFromUserOutput struct{}

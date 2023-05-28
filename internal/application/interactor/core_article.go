@@ -7,6 +7,7 @@ import (
 	"github.com/morning-night-guild/platform-app/internal/application/usecase"
 	"github.com/morning-night-guild/platform-app/internal/domain/model"
 	"github.com/morning-night-guild/platform-app/internal/domain/model/article"
+	"github.com/morning-night-guild/platform-app/internal/domain/model/errors"
 	"github.com/morning-night-guild/platform-app/internal/domain/repository"
 	"github.com/morning-night-guild/platform-app/pkg/log"
 )
@@ -125,4 +126,21 @@ func (itr *CoreArticle) AddToUser(
 	}
 
 	return usecase.CoreArticleAddToUserOutput{}, nil
+}
+
+func (itr *CoreArticle) RemoveFromUser(
+	ctx context.Context,
+	input usecase.CoreArticleRemoveFromUserInput,
+) (usecase.CoreArticleRemoveFromUserOutput, error) {
+	if exists, err := itr.articleRepository.ExistsByUser(ctx, input.ArticleID, input.UserID); err != nil {
+		return usecase.CoreArticleRemoveFromUserOutput{}, err
+	} else if !exists {
+		return usecase.CoreArticleRemoveFromUserOutput{}, errors.NewNotFoundError("user article not found")
+	}
+
+	if err := itr.articleRepository.RemoveFromUser(ctx, input.ArticleID, input.UserID); err != nil {
+		return usecase.CoreArticleRemoveFromUserOutput{}, err
+	}
+
+	return usecase.CoreArticleRemoveFromUserOutput{}, nil
 }

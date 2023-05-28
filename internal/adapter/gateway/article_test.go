@@ -783,3 +783,65 @@ func TestArticleListByUser(t *testing.T) {
 		}
 	})
 }
+
+func TestArticleRemoveFromUser(t *testing.T) {
+	t.Parallel()
+
+	t.Run("ユーザーに紐づく記事を削除できる", func(t *testing.T) {
+		t.Parallel()
+
+		rdb, err := gateway.NewRDBClientMock(t).Of(uuid.NewString())
+		if err != nil {
+			t.Fatalf("failed to create rdb client. got %v", err)
+		}
+
+		userGateway := gateway.NewUser(rdb)
+
+		articleGateway := gateway.NewArticle(rdb)
+
+		ctx := context.Background()
+
+		usr := model.User{
+			UserID: user.GenerateID(),
+		}
+
+		if err := userGateway.Save(ctx, usr); err != nil {
+			t.Fatalf("failed to save. got %v", err)
+		}
+
+		item := model.CreateArticle(
+			article.URL("https://example.com/1"),
+			article.Title("title1"),
+			article.Description("description"),
+			article.Thumbnail("https://example.com/1"),
+			article.TagList([]article.Tag{
+				article.Tag("tag1"),
+				article.Tag("tag2"),
+			}),
+		)
+
+		if err := articleGateway.Save(ctx, item); err != nil {
+			t.Fatalf("failed to save. got %v", err)
+		}
+
+		if err := articleGateway.AddToUser(ctx, item.ArticleID, usr.UserID); err != nil {
+			t.Fatalf("failed to add to user. got %v", err)
+		}
+
+		if got, err := articleGateway.ExistsByUser(ctx, item.ArticleID, usr.UserID); err != nil {
+			t.Fatalf("unexpected error while exists by user. got %v", err)
+		} else if !got {
+			t.Error("article is not exists")
+		}
+
+		if err := articleGateway.RemoveFromUser(ctx, item.ArticleID, usr.UserID); err != nil {
+			t.Errorf("unexpected error while remove from user. got %v", err)
+		}
+
+		if got, err := articleGateway.ExistsByUser(ctx, item.ArticleID, usr.UserID); err != nil {
+			t.Fatalf("unexpected error while find. got %v", err)
+		} else if got {
+			t.Error("article is exists")
+		}
+	})
+}
