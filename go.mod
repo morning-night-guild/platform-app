@@ -21,7 +21,7 @@ require (
 	github.com/redis/go-redis/v9 v9.0.5
 	go.uber.org/zap v1.24.0
 	golang.org/x/net v0.10.0
-	google.golang.org/api v0.125.0
+	google.golang.org/api v0.126.0
 	google.golang.org/grpc v1.55.0
 	google.golang.org/protobuf v1.30.0
 )
