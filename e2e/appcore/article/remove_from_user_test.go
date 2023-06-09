@@ -74,10 +74,8 @@ func TestAppCoreE2EArticleRemoveFromUser(t *testing.T) {
 
 		if _, err := client.Article.RemoveFromUser(context.Background(), connect.NewRequest(req)); err == nil {
 			t.Error("err is nil")
-		} else {
-			if connect.CodeOf(err) != connect.CodeNotFound {
-				t.Errorf("err = %v, want %v", connect.CodeOf(err), connect.CodeNotFound)
-			}
+		} else if connect.CodeOf(err) != connect.CodeNotFound {
+			t.Errorf("err = %v, want %v", connect.CodeOf(err), connect.CodeNotFound)
 		}
 	})
 
@@ -105,10 +103,8 @@ func TestAppCoreE2EArticleRemoveFromUser(t *testing.T) {
 
 		if _, err := client.Article.RemoveFromUser(context.Background(), connect.NewRequest(req)); err == nil {
 			t.Error("err is nil")
-		} else {
-			if connect.CodeOf(err) != connect.CodeNotFound {
-				t.Errorf("err = %v, want %v", connect.CodeOf(err), connect.CodeNotFound)
-			}
+		} else if connect.CodeOf(err) != connect.CodeNotFound {
+			t.Errorf("err = %v, want %v", connect.CodeOf(err), connect.CodeNotFound)
 		}
 	})
 }

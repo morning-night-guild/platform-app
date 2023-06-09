@@ -153,10 +153,8 @@ func TestAppCoreE2EArticleListByUser(t *testing.T) {
 
 		if _, err := client.Article.ListByUser(context.Background(), connect.NewRequest(req)); err == nil {
 			t.Error("error is nil")
-		} else {
-			if connect.CodeOf(err) != connect.CodeNotFound {
-				t.Errorf("err = %v, want %v", connect.CodeOf(err), connect.CodeNotFound)
-			}
+		} else if connect.CodeOf(err) != connect.CodeNotFound {
+			t.Errorf("err = %v, want %v", connect.CodeOf(err), connect.CodeNotFound)
 		}
 	})
 }

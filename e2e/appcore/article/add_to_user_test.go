@@ -71,10 +71,8 @@ func TestAppCoreE2EArticleAddToUser(t *testing.T) {
 
 		if _, err := client.Article.AddToUser(context.Background(), connect.NewRequest(req)); err == nil {
 			t.Error("err is nil")
-		} else {
-			if connect.CodeOf(err) != connect.CodeNotFound {
-				t.Errorf("err = %v, want %v", connect.CodeOf(err), connect.CodeNotFound)
-			}
+		} else if connect.CodeOf(err) != connect.CodeNotFound {
+			t.Errorf("err = %v, want %v", connect.CodeOf(err), connect.CodeNotFound)
 		}
 	})
 
@@ -102,10 +100,8 @@ func TestAppCoreE2EArticleAddToUser(t *testing.T) {
 
 		if _, err := client.Article.AddToUser(context.Background(), connect.NewRequest(req)); err == nil {
 			t.Error("err is nil")
-		} else {
-			if connect.CodeOf(err) != connect.CodeNotFound {
-				t.Errorf("err = %v, want %v", connect.CodeOf(err), connect.CodeNotFound)
-			}
+		} else if connect.CodeOf(err) != connect.CodeNotFound {
+			t.Errorf("err = %v, want %v", connect.CodeOf(err), connect.CodeNotFound)
 		}
 	})
 }
