@@ -135,7 +135,7 @@ func (hdl *Handler) V1ArticleShare(
 
 // 記事追加
 // (POST /v1/articles/{articleId}).
-func (hdl *Handler) V1ArticleAddOwn(
+func (hdl *Handler) V1ArticleAddOwn( //nolint:dupl
 	w http.ResponseWriter,
 	r *http.Request,
 	articleID types.UUID,
@@ -178,7 +178,7 @@ func (hdl *Handler) V1ArticleAddOwn(
 
 // 記事削除
 // (DELETE /v1/articles/{articleId}).
-func (hdl *Handler) V1ArticleRemoveOwn(
+func (hdl *Handler) V1ArticleRemoveOwn( //nolint:dupl
 	w http.ResponseWriter,
 	r *http.Request,
 	articleID types.UUID,
