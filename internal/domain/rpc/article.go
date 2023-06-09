@@ -17,4 +17,5 @@ type Article interface {
 	ListByUser(context.Context, user.ID, value.Index, value.Size, ...value.Filter) ([]model.Article, error)
 	Delete(context.Context, article.ID) error
 	AddToUser(context.Context, article.ID, user.ID) error
+	RemoveFromUser(context.Context, article.ID, user.ID) error
 }

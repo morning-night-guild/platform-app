@@ -185,9 +185,38 @@ func (hdl *Handler) V1ArticleRemoveOwn(
 ) {
 	ctx := r.Context()
 
-	log.GetLogCtx(ctx).Debug(fmt.Sprintf("%v %v %v", w, r, articleID))
+	uid, err := hdl.ExtractUserID(ctx, r)
+	if err != nil {
+		log.GetLogCtx(ctx).Warn("failed to extract user id", log.ErrorField(err))
 
-	w.WriteHeader(http.StatusNotImplemented)
+		w.WriteHeader(http.StatusUnauthorized)
+
+		return
+	}
+
+	ctx = user.SetUIDCtx(ctx, uid)
+
+	aid, err := article.NewID(articleID.String())
+	if err != nil {
+		log.GetLogCtx(ctx).Warn("failed to add article", log.ErrorField(err))
+
+		w.WriteHeader(http.StatusBadRequest)
+
+		return
+	}
+
+	input := usecase.APIArticleRemoveFromUserInput{
+		ArticleID: aid,
+		UserID:    uid,
+	}
+
+	if _, err := hdl.article.RemoveFromUser(ctx, input); err != nil {
+		log.GetLogCtx(ctx).Warn("failed to remove article", log.ErrorField(err))
+
+		w.WriteHeader(hdl.HandleConnectError(ctx, err))
+
+		return
+	}
 }
 
 // 記事共有

@@ -168,6 +168,27 @@ func (ext *Article) AddToUser(
 	return nil
 }
 
+func (ext *Article) RemoveFromUser(
+	ctx context.Context,
+	articleID article.ID,
+	userID user.ID,
+) error {
+	req := NewRequest(ctx, &articlev1.RemoveFromUserRequest{
+		ArticleId: articleID.String(),
+		UserId:    userID.String(),
+	})
+
+	if _, err := ext.connect.RemoveFromUser(ctx, req); err != nil {
+		msg := fmt.Sprintf("failed to remove article from user. articleID=%s, userID=%s", articleID.String(), userID.String())
+
+		log.GetLogCtx(ctx).Warn(msg, log.ErrorField(err))
+
+		return ext.external.HandleError(ctx, err)
+	}
+
+	return nil
+}
+
 func (ext *Article) toModels(
 	articles []*articlev1.Article,
 ) []model.Article {

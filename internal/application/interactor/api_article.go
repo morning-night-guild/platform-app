@@ -98,9 +98,42 @@ func (itr *APIArticle) AddToUser(
 	ctx context.Context,
 	input usecase.APIArticleAddToUserInput,
 ) (usecase.APIArticleAddToUserOutput, error) {
+	auth, err := itr.authCache.Get(ctx, input.UserID.String())
+	if err != nil {
+		log.GetLogCtx(ctx).Warn("failed to get auth cache", log.ErrorField(err))
+
+		return usecase.APIArticleAddToUserOutput{}, errors.NewUnauthorizedError("failed to get auth cache", err)
+	}
+
+	if auth.IsExpired() {
+		return usecase.APIArticleAddToUserOutput{}, errors.NewUnauthorizedError("auth token is expired")
+	}
+
 	if err := itr.articleRPC.AddToUser(ctx, input.ArticleID, input.UserID); err != nil {
 		return usecase.APIArticleAddToUserOutput{}, err
 	}
 
 	return usecase.APIArticleAddToUserOutput{}, nil
+}
+
+func (itr *APIArticle) RemoveFromUser(
+	ctx context.Context,
+	input usecase.APIArticleRemoveFromUserInput,
+) (usecase.APIArticleRemoveFromUserOutput, error) {
+	auth, err := itr.authCache.Get(ctx, input.UserID.String())
+	if err != nil {
+		log.GetLogCtx(ctx).Warn("failed to get auth cache", log.ErrorField(err))
+
+		return usecase.APIArticleRemoveFromUserOutput{}, errors.NewUnauthorizedError("failed to get auth cache", err)
+	}
+
+	if auth.IsExpired() {
+		return usecase.APIArticleRemoveFromUserOutput{}, errors.NewUnauthorizedError("auth token is expired")
+	}
+
+	if err := itr.articleRPC.RemoveFromUser(ctx, input.ArticleID, input.UserID); err != nil {
+		return usecase.APIArticleRemoveFromUserOutput{}, err
+	}
+
+	return usecase.APIArticleRemoveFromUserOutput{}, nil
 }

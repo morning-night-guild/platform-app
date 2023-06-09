@@ -33,6 +33,8 @@ func TestAppCoreE2EArticleRemoveFromUser(t *testing.T) {
 
 		db.BulkInsertArticles([]uuid.UUID{aid})
 
+		defer db.BulkDeleteArticles([]uuid.UUID{})
+
 		defer db.DeleteUser(uid)
 
 		if _, err := client.Article.AddToUser(context.Background(), connect.NewRequest(&articlev1.AddToUserRequest{
