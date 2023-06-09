@@ -477,6 +477,8 @@ func TestAPIArticleAddToUser(t *testing.T) {
 		input usecase.APIArticleAddToUserInput
 	}
 
+	now := time.Now()
+
 	tests := []struct {
 		name    string
 		fields  fields
@@ -487,6 +489,18 @@ func TestAPIArticleAddToUser(t *testing.T) {
 		{
 			name: "ユーザーに記事を追加できる",
 			fields: fields{
+				authCache: &cache.CacheMock[model.Auth]{
+					T: t,
+					Value: model.Auth{
+						AuthID:    user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+						UserID:    user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+						IssuedAt:  now,
+						ExpiresAt: now.Add(time.Hour * 24 * 30),
+					},
+					GetAssert: func(t *testing.T, key string) {
+						t.Helper()
+					},
+				},
 				articleRPC: func(t *testing.T) rpc.Article {
 					t.Helper()
 					ctrl := gomock.NewController(t)
@@ -512,6 +526,18 @@ func TestAPIArticleAddToUser(t *testing.T) {
 		{
 			name: "ユーザーに記事を追加できない",
 			fields: fields{
+				authCache: &cache.CacheMock[model.Auth]{
+					T: t,
+					Value: model.Auth{
+						AuthID:    user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+						UserID:    user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+						IssuedAt:  now,
+						ExpiresAt: now.Add(time.Hour * 24 * 30),
+					},
+					GetAssert: func(t *testing.T, key string) {
+						t.Helper()
+					},
+				},
 				articleRPC: func(t *testing.T) rpc.Article {
 					t.Helper()
 					ctrl := gomock.NewController(t)
@@ -551,6 +577,124 @@ func TestAPIArticleAddToUser(t *testing.T) {
 			}
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("APIArticle.AddToUser() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestAPIArticleRemoveFromUser(t *testing.T) {
+	t.Parallel()
+
+	type fields struct {
+		authCache  cache.Cache[model.Auth]
+		articleRPC func(*testing.T) rpc.Article
+	}
+
+	type args struct {
+		ctx   context.Context
+		input usecase.APIArticleRemoveFromUserInput
+	}
+
+	now := time.Now()
+
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		want    usecase.APIArticleRemoveFromUserOutput
+		wantErr bool
+	}{
+		{
+			name: "ユーザーの記事を削除できる",
+			fields: fields{
+				authCache: &cache.CacheMock[model.Auth]{
+					T: t,
+					Value: model.Auth{
+						AuthID:    user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+						UserID:    user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+						IssuedAt:  now,
+						ExpiresAt: now.Add(time.Hour * 24 * 30),
+					},
+					GetAssert: func(t *testing.T, key string) {
+						t.Helper()
+					},
+				},
+				articleRPC: func(t *testing.T) rpc.Article {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := rpc.NewMockArticle(ctrl)
+					mock.EXPECT().RemoveFromUser(
+						gomock.Any(),
+						article.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+						user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ac")),
+					).Return(nil)
+					return mock
+				},
+			},
+			args: args{
+				ctx: context.Background(),
+				input: usecase.APIArticleRemoveFromUserInput{
+					ArticleID: article.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+					UserID:    user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ac")),
+				},
+			},
+			want:    usecase.APIArticleRemoveFromUserOutput{},
+			wantErr: false,
+		},
+		{
+			name: "ユーザーに記事を追加できない",
+			fields: fields{
+				authCache: &cache.CacheMock[model.Auth]{
+					T: t,
+					Value: model.Auth{
+						AuthID:    user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+						UserID:    user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+						IssuedAt:  now,
+						ExpiresAt: now.Add(time.Hour * 24 * 30),
+					},
+					GetAssert: func(t *testing.T, key string) {
+						t.Helper()
+					},
+				},
+				articleRPC: func(t *testing.T) rpc.Article {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := rpc.NewMockArticle(ctrl)
+					mock.EXPECT().RemoveFromUser(
+						gomock.Any(),
+						article.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+						user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ac")),
+					).Return(fmt.Errorf("error"))
+					return mock
+				},
+			},
+			args: args{
+				ctx: context.Background(),
+				input: usecase.APIArticleRemoveFromUserInput{
+					ArticleID: article.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+					UserID:    user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ac")),
+				},
+			},
+			want:    usecase.APIArticleRemoveFromUserOutput{},
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			itr := interactor.NewAPIArticle(
+				tt.fields.authCache,
+				tt.fields.articleRPC(t),
+			)
+			got, err := itr.RemoveFromUser(tt.args.ctx, tt.args.input)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("APIArticle.RemoveFromUser() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("APIArticle.RemoveFromUser() = %v, want %v", got, tt.want)
 			}
 		})
 	}
