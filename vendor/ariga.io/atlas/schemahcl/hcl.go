@@ -27,6 +27,7 @@ type (
 	// State is used to evaluate and marshal Atlas HCL documents and stores a configuration for these operations.
 	State struct {
 		config *Config
+		newCtx func() *hcl.EvalContext
 	}
 	// Evaluator is the interface that wraps the Eval function.
 	Evaluator interface {
@@ -69,7 +70,7 @@ func (s *State) EvalFiles(paths []string, v any, input map[string]cty.Value) err
 // Eval evaluates the parsed HCL documents using the input variables and populates v
 // using the result.
 func (s *State) Eval(parsed *hclparse.Parser, v any, input map[string]cty.Value) error {
-	ctx := s.config.newCtx()
+	ctx := s.newCtx()
 	reg := &blockDef{
 		fields:   make(map[string]struct{}),
 		children: make(map[string]*blockDef),
@@ -90,7 +91,7 @@ func (s *State) Eval(parsed *hclparse.Parser, v any, input map[string]cty.Value)
 		for _, b := range body.Blocks {
 			switch {
 			// Variable blocks are not reachable by reference.
-			case b.Type == varBlock:
+			case b.Type == BlockVariable:
 				continue
 			// Semi-evaluate blocks with the for_each meta argument.
 			case b.Body != nil && b.Body.Attributes[forEachAttr] != nil:
@@ -222,7 +223,7 @@ func (s *State) resource(ctx *hcl.EvalContext, file *hcl.File) (*Resource, error
 	}
 	for _, blk := range body.Blocks {
 		// variable blocks may be included in the document but are skipped in unmarshaling.
-		if blk.Type == varBlock {
+		if blk.Type == BlockVariable {
 			continue
 		}
 		ctx, err := setBlockVars(ctx.NewChild(), blk.Body)

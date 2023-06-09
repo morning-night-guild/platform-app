@@ -1092,10 +1092,12 @@ FROM
 	JOIN pg_catalog.pg_namespace AS t2 ON t2.nspname = t1.table_schema
 	JOIN pg_catalog.pg_class AS t3 ON t3.relnamespace = t2.oid AND t3.relname = t1.table_name
 	LEFT JOIN pg_catalog.pg_partitioned_table AS t4 ON t4.partrelid = t3.oid
+	LEFT JOIN pg_depend AS t5 ON t5.objid = t3.oid AND t5.deptype = 'e'
 WHERE
 	t1.table_type = 'BASE TABLE'
 	AND NOT COALESCE(t3.relispartition, false)
 	AND t1.table_schema IN (%s)
+	AND t5.objid IS NULL
 ORDER BY
 	t1.table_schema, t1.table_name
 `
@@ -1112,11 +1114,13 @@ FROM
 	JOIN pg_catalog.pg_namespace AS t2 ON t2.nspname = t1.table_schema
 	JOIN pg_catalog.pg_class AS t3 ON t3.relnamespace = t2.oid AND t3.relname = t1.table_name
 	LEFT JOIN pg_catalog.pg_partitioned_table AS t4 ON t4.partrelid = t3.oid
+	LEFT JOIN pg_depend AS t5 ON t5.objid = t3.oid AND t5.deptype = 'e'
 WHERE
 	t1.table_type = 'BASE TABLE'
 	AND NOT COALESCE(t3.relispartition, false)
 	AND t1.table_schema IN (%s)
 	AND t1.table_name IN (%s)
+	AND t5.objid IS NULL
 ORDER BY
 	t1.table_schema, t1.table_name
 `
@@ -1180,6 +1184,7 @@ SELECT
 	      		ns1.nspname AS schema_name,
       			t2.relname AS referenced_table_name,
 	      		ns2.nspname AS referenced_schema_name,
+	      		generate_series(1,array_length(con.conkey,1)) as ord,
 	      		unnest(con.conkey) AS conkey,
 	      		unnest(con.confkey) AS confkey
 	    	FROM pg_constraint con
@@ -1195,7 +1200,7 @@ SELECT
 	JOIN pg_attribute a2 ON a2.attnum = fk.confkey AND a2.attrelid = fk.confrelid
 	JOIN information_schema.referential_constraints rc ON rc.constraint_name = fk.constraint_name AND rc.constraint_schema = fk.schema_name
 	ORDER BY
-	    fk.conrelid, fk.constraint_name
+	    fk.conrelid, fk.constraint_name, fk.ord
 `
 
 	// Query to list table check constraints.

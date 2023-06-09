@@ -88,7 +88,11 @@ func (d *LocalDir) Path() string {
 
 // Open implements fs.FS.
 func (d *LocalDir) Open(name string) (fs.File, error) {
-	return os.Open(filepath.Join(d.path, name))
+	f, err := os.Open(filepath.Join(d.path, name))
+	if err != nil {
+		return nil, err
+	}
+	return f, nil
 }
 
 // WriteFile implements Dir.WriteFile.
@@ -465,11 +469,6 @@ var (
 // Validate checks if the migration dir is in sync with its sum file.
 // If they don't match ErrChecksumMismatch is returned.
 func Validate(dir Dir) error {
-	// If a migration directory implements the Validate() method,
-	// it will be used to determine the validity instead.
-	if v, ok := dir.(interface{ Validate() error }); ok {
-		return v.Validate()
-	}
 	fh, err := readHashFile(dir)
 	if errors.Is(err, fs.ErrNotExist) {
 		// If there are no migration files yet this is okay.
