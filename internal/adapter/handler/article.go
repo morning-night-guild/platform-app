@@ -39,7 +39,7 @@ func (hdl *Handler) V1ArticleList( //nolint:cyclop
 	scope := article.All
 
 	if params.Scope != nil {
-		s, err := article.NewScope(string(*params.Scope))
+		sc, err := article.NewScope(string(*params.Scope))
 		if err != nil {
 			log.GetLogCtx(ctx).Warn("failed to list articles", log.ErrorField(err))
 
@@ -48,7 +48,7 @@ func (hdl *Handler) V1ArticleList( //nolint:cyclop
 			return
 		}
 
-		scope = s
+		scope = sc
 	}
 
 	pageToken := ""
@@ -61,7 +61,7 @@ func (hdl *Handler) V1ArticleList( //nolint:cyclop
 	size := model.DefaultArticleSize
 
 	if params.MaxPageSize != nil {
-		s, err := value.NewSize(*params.MaxPageSize)
+		sz, err := value.NewSize(*params.MaxPageSize)
 		if err != nil {
 			log.GetLogCtx(ctx).Warn("failed to list articles", log.ErrorField(err))
 
@@ -70,7 +70,7 @@ func (hdl *Handler) V1ArticleList( //nolint:cyclop
 			return
 		}
 
-		size = s
+		size = sz
 	}
 
 	input := usecase.APIArticleListInput{

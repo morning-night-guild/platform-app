@@ -86,13 +86,13 @@ func (at AuthToken) UserID() user.ID {
 		Sub string `json:"sub"`
 	}
 
-	var p payload
+	var pl payload
 
-	if err := json.Unmarshal(dec, &p); err != nil {
+	if err := json.Unmarshal(dec, &pl); err != nil {
 		return user.GenerateZeroID()
 	}
 
-	uid, err := user.NewID(p.Sub)
+	uid, err := user.NewID(pl.Sub)
 	if err != nil {
 		return user.GenerateZeroID()
 	}

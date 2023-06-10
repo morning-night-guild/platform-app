@@ -36,6 +36,8 @@ linters:
     - wastedassign
     # https://github.com/golangci/golangci-lint/issues/3711
     - contextcheck
+    # disable because know how to use it
+    - depguard
 issues:
   exclude-rules:
     - path: handler

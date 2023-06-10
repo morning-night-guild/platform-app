@@ -76,9 +76,9 @@ func (k *Key) String() string {
 		k.T.Fatal(err)
 	}
 
-	b := new(bytes.Buffer)
+	buf := new(bytes.Buffer)
 
-	if err := pem.Encode(b, &pem.Block{
+	if err := pem.Encode(buf, &pem.Block{
 		Bytes: pubkey,
 	}); err != nil {
 		k.T.Fatal(err)
@@ -88,7 +88,7 @@ func (k *Key) String() string {
 		return append(arr[:i], arr[i+1:]...)
 	}
 
-	pems := strings.Split(b.String(), "\n")
+	pems := strings.Split(buf.String(), "\n")
 
 	pems = remove(pems, len(pems)-1)
 
