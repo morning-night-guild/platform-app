@@ -231,8 +231,6 @@ func (siw *ServerInterfaceWrapper) V1AuthInvite(w http.ResponseWriter, r *http.R
 func (siw *ServerInterfaceWrapper) V1AuthJoin(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	ctx = context.WithValue(ctx, ApiKeyScopes, []string{})
-
 	var handler http.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.V1AuthJoin(w, r)
 	})
