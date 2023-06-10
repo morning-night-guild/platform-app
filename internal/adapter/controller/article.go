@@ -2,7 +2,6 @@ package controller
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/bufbuild/connect-go"
 	"github.com/morning-night-guild/platform-app/internal/application/usecase"
@@ -11,7 +10,6 @@ import (
 	"github.com/morning-night-guild/platform-app/internal/domain/value"
 	articlev1 "github.com/morning-night-guild/platform-app/pkg/connect/article/v1"
 	"github.com/morning-night-guild/platform-app/pkg/connect/article/v1/articlev1connect"
-	"github.com/morning-night-guild/platform-app/pkg/log"
 )
 
 var _ articlev1connect.ArticleServiceHandler = (*Article)(nil)
@@ -247,7 +245,24 @@ func (ctrl *Article) RemoveFromUser(
 	ctx context.Context,
 	req *connect.Request[articlev1.RemoveFromUserRequest],
 ) (*connect.Response[articlev1.RemoveFromUserResponse], error) {
-	log.GetLogCtx(ctx).Debug(fmt.Sprintf("%+v", req))
+	articleID, err := article.NewID(req.Msg.ArticleId)
+	if err != nil {
+		return nil, ctrl.controller.HandleConnectError(ctx, err)
+	}
+
+	userID, err := user.NewID(req.Msg.UserId)
+	if err != nil {
+		return nil, ctrl.controller.HandleConnectError(ctx, err)
+	}
+
+	input := usecase.CoreArticleRemoveFromUserInput{
+		ArticleID: articleID,
+		UserID:    userID,
+	}
+
+	if _, err := ctrl.usecase.RemoveFromUser(ctx, input); err != nil {
+		return nil, ctrl.controller.HandleConnectError(ctx, err)
+	}
 
 	return connect.NewResponse(&articlev1.RemoveFromUserResponse{}), nil
 }

@@ -11,12 +11,12 @@ import (
 	articlev1 "github.com/morning-night-guild/platform-app/pkg/connect/article/v1"
 )
 
-func TestAppCoreE2EArticleAddToUser(t *testing.T) {
+func TestAppCoreE2EArticleRemoveFromUser(t *testing.T) {
 	t.Parallel()
 
 	url := helper.GetAppCoreEndpoint(t)
 
-	t.Run("ユーザーに記事が追加できる", func(t *testing.T) {
+	t.Run("ユーザーの記事が削除できる", func(t *testing.T) {
 		t.Parallel()
 
 		client := helper.NewConnectClient(t, &http.Client{}, url)
@@ -37,17 +37,24 @@ func TestAppCoreE2EArticleAddToUser(t *testing.T) {
 
 		defer db.DeleteUser(uid)
 
-		req := &articlev1.AddToUserRequest{
+		if _, err := client.Article.AddToUser(context.Background(), connect.NewRequest(&articlev1.AddToUserRequest{
+			UserId:    uid.String(),
+			ArticleId: aid.String(),
+		})); err != nil {
+			t.Fatalf("failed to add article to user: %s", err)
+		}
+
+		req := &articlev1.RemoveFromUserRequest{
 			UserId:    uid.String(),
 			ArticleId: aid.String(),
 		}
 
-		if _, err := client.Article.AddToUser(context.Background(), connect.NewRequest(req)); err != nil {
-			t.Errorf("failed to add article: %s", err)
+		if _, err := client.Article.RemoveFromUser(context.Background(), connect.NewRequest(req)); err != nil {
+			t.Errorf("failed to remove article from user: %s", err)
 		}
 	})
 
-	t.Run("ユーザーが存在せず記事が追加できない", func(t *testing.T) {
+	t.Run("ユーザーが存在せず記事が削除できない", func(t *testing.T) {
 		t.Parallel()
 
 		client := helper.NewConnectClient(t, &http.Client{}, url)
@@ -60,23 +67,21 @@ func TestAppCoreE2EArticleAddToUser(t *testing.T) {
 
 		db.BulkInsertArticles([]uuid.UUID{aid})
 
-		// NOTE: 記事またはユーザーを削除すればユーザーに紐づく記事も削除される
-
 		defer db.BulkDeleteArticles([]uuid.UUID{})
 
-		req := &articlev1.AddToUserRequest{
+		req := &articlev1.RemoveFromUserRequest{
 			UserId:    uuid.New().String(),
 			ArticleId: aid.String(),
 		}
 
-		if _, err := client.Article.AddToUser(context.Background(), connect.NewRequest(req)); err == nil {
+		if _, err := client.Article.RemoveFromUser(context.Background(), connect.NewRequest(req)); err == nil {
 			t.Error("err is nil")
 		} else if connect.CodeOf(err) != connect.CodeNotFound {
 			t.Errorf("err = %v, want %v", connect.CodeOf(err), connect.CodeNotFound)
 		}
 	})
 
-	t.Run("記事が存在せず記事が追加できない", func(t *testing.T) {
+	t.Run("記事が存在せず記事が削除できない", func(t *testing.T) {
 		t.Parallel()
 
 		client := helper.NewConnectClient(t, &http.Client{}, url)
@@ -93,12 +98,12 @@ func TestAppCoreE2EArticleAddToUser(t *testing.T) {
 
 		defer db.DeleteUser(uid)
 
-		req := &articlev1.AddToUserRequest{
+		req := &articlev1.RemoveFromUserRequest{
 			UserId:    uid.String(),
 			ArticleId: uuid.New().String(),
 		}
 
-		if _, err := client.Article.AddToUser(context.Background(), connect.NewRequest(req)); err == nil {
+		if _, err := client.Article.RemoveFromUser(context.Background(), connect.NewRequest(req)); err == nil {
 			t.Error("err is nil")
 		} else if connect.CodeOf(err) != connect.CodeNotFound {
 			t.Errorf("err = %v, want %v", connect.CodeOf(err), connect.CodeNotFound)

@@ -79,6 +79,7 @@ func MarshalSpec(v any, marshaler schemahcl.Marshaler) ([]byte, error) {
 var (
 	hclState = schemahcl.New(
 		schemahcl.WithTypes("table.column.type", TypeRegistry.Specs()),
+		schemahcl.WithScopedEnums("table.engine", EngineInnoDB, EngineMyISAM, EngineMemory, EngineCSV, EngineNDB),
 		schemahcl.WithScopedEnums("table.index.type", IndexTypeBTree, IndexTypeHash, IndexTypeFullText, IndexTypeSpatial),
 		schemahcl.WithScopedEnums("table.primary_key.type", IndexTypeBTree, IndexTypeHash, IndexTypeFullText, IndexTypeSpatial),
 		schemahcl.WithScopedEnums("table.column.as.type", stored, persistent, virtual),
@@ -116,6 +117,13 @@ func convertTable(spec *sqlspec.Table, parent *schema.Schema) (*schema.Table, er
 			return nil, err
 		}
 		t.AddAttrs(&AutoIncrement{V: v})
+	}
+	if attr, ok := spec.Attr("engine"); ok {
+		v, err := attr.String()
+		if err != nil {
+			return nil, err
+		}
+		t.AddAttrs(&Engine{V: v})
 	}
 	return t, err
 }
@@ -254,6 +262,17 @@ func tableSpec(t *schema.Table) (*sqlspec.Table, error) {
 	}
 	if c, ok := hasCollate(t.Attrs, t.Schema.Attrs); ok {
 		ts.Extra.Attrs = append(ts.Extra.Attrs, schemahcl.StringAttr("collate", c))
+	}
+	// Marshal the engine attribute only if it is not InnoDB (default).
+	if e := (&Engine{}); sqlx.Has(t.Attrs, e) && e.V != "" && !e.Default {
+		attr := schemahcl.StringAttr("engine", e.V)
+		for _, e1 := range []string{EngineInnoDB, EngineMyISAM, EngineMemory, EngineCSV, EngineNDB} {
+			if strings.EqualFold(e.V, e1) {
+				attr = specutil.VarAttr("engine", e1)
+				break
+			}
+		}
+		ts.Extra.Attrs = append(ts.Extra.Attrs, attr)
 	}
 	return ts, nil
 }

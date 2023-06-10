@@ -66,6 +66,21 @@ func (mr *MockArticleMockRecorder) Delete(arg0, arg1 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockArticle)(nil).Delete), arg0, arg1)
 }
 
+// ExistsByUser mocks base method.
+func (m *MockArticle) ExistsByUser(arg0 context.Context, arg1 article.ID, arg2 user.ID) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ExistsByUser", arg0, arg1, arg2)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ExistsByUser indicates an expected call of ExistsByUser.
+func (mr *MockArticleMockRecorder) ExistsByUser(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExistsByUser", reflect.TypeOf((*MockArticle)(nil).ExistsByUser), arg0, arg1, arg2)
+}
+
 // Find mocks base method.
 func (m *MockArticle) Find(arg0 context.Context, arg1 article.ID) (model.Article, error) {
 	m.ctrl.T.Helper()
@@ -119,6 +134,20 @@ func (mr *MockArticleMockRecorder) ListByUser(arg0, arg1, arg2, arg3 interface{}
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0, arg1, arg2, arg3}, arg4...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListByUser", reflect.TypeOf((*MockArticle)(nil).ListByUser), varargs...)
+}
+
+// RemoveFromUser mocks base method.
+func (m *MockArticle) RemoveFromUser(arg0 context.Context, arg1 article.ID, arg2 user.ID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RemoveFromUser", arg0, arg1, arg2)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RemoveFromUser indicates an expected call of RemoveFromUser.
+func (mr *MockArticleMockRecorder) RemoveFromUser(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveFromUser", reflect.TypeOf((*MockArticle)(nil).RemoveFromUser), arg0, arg1, arg2)
 }
 
 // Save mocks base method.

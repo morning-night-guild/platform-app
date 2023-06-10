@@ -752,3 +752,116 @@ func TestCoreArticleAddToUser(t *testing.T) {
 		})
 	}
 }
+
+func TestCoreArticleRemoveFromUser(t *testing.T) {
+	t.Parallel()
+
+	type fields struct {
+		articleRepository func(*testing.T) repository.Article
+		userRepository    func(*testing.T) repository.User
+	}
+
+	type args struct {
+		ctx   context.Context
+		input usecase.CoreArticleRemoveFromUserInput
+	}
+
+	uid := user.ID(uuid.New())
+
+	aid := article.ID(uuid.New())
+
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		want    usecase.CoreArticleRemoveFromUserOutput
+		wantErr bool
+	}{
+		{
+			name: "記事をユーザーから削除できる",
+			fields: fields{
+				articleRepository: func(t *testing.T) repository.Article {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := repository.NewMockArticle(ctrl)
+					mock.EXPECT().ExistsByUser(
+						gomock.Any(),
+						aid,
+						uid,
+					).Return(true, nil)
+					mock.EXPECT().RemoveFromUser(
+						gomock.Any(),
+						aid,
+						uid,
+					).Return(nil)
+					return mock
+				},
+				userRepository: func(t *testing.T) repository.User {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := repository.NewMockUser(ctrl)
+					return mock
+				},
+			},
+			args: args{
+				ctx: context.Background(),
+				input: usecase.CoreArticleRemoveFromUserInput{
+					ArticleID: aid,
+					UserID:    uid,
+				},
+			},
+			want:    usecase.CoreArticleRemoveFromUserOutput{},
+			wantErr: false,
+		},
+		{
+			name: "ユーザーに紐づく記事が存在しない",
+			fields: fields{
+				articleRepository: func(t *testing.T) repository.Article {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := repository.NewMockArticle(ctrl)
+					mock.EXPECT().ExistsByUser(
+						gomock.Any(),
+						aid,
+						uid,
+					).Return(false, nil)
+					return mock
+				},
+				userRepository: func(t *testing.T) repository.User {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := repository.NewMockUser(ctrl)
+					return mock
+				},
+			},
+			args: args{
+				ctx: context.Background(),
+				input: usecase.CoreArticleRemoveFromUserInput{
+					ArticleID: aid,
+					UserID:    uid,
+				},
+			},
+			want:    usecase.CoreArticleRemoveFromUserOutput{},
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			itr := interactor.NewCoreArticle(
+				tt.fields.articleRepository(t),
+				tt.fields.userRepository(t),
+			)
+			got, err := itr.RemoveFromUser(tt.args.ctx, tt.args.input)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("CoreArticle.RemoveFromUser() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("CoreArticle.RemoveFromUser() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

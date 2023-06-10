@@ -51,6 +51,8 @@ func TestAppCoreE2EArticleDelete(t *testing.T) {
 
 		if _, err := client.Article.Delete(context.Background(), connect.NewRequest(req)); err == nil {
 			t.Errorf("succeeded to delete articles: %s", err)
+		} else if connect.CodeOf(err) != connect.CodeNotFound {
+			t.Errorf("err = %v, want %v", connect.CodeOf(err), connect.CodeNotFound)
 		}
 	})
 }

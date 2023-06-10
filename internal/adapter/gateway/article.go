@@ -217,6 +217,36 @@ func (gtw *Article) AddToUser(
 	return nil
 }
 
+func (gtw *Article) ExistsByUser(
+	ctx context.Context,
+	articleID article.ID,
+	userID user.ID,
+) (bool, error) {
+	return gtw.rdb.UserArticle.Query().
+		Where(
+			entuserarticle.ArticleIDEQ(articleID.Value()),
+			entuserarticle.UserID(userID.Value()),
+		).
+		Exist(ctx)
+}
+
+func (gtw *Article) RemoveFromUser(
+	ctx context.Context,
+	articleID article.ID,
+	userID user.ID,
+) error {
+	if _, err := gtw.rdb.UserArticle.Delete().
+		Where(
+			entuserarticle.ArticleIDEQ(articleID.Value()),
+			entuserarticle.UserID(userID.Value()),
+		).
+		Exec(ctx); err != nil {
+		return errors.Wrap(err, "failed to remove from user")
+	}
+
+	return nil
+}
+
 func (gtw *Article) toModel(
 	ea *ent.Article,
 ) model.Article {

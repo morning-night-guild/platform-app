@@ -94,6 +94,21 @@ func (mr *MockCoreArticleMockRecorder) ListByUser(arg0, arg1 interface{}) *gomoc
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListByUser", reflect.TypeOf((*MockCoreArticle)(nil).ListByUser), arg0, arg1)
 }
 
+// RemoveFromUser mocks base method.
+func (m *MockCoreArticle) RemoveFromUser(arg0 context.Context, arg1 CoreArticleRemoveFromUserInput) (CoreArticleRemoveFromUserOutput, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RemoveFromUser", arg0, arg1)
+	ret0, _ := ret[0].(CoreArticleRemoveFromUserOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// RemoveFromUser indicates an expected call of RemoveFromUser.
+func (mr *MockCoreArticleMockRecorder) RemoveFromUser(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveFromUser", reflect.TypeOf((*MockCoreArticle)(nil).RemoveFromUser), arg0, arg1)
+}
+
 // Share mocks base method.
 func (m *MockCoreArticle) Share(arg0 context.Context, arg1 CoreArticleShareInput) (CoreArticleShareOutput, error) {
 	m.ctrl.T.Helper()
