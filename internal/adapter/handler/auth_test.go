@@ -51,14 +51,14 @@ func NewPublicKey(t *testing.T) Public {
 func (pub Public) String() string {
 	pub.T.Helper()
 
-	b := new(bytes.Buffer)
+	buf := new(bytes.Buffer)
 
 	bt, err := x509.MarshalPKIXPublicKey(&pub.Key)
 	if err != nil {
 		pub.T.Fatal(err)
 	}
 
-	if err := pem.Encode(b, &pem.Block{
+	if err := pem.Encode(buf, &pem.Block{
 		Bytes: bt,
 	}); err != nil {
 		pub.T.Fatal(err)
@@ -68,7 +68,7 @@ func (pub Public) String() string {
 		return append(arr[:i], arr[i+1:]...)
 	}
 
-	pems := strings.Split(b.String(), "\n")
+	pems := strings.Split(buf.String(), "\n")
 
 	pems = remove(pems, len(pems)-1)
 

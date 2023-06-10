@@ -215,10 +215,10 @@ func (hdl *Handler) V1AuthSignOut(_ http.ResponseWriter, r *http.Request) {
 
 // サインアウトオール
 // (GET /v1/auth/signout/all).
-func (hdl *Handler) V1AuthSignOutAll(_ http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
+func (hdl *Handler) V1AuthSignOutAll(_ http.ResponseWriter, req *http.Request) {
+	ctx := req.Context()
 
-	tokens, err := hdl.ExtractTokens(ctx, r)
+	tokens, err := hdl.ExtractTokens(ctx, req)
 	if err != nil {
 		log.GetLogCtx(ctx).Warn("failed to extract tokens", log.ErrorField(err))
 
