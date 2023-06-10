@@ -16,6 +16,110 @@ import (
 
 const path = "/"
 
+// 招待
+// (POST /v1/auth/invite).
+func (hdl *Handler) V1AuthInvite(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	key := r.Header.Get("Api-Key")
+	if key != hdl.key {
+		log.GetLogCtx(ctx).Warn(fmt.Sprintf("invalid api key. api key = %s", key))
+
+		w.WriteHeader(http.StatusUnauthorized)
+
+		return
+	}
+
+	var body openapi.V1AuthInviteRequestSchema
+
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		log.GetLogCtx(ctx).Warn("failed to decode request body", log.ErrorField(err))
+
+		w.WriteHeader(http.StatusBadRequest)
+
+		return
+	}
+
+	email, err := auth.NewEmail(string(body.Email))
+	if err != nil {
+		log.GetLogCtx(ctx).Warn("failed to new email", log.ErrorField(err))
+
+		w.WriteHeader(http.StatusBadRequest)
+
+		return
+	}
+
+	input := usecase.APIAuthInviteInput{
+		Email: email,
+	}
+
+	output, err := hdl.auth.Invite(ctx, input)
+	if err != nil {
+		log.GetLogCtx(ctx).Warn("failed to sign up", log.ErrorField(err))
+
+		hdl.HandleErrorStatus(w, err)
+
+		return
+	}
+
+	res := openapi.V1AuthInviteResponseSchema{
+		Code: output.InvitationCode.String(),
+	}
+
+	if err := json.NewEncoder(w).Encode(res); err != nil {
+		log.GetLogCtx(ctx).Warn("failed to encode outputponse", log.ErrorField(err))
+
+		w.WriteHeader(http.StatusInternalServerError)
+	}
+}
+
+// 参加
+// (POST /v1/auth/join).
+func (hdl *Handler) V1AuthJoin(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	var body openapi.V1AuthJoinRequestSchema
+
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		log.GetLogCtx(ctx).Warn("failed to decode request body", log.ErrorField(err))
+
+		w.WriteHeader(http.StatusBadRequest)
+
+		return
+	}
+
+	code, err := auth.NewInvitationCode(body.Code)
+	if err != nil {
+		log.GetLogCtx(ctx).Warn("failed to new email", log.ErrorField(err))
+
+		w.WriteHeader(http.StatusBadRequest)
+
+		return
+	}
+
+	password, err := auth.NewPassword(body.Password)
+	if err != nil {
+		log.GetLogCtx(ctx).Warn("failed to new password", log.ErrorField(err))
+
+		w.WriteHeader(http.StatusBadRequest)
+
+		return
+	}
+
+	input := usecase.APIAuthJoinInput{
+		InvitationCode: code,
+		Password:       password,
+	}
+
+	if _, err := hdl.auth.Join(ctx, input); err != nil {
+		log.GetLogCtx(ctx).Warn("failed to sign up", log.ErrorField(err))
+
+		hdl.HandleErrorStatus(w, err)
+
+		return
+	}
+}
+
 // リフレッシュ
 // (GET /v1/auth/refresh).
 func (hdl *Handler) V1AuthRefresh(w http.ResponseWriter, r *http.Request, params openapi.V1AuthRefreshParams) {

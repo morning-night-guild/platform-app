@@ -105,6 +105,8 @@ services:
       FIREBASE_API_ENDPOINT: http://firebase:9099/identitytoolkit.googleapis.com
       FIREBASE_API_KEY: emulator
       FIREBASE_AUTH_EMULATOR_HOST: firebase:9099
+      RESEND_API_KEY: ${RESEND_API_KEY}
+      RESEND_SENDER: noreply@localhost
     volumes:
       - ../:/app
     restart: always

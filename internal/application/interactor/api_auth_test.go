@@ -18,6 +18,7 @@ import (
 	"github.com/morning-night-guild/platform-app/internal/domain/cache"
 	"github.com/morning-night-guild/platform-app/internal/domain/model"
 	"github.com/morning-night-guild/platform-app/internal/domain/model/auth"
+	"github.com/morning-night-guild/platform-app/internal/domain/model/notice"
 	"github.com/morning-night-guild/platform-app/internal/domain/model/user"
 	"github.com/morning-night-guild/platform-app/internal/domain/rpc"
 )
@@ -50,16 +51,395 @@ func generateKey(t *testing.T) *rsa.PrivateKey {
 	return prv
 }
 
+func TestAPIAuthInvite(t *testing.T) {
+	t.Parallel()
+
+	type fields struct {
+		noticeRPC       func(t *testing.T) rpc.Notice
+		authRPC         rpc.Auth
+		userRPC         rpc.User
+		invitationCache cache.Cache[model.Invitation]
+		userCache       cache.Cache[model.User]
+		authCache       cache.Cache[model.Auth]
+		codeCache       cache.Cache[model.Code]
+		sessionCache    cache.Cache[model.Session]
+	}
+
+	type args struct {
+		ctx   context.Context
+		input usecase.APIAuthInviteInput
+	}
+
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		want    usecase.APIAuthInviteOutput
+		wantErr bool
+	}{
+		{
+			name: "招待できる",
+			args: args{
+				ctx: context.Background(),
+				input: usecase.APIAuthInviteInput{
+					Email: auth.Email("test@example.com"),
+				},
+			},
+			fields: fields{
+				invitationCache: &cache.CacheMock[model.Invitation]{
+					T: t,
+					SetAssert: func(t *testing.T, key string, value model.Invitation, ttl time.Duration) {
+						t.Helper()
+						if !reflect.DeepEqual(ttl, 24*time.Hour) {
+							t.Errorf("ttl = %v, want %v", ttl, 24*time.Hour)
+						}
+					},
+				},
+				noticeRPC: func(t *testing.T) rpc.Notice {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := rpc.NewMockNotice(ctrl)
+					mock.EXPECT().Notify(
+						gomock.Any(),
+						auth.Email("test@example.com"),
+						gomock.Any(),
+						gomock.Any(),
+					).Return(notice.ID(""), nil)
+					return mock
+				},
+			},
+			want:    usecase.APIAuthInviteOutput{},
+			wantErr: false,
+		},
+		{
+			name: "InvitationCache.Set()でエラーが発生して招待できない",
+			args: args{
+				ctx: context.Background(),
+				input: usecase.APIAuthInviteInput{
+					Email: auth.Email("test@example.com"),
+				},
+			},
+			fields: fields{
+				invitationCache: &cache.CacheMock[model.Invitation]{
+					T:      t,
+					SetErr: fmt.Errorf("error"),
+					SetAssert: func(t *testing.T, key string, value model.Invitation, ttl time.Duration) {
+						t.Helper()
+						if !reflect.DeepEqual(ttl, 24*time.Hour) {
+							t.Errorf("ttl = %v, want %v", ttl, 24*time.Hour)
+						}
+					},
+				},
+				noticeRPC: func(t *testing.T) rpc.Notice {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := rpc.NewMockNotice(ctrl)
+					return mock
+				},
+			},
+			want:    usecase.APIAuthInviteOutput{},
+			wantErr: true,
+		},
+		{
+			name: "NoticeRPC.Notify()でエラーが発生して招待できない",
+			args: args{
+				ctx: context.Background(),
+				input: usecase.APIAuthInviteInput{
+					Email: auth.Email("test@example.com"),
+				},
+			},
+			fields: fields{
+				invitationCache: &cache.CacheMock[model.Invitation]{
+					T: t,
+					SetAssert: func(t *testing.T, key string, value model.Invitation, ttl time.Duration) {
+						t.Helper()
+						if !reflect.DeepEqual(ttl, 24*time.Hour) {
+							t.Errorf("ttl = %v, want %v", ttl, 24*time.Hour)
+						}
+					},
+				},
+				noticeRPC: func(t *testing.T) rpc.Notice {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := rpc.NewMockNotice(ctrl)
+					mock.EXPECT().Notify(
+						gomock.Any(),
+						auth.Email("test@example.com"),
+						gomock.Any(),
+						gomock.Any(),
+					).Return(notice.ID(""), fmt.Errorf("error"))
+					return mock
+				},
+			},
+			want:    usecase.APIAuthInviteOutput{},
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			itr := interactor.NewAPIAuth(
+				tt.fields.noticeRPC(t),
+				tt.fields.authRPC,
+				tt.fields.userRPC,
+				tt.fields.invitationCache,
+				tt.fields.userCache,
+				tt.fields.authCache,
+				tt.fields.codeCache,
+				tt.fields.sessionCache,
+			)
+			got, err := itr.Invite(tt.args.ctx, tt.args.input)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("APIAuth.Invite() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !tt.wantErr && len(got.InvitationCode.String()) != 8 {
+				t.Errorf("APIAuth.Invite() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestAPIAuthJoin(t *testing.T) {
+	t.Parallel()
+
+	type fields struct {
+		noticeRPC       rpc.Notice
+		authRPC         func(t *testing.T) rpc.Auth
+		userRPC         func(t *testing.T) rpc.User
+		invitationCache cache.Cache[model.Invitation]
+		userCache       cache.Cache[model.User]
+		authCache       cache.Cache[model.Auth]
+		codeCache       cache.Cache[model.Code]
+		sessionCache    cache.Cache[model.Session]
+	}
+
+	type args struct {
+		ctx   context.Context
+		input usecase.APIAuthJoinInput
+	}
+
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		want    usecase.APIAuthJoinOutput
+		wantErr bool
+	}{
+		{
+			name: "参加できる",
+			args: args{
+				ctx: context.Background(),
+				input: usecase.APIAuthJoinInput{
+					InvitationCode: auth.InvitationCode("01234567"),
+					Password:       auth.Password("password"),
+				},
+			},
+			fields: fields{
+				invitationCache: &cache.CacheMock[model.Invitation]{
+					T: t,
+					Value: model.Invitation{
+						Code:  auth.InvitationCode("01234567"),
+						Email: auth.Email("test@example.com"),
+					},
+					GetDelAssert: func(t *testing.T, key string) {
+						t.Helper()
+						if key != "01234567" {
+							t.Errorf("key = %v, want %v", key, "01234567")
+						}
+					},
+				},
+				userRPC: func(t *testing.T) rpc.User {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := rpc.NewMockUser(ctrl)
+					mock.EXPECT().Create(gomock.Any()).Return(model.User{
+						UserID: user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+					}, nil)
+					return mock
+				},
+				authRPC: func(t *testing.T) rpc.Auth {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := rpc.NewMockAuth(ctrl)
+					mock.EXPECT().SignUp(
+						gomock.Any(),
+						user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+						auth.Email("test@example.com"),
+						auth.Password("password"),
+					).Return(nil)
+					return mock
+				},
+			},
+			want:    usecase.APIAuthJoinOutput{},
+			wantErr: false,
+		},
+		{
+			name: "InvitationCache.Get()でエラーが発生して参加できない",
+			args: args{
+				ctx: context.Background(),
+				input: usecase.APIAuthJoinInput{
+					InvitationCode: auth.InvitationCode("01234567"),
+					Password:       auth.Password("password"),
+				},
+			},
+			fields: fields{
+				invitationCache: &cache.CacheMock[model.Invitation]{
+					T: t,
+					GetDelAssert: func(t *testing.T, key string) {
+						t.Helper()
+						if key != "01234567" {
+							t.Errorf("key = %v, want %v", key, "01234567")
+						}
+					},
+					GetDelErr: fmt.Errorf("error"),
+				},
+				userRPC: func(t *testing.T) rpc.User {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := rpc.NewMockUser(ctrl)
+					return mock
+				},
+				authRPC: func(t *testing.T) rpc.Auth {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := rpc.NewMockAuth(ctrl)
+					return mock
+				},
+			},
+			want:    usecase.APIAuthJoinOutput{},
+			wantErr: true,
+		},
+		{
+			name: "UserRPC.CreateUser()でエラーが発生して参加できない",
+			args: args{
+				ctx: context.Background(),
+				input: usecase.APIAuthJoinInput{
+					InvitationCode: auth.InvitationCode("01234567"),
+					Password:       auth.Password("password"),
+				},
+			},
+			fields: fields{
+				invitationCache: &cache.CacheMock[model.Invitation]{
+					T: t,
+					Value: model.Invitation{
+						Code:  auth.InvitationCode("01234567"),
+						Email: auth.Email("test@example.com"),
+					},
+					GetDelAssert: func(t *testing.T, key string) {
+						t.Helper()
+						if key != "01234567" {
+							t.Errorf("key = %v, want %v", key, "01234567")
+						}
+					},
+				},
+				userRPC: func(t *testing.T) rpc.User {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := rpc.NewMockUser(ctrl)
+					mock.EXPECT().Create(gomock.Any()).Return(model.User{}, fmt.Errorf("test"))
+					return mock
+				},
+				authRPC: func(t *testing.T) rpc.Auth {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := rpc.NewMockAuth(ctrl)
+					return mock
+				},
+			},
+			want:    usecase.APIAuthJoinOutput{},
+			wantErr: true,
+		},
+		{
+			name: "AuthRPC.SignUp()でエラーが発生して参加できない",
+			args: args{
+				ctx: context.Background(),
+				input: usecase.APIAuthJoinInput{
+					InvitationCode: auth.InvitationCode("01234567"),
+					Password:       auth.Password("password"),
+				},
+			},
+			fields: fields{
+				invitationCache: &cache.CacheMock[model.Invitation]{
+					T: t,
+					Value: model.Invitation{
+						Code:  auth.InvitationCode("01234567"),
+						Email: auth.Email("test@example.com"),
+					},
+					GetDelAssert: func(t *testing.T, key string) {
+						t.Helper()
+						if key != "01234567" {
+							t.Errorf("key = %v, want %v", key, "01234567")
+						}
+					},
+				},
+				userRPC: func(t *testing.T) rpc.User {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := rpc.NewMockUser(ctrl)
+					mock.EXPECT().Create(gomock.Any()).Return(model.User{
+						UserID: user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+					}, nil)
+					return mock
+				},
+				authRPC: func(t *testing.T) rpc.Auth {
+					t.Helper()
+					ctrl := gomock.NewController(t)
+					mock := rpc.NewMockAuth(ctrl)
+					mock.EXPECT().SignUp(
+						gomock.Any(),
+						user.ID(uuid.MustParse("01234567-0123-0123-0123-0123456789ab")),
+						auth.Email("test@example.com"),
+						auth.Password("password"),
+					).Return(fmt.Errorf("test"))
+					return mock
+				},
+			},
+			want:    usecase.APIAuthJoinOutput{},
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			itr := interactor.NewAPIAuth(
+				tt.fields.noticeRPC,
+				tt.fields.authRPC(t),
+				tt.fields.userRPC(t),
+				tt.fields.invitationCache,
+				tt.fields.userCache,
+				tt.fields.authCache,
+				tt.fields.codeCache,
+				tt.fields.sessionCache,
+			)
+			got, err := itr.Join(tt.args.ctx, tt.args.input)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("APIAuth.Join() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("APIAuth.Join() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
 func TestAPIAuthSignUp(t *testing.T) {
 	t.Parallel()
 
 	type fields struct {
-		authRPC      func(t *testing.T) rpc.Auth
-		userRPC      func(t *testing.T) rpc.User
-		userCache    cache.Cache[model.User]
-		authCache    cache.Cache[model.Auth]
-		codeCache    cache.Cache[model.Code]
-		sessionCache cache.Cache[model.Session]
+		noticeRPC       rpc.Notice
+		authRPC         func(t *testing.T) rpc.Auth
+		userRPC         func(t *testing.T) rpc.User
+		invitationCache cache.Cache[model.Invitation]
+		userCache       cache.Cache[model.User]
+		authCache       cache.Cache[model.Auth]
+		codeCache       cache.Cache[model.Code]
+		sessionCache    cache.Cache[model.Session]
 	}
 
 	type args struct {
@@ -178,8 +558,10 @@ func TestAPIAuthSignUp(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			itr := interactor.NewAPIAuth(
+				tt.fields.noticeRPC,
 				tt.fields.authRPC(t),
 				tt.fields.userRPC(t),
+				tt.fields.invitationCache,
 				tt.fields.userCache,
 				tt.fields.authCache,
 				tt.fields.codeCache,
@@ -201,12 +583,14 @@ func TestAPIAuthSignIn(t *testing.T) {
 	t.Parallel()
 
 	type fields struct {
-		authRPC      func(t *testing.T) rpc.Auth
-		userRPC      rpc.User
-		userCache    cache.Cache[model.User]
-		authCache    cache.Cache[model.Auth]
-		codeCache    cache.Cache[model.Code]
-		sessionCache cache.Cache[model.Session]
+		noticeRPC       rpc.Notice
+		authRPC         func(t *testing.T) rpc.Auth
+		userRPC         rpc.User
+		invitationCache cache.Cache[model.Invitation]
+		userCache       cache.Cache[model.User]
+		authCache       cache.Cache[model.Auth]
+		codeCache       cache.Cache[model.Code]
+		sessionCache    cache.Cache[model.Session]
 	}
 
 	type args struct {
@@ -294,8 +678,10 @@ func TestAPIAuthSignIn(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			itr := interactor.NewAPIAuth(
+				tt.fields.noticeRPC,
 				tt.fields.authRPC(t),
 				tt.fields.userRPC,
+				tt.fields.invitationCache,
 				tt.fields.userCache,
 				tt.fields.authCache,
 				tt.fields.codeCache,
@@ -317,12 +703,14 @@ func TestAPIAuthSignOut(t *testing.T) {
 	t.Parallel()
 
 	type fields struct {
-		authRPC      rpc.Auth
-		userRPC      rpc.User
-		userCache    cache.Cache[model.User]
-		authCache    cache.Cache[model.Auth]
-		codeCache    cache.Cache[model.Code]
-		sessionCache cache.Cache[model.Session]
+		noticeRPC       rpc.Notice
+		authRPC         rpc.Auth
+		userRPC         rpc.User
+		invitationCache cache.Cache[model.Invitation]
+		userCache       cache.Cache[model.User]
+		authCache       cache.Cache[model.Auth]
+		codeCache       cache.Cache[model.Code]
+		sessionCache    cache.Cache[model.Session]
 	}
 
 	type args struct {
@@ -487,8 +875,10 @@ func TestAPIAuthSignOut(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			itr := interactor.NewAPIAuth(
+				tt.fields.noticeRPC,
 				tt.fields.authRPC,
 				tt.fields.userRPC,
+				tt.fields.invitationCache,
 				tt.fields.userCache,
 				tt.fields.authCache,
 				tt.fields.codeCache,
@@ -510,12 +900,14 @@ func TestAPIAuthSignOutAll(t *testing.T) {
 	t.Parallel()
 
 	type fields struct {
-		authRPC      rpc.Auth
-		userRPC      rpc.User
-		userCache    cache.Cache[model.User]
-		authCache    cache.Cache[model.Auth]
-		codeCache    cache.Cache[model.Code]
-		sessionCache cache.Cache[model.Session]
+		noticeRPC       rpc.Notice
+		authRPC         rpc.Auth
+		userRPC         rpc.User
+		invitationCache cache.Cache[model.Invitation]
+		userCache       cache.Cache[model.User]
+		authCache       cache.Cache[model.Auth]
+		codeCache       cache.Cache[model.Code]
+		sessionCache    cache.Cache[model.Session]
 	}
 
 	type args struct {
@@ -579,8 +971,10 @@ func TestAPIAuthSignOutAll(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			itr := interactor.NewAPIAuth(
+				tt.fields.noticeRPC,
 				tt.fields.authRPC,
 				tt.fields.userRPC,
+				tt.fields.invitationCache,
 				tt.fields.userCache,
 				tt.fields.authCache,
 				tt.fields.codeCache,
@@ -602,12 +996,14 @@ func TestAPIAuthVerify(t *testing.T) {
 	t.Parallel()
 
 	type fields struct {
-		authRPC      rpc.Auth
-		userRPC      rpc.User
-		userCache    cache.Cache[model.User]
-		authCache    cache.Cache[model.Auth]
-		codeCache    cache.Cache[model.Code]
-		sessionCache cache.Cache[model.Session]
+		noticeRPC       rpc.Notice
+		authRPC         rpc.Auth
+		userRPC         rpc.User
+		invitationCache cache.Cache[model.Invitation]
+		userCache       cache.Cache[model.User]
+		authCache       cache.Cache[model.Auth]
+		codeCache       cache.Cache[model.Code]
+		sessionCache    cache.Cache[model.Session]
 	}
 
 	type args struct {
@@ -794,8 +1190,10 @@ func TestAPIAuthVerify(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			itr := interactor.NewAPIAuth(
+				tt.fields.noticeRPC,
 				tt.fields.authRPC,
 				tt.fields.userRPC,
+				tt.fields.invitationCache,
 				tt.fields.userCache,
 				tt.fields.authCache,
 				tt.fields.codeCache,
@@ -817,12 +1215,14 @@ func TestAPIAuthRefresh(t *testing.T) {
 	t.Parallel()
 
 	type fields struct {
-		authRPC      rpc.Auth
-		userRPC      rpc.User
-		userCache    cache.Cache[model.User]
-		authCache    cache.Cache[model.Auth]
-		codeCache    cache.Cache[model.Code]
-		sessionCache cache.Cache[model.Session]
+		noticeRPC       rpc.Notice
+		authRPC         rpc.Auth
+		userRPC         rpc.User
+		invitationCache cache.Cache[model.Invitation]
+		userCache       cache.Cache[model.User]
+		authCache       cache.Cache[model.Auth]
+		codeCache       cache.Cache[model.Code]
+		sessionCache    cache.Cache[model.Session]
 	}
 
 	type args struct {
@@ -913,8 +1313,10 @@ func TestAPIAuthRefresh(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			itr := interactor.NewAPIAuth(
+				tt.fields.noticeRPC,
 				tt.fields.authRPC,
 				tt.fields.userRPC,
+				tt.fields.invitationCache,
 				tt.fields.userCache,
 				tt.fields.authCache,
 				tt.fields.codeCache,
@@ -936,12 +1338,14 @@ func TestAPIAuthGenerateCode(t *testing.T) {
 	t.Parallel()
 
 	type fields struct {
-		authRPC      rpc.Auth
-		userRPC      rpc.User
-		userCache    cache.Cache[model.User]
-		authCache    cache.Cache[model.Auth]
-		codeCache    cache.Cache[model.Code]
-		sessionCache cache.Cache[model.Session]
+		noticeRPC       rpc.Notice
+		authRPC         rpc.Auth
+		userRPC         rpc.User
+		invitationCache cache.Cache[model.Invitation]
+		userCache       cache.Cache[model.User]
+		authCache       cache.Cache[model.Auth]
+		codeCache       cache.Cache[model.Code]
+		sessionCache    cache.Cache[model.Session]
 	}
 
 	type args struct {
@@ -991,8 +1395,10 @@ func TestAPIAuthGenerateCode(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			itr := interactor.NewAPIAuth(
+				tt.fields.noticeRPC,
 				tt.fields.authRPC,
 				tt.fields.userRPC,
+				tt.fields.invitationCache,
 				tt.fields.userCache,
 				tt.fields.authCache,
 				tt.fields.codeCache,
@@ -1014,12 +1420,14 @@ func TestAPIAuthChangePassword(t *testing.T) {
 	t.Parallel()
 
 	type fields struct {
-		authRPC      func(t *testing.T) rpc.Auth
-		userRPC      rpc.User
-		userCache    cache.Cache[model.User]
-		authCache    cache.Cache[model.Auth]
-		codeCache    cache.Cache[model.Code]
-		sessionCache cache.Cache[model.Session]
+		noticeRPC       rpc.Notice
+		authRPC         func(t *testing.T) rpc.Auth
+		userRPC         rpc.User
+		invitationCache cache.Cache[model.Invitation]
+		userCache       cache.Cache[model.User]
+		authCache       cache.Cache[model.Auth]
+		codeCache       cache.Cache[model.Code]
+		sessionCache    cache.Cache[model.Session]
 	}
 
 	type args struct {
@@ -1143,8 +1551,10 @@ func TestAPIAuthChangePassword(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			itr := interactor.NewAPIAuth(
+				tt.fields.noticeRPC,
 				tt.fields.authRPC(t),
 				tt.fields.userRPC,
+				tt.fields.invitationCache,
 				tt.fields.userCache,
 				tt.fields.authCache,
 				tt.fields.codeCache,

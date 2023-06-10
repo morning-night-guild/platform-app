@@ -64,6 +64,36 @@ func (mr *MockAPIAuthMockRecorder) GenerateCode(arg0, arg1 interface{}) *gomock.
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GenerateCode", reflect.TypeOf((*MockAPIAuth)(nil).GenerateCode), arg0, arg1)
 }
 
+// Invite mocks base method.
+func (m *MockAPIAuth) Invite(arg0 context.Context, arg1 APIAuthInviteInput) (APIAuthInviteOutput, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Invite", arg0, arg1)
+	ret0, _ := ret[0].(APIAuthInviteOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Invite indicates an expected call of Invite.
+func (mr *MockAPIAuthMockRecorder) Invite(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Invite", reflect.TypeOf((*MockAPIAuth)(nil).Invite), arg0, arg1)
+}
+
+// Join mocks base method.
+func (m *MockAPIAuth) Join(arg0 context.Context, arg1 APIAuthJoinInput) (APIAuthJoinOutput, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Join", arg0, arg1)
+	ret0, _ := ret[0].(APIAuthJoinOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Join indicates an expected call of Join.
+func (mr *MockAPIAuthMockRecorder) Join(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Join", reflect.TypeOf((*MockAPIAuth)(nil).Join), arg0, arg1)
+}
+
 // Refresh mocks base method.
 func (m *MockAPIAuth) Refresh(arg0 context.Context, arg1 APIAuthRefreshInput) (APIAuthRefreshOutput, error) {
 	m.ctrl.T.Helper()

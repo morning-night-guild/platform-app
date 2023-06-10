@@ -14,6 +14,7 @@ import (
 	"github.com/morning-night-guild/platform-app/internal/driver/http"
 	"github.com/morning-night-guild/platform-app/internal/driver/middleware"
 	"github.com/morning-night-guild/platform-app/internal/driver/redis"
+	"github.com/morning-night-guild/platform-app/internal/driver/resend"
 	"github.com/morning-night-guild/platform-app/internal/driver/server"
 )
 
@@ -33,6 +34,14 @@ func main() {
 	cs, err := cors.New(origins, cors.ConvertDebugEnable(cfg.CORSDebugEnable))
 	if err != nil {
 		panic(err)
+	}
+
+	noticeRPC := resend.New().MockNotice()
+	if cfg.ResendAPIKey != "" {
+		noticeRPC, err = resend.New().Notice(cfg.ResendAPIKey, cfg.ResendSender)
+		if err != nil {
+			panic(err)
+		}
 	}
 
 	userRPC, err := con.User(cfg.AppCoreURL)
@@ -60,6 +69,11 @@ func main() {
 		panic(err)
 	}
 
+	invitationCache, err := redis.New[model.Invitation]().KVS("invitation", rds)
+	if err != nil {
+		panic(err)
+	}
+
 	userCache, err := redis.New[model.User]().KVS("user", rds)
 	if err != nil {
 		panic(err)
@@ -81,8 +95,10 @@ func main() {
 	}
 
 	authUsecase := interactor.NewAPIAuth(
+		noticeRPC,
 		authRPC,
 		userRPC,
+		invitationCache,
 		userCache,
 		authCache,
 		codeCache,

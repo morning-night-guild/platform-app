@@ -21,6 +21,8 @@ type APIConfig struct {
 	FirebaseSecret      string
 	FirebaseAPIEndpoint string
 	FirebaseAPIKey      string
+	ResendAPIKey        string
+	ResendSender        string
 }
 
 func NewAPI() APIConfig {
@@ -44,6 +46,8 @@ func NewAPI() APIConfig {
 		FirebaseSecret:      os.Getenv("FIREBASE_SECRET"),
 		FirebaseAPIEndpoint: os.Getenv("FIREBASE_API_ENDPOINT"),
 		FirebaseAPIKey:      os.Getenv("FIREBASE_API_KEY"),
+		ResendAPIKey:        os.Getenv("RESEND_API_KEY"),
+		ResendSender:        os.Getenv("RESEND_SENDER"),
 	}
 
 	log.Log().Sugar().Infof("config: %+v", conf)

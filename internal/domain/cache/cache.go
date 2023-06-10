@@ -16,6 +16,7 @@ type Cache[T any] interface {
 	Get(context.Context, string) (T, error)
 	Set(context.Context, string, T, time.Duration) error
 	Del(context.Context, string) error
+	GetDel(context.Context, string) (T, error)
 	CreateTxSetCmd(context.Context, string, T, time.Duration) (TxSetCmd, error)
 	CreateTxDelCmd(context.Context, string) (TxDelCmd, error)
 	Tx(context.Context, []TxSetCmd, []TxDelCmd) error

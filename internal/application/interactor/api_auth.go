@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/morning-night-guild/platform-app/internal/application/usecase"
 	"github.com/morning-night-guild/platform-app/internal/domain/cache"
@@ -16,30 +17,84 @@ import (
 var _ usecase.APIAuth = (*APIAuth)(nil)
 
 type APIAuth struct {
-	authRPC      rpc.Auth
-	userRPC      rpc.User
-	userCache    cache.Cache[model.User]
-	authCache    cache.Cache[model.Auth]
-	codeCache    cache.Cache[model.Code]
-	sessionCache cache.Cache[model.Session]
+	noticeRPC       rpc.Notice
+	authRPC         rpc.Auth
+	userRPC         rpc.User
+	invitationCache cache.Cache[model.Invitation]
+	userCache       cache.Cache[model.User]
+	authCache       cache.Cache[model.Auth]
+	codeCache       cache.Cache[model.Code]
+	sessionCache    cache.Cache[model.Session]
 }
 
 func NewAPIAuth(
+	noticeRPC rpc.Notice,
 	authRPC rpc.Auth,
 	userRPC rpc.User,
+	invitationCache cache.Cache[model.Invitation],
 	userCache cache.Cache[model.User],
 	authCache cache.Cache[model.Auth],
 	codeCache cache.Cache[model.Code],
 	sessionCache cache.Cache[model.Session],
 ) *APIAuth {
 	return &APIAuth{
-		authRPC:      authRPC,
-		userCache:    userCache,
-		userRPC:      userRPC,
-		authCache:    authCache,
-		codeCache:    codeCache,
-		sessionCache: sessionCache,
+		noticeRPC:       noticeRPC,
+		authRPC:         authRPC,
+		userRPC:         userRPC,
+		invitationCache: invitationCache,
+		userCache:       userCache,
+		authCache:       authCache,
+		codeCache:       codeCache,
+		sessionCache:    sessionCache,
 	}
+}
+
+func (itr *APIAuth) Invite(
+	ctx context.Context,
+	input usecase.APIAuthInviteInput,
+) (usecase.APIAuthInviteOutput, error) {
+	inv := model.GenerateInvitation(input.Email)
+
+	const day = 24 * time.Hour
+
+	if err := itr.invitationCache.Set(ctx, inv.Code.String(), inv, day); err != nil {
+		log.GetLogCtx(ctx).Warn("failed to set invitation", log.ErrorField(err))
+
+		return usecase.APIAuthInviteOutput{}, err
+	}
+
+	if _, err := itr.noticeRPC.Notify(ctx, inv.Email, inv.Subject(), inv.Message()); err != nil {
+		log.GetLogCtx(ctx).Warn("failed to notify", log.ErrorField(err))
+
+		return usecase.APIAuthInviteOutput{}, err
+	}
+
+	return usecase.APIAuthInviteOutput{
+		InvitationCode: inv.Code,
+	}, nil
+}
+
+func (itr *APIAuth) Join(
+	ctx context.Context,
+	input usecase.APIAuthJoinInput,
+) (usecase.APIAuthJoinOutput, error) {
+	inv, err := itr.invitationCache.GetDel(ctx, input.InvitationCode.String())
+	if err != nil {
+		log.GetLogCtx(ctx).Warn("failed to get invitation", log.ErrorField(err))
+
+		return usecase.APIAuthJoinOutput{}, errors.NewNotFoundError(fmt.Sprintf("invitation code: %s", input.InvitationCode))
+	}
+
+	if _, err := itr.SignUp(ctx, usecase.APIAuthSignUpInput{
+		Email:    inv.Email,
+		Password: input.Password,
+	}); err != nil {
+		log.GetLogCtx(ctx).Warn("failed to sign up", log.ErrorField(err))
+
+		return usecase.APIAuthJoinOutput{}, err
+	}
+
+	return usecase.APIAuthJoinOutput{}, nil
 }
 
 func (itr *APIAuth) SignUp(

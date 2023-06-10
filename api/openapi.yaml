@@ -22,11 +22,68 @@ tags:
   - name: health
     description: ヘルスチェック
 paths:
-  /v1/auth/signup:
+  /v1/auth/invite:
     post:
       tags:
         - auth
-      summary: サインアップ
+      summary: 招待
+      description: |
+        ユーザーを招待する
+        招待コードはメールアドレスに送信される
+      operationId: v1AuthInvite
+      security:
+        - apiKey: []      
+      requestBody:
+        required: true
+        description: 招待リクエストボディ
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/V1AuthInviteRequestSchema'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V1AuthInviteResponseSchema'
+        '400':
+          description: Bad Request
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal Server Error
+  /v1/auth/join:
+    post:
+      tags:
+        - auth
+      summary: 参加
+      description: 招待コードを用いてサインアップする
+      operationId: v1AuthJoin
+      requestBody:
+        required: true
+        description: 参加リクエストボディ
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/V1AuthJoinRequestSchema'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V1ArticleListResponseSchema'
+        '404':
+          description: Not Found
+        '500':
+          description: Internal Server Error
+  /v1/auth/signup:
+    post:
+      deprecated: true
+      tags:
+        - auth
+      summary: サインアップ(テスト用)
       description: ユーザーを登録する
       operationId: v1AuthSignUp
       security:
@@ -455,6 +512,39 @@ components:
           items:
             type: string
             example: tag
+    V1AuthInviteRequestSchema:
+      type: object
+      properties:
+        email:
+          type: string
+          description: メールアドレス
+          format: email
+          example: morning.night.guild@example.com
+      required:
+        - email
+    V1AuthInviteResponseSchema:
+      type: object
+      properties:
+        code:
+          type: string
+          description: 招待コード
+          example: xxxxxxxx
+      required:
+        - code
+    V1AuthJoinRequestSchema:
+      type: object
+      properties:
+        code:
+          type: string
+          description: 招待コード
+          example: xxxxxxxx
+        password:
+          type: string
+          description: パスワード
+          example: password
+      required:
+        - code
+        - password
     V1AuthSignUpRequestSchema:
       type: object
       properties:

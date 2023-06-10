@@ -30,6 +30,8 @@ func TestNewAPI(t *testing.T) {
 				FirebaseSecret:      `{"type": "service_account","project_id": "emulator"}`,
 				FirebaseAPIEndpoint: "http://firebase:9099/identitytoolkit.googleapis.com",
 				FirebaseAPIKey:      "emulator",
+				ResendAPIKey:        "resend_api_key",
+				ResendSender:        "noreply@localhost",
 			},
 			want: config.APIConfig{
 				Port:                "8080",
@@ -45,6 +47,8 @@ func TestNewAPI(t *testing.T) {
 				FirebaseSecret:      `{"type": "service_account","project_id": "emulator"}`,
 				FirebaseAPIEndpoint: "http://firebase:9099/identitytoolkit.googleapis.com",
 				FirebaseAPIKey:      "emulator",
+				ResendAPIKey:        "resend_api_key",
+				ResendSender:        "noreply@localhost",
 			},
 		},
 		{
@@ -63,6 +67,8 @@ func TestNewAPI(t *testing.T) {
 				FirebaseSecret:      `{"type": "service_account","project_id": "emulator"}`,
 				FirebaseAPIEndpoint: "http://firebase:9099/identitytoolkit.googleapis.com",
 				FirebaseAPIKey:      "emulator",
+				ResendAPIKey:        "resend_api_key",
+				ResendSender:        "noreply@localhost",
 			},
 			want: config.APIConfig{
 				Port:                "8080",
@@ -78,6 +84,8 @@ func TestNewAPI(t *testing.T) {
 				FirebaseSecret:      `{"type": "service_account","project_id": "emulator"}`,
 				FirebaseAPIEndpoint: "http://firebase:9099/identitytoolkit.googleapis.com",
 				FirebaseAPIKey:      "emulator",
+				ResendAPIKey:        "resend_api_key",
+				ResendSender:        "noreply@localhost",
 			},
 		},
 		{
@@ -96,6 +104,8 @@ func TestNewAPI(t *testing.T) {
 				FirebaseSecret:      `{"type": "service_account","project_id": "emulator"}`,
 				FirebaseAPIEndpoint: "http://firebase:9099/identitytoolkit.googleapis.com",
 				FirebaseAPIKey:      "emulator",
+				ResendAPIKey:        "resend_api_key",
+				ResendSender:        "noreply@localhost",
 			},
 			want: config.APIConfig{
 				Port:                "8080",
@@ -111,6 +121,8 @@ func TestNewAPI(t *testing.T) {
 				FirebaseSecret:      `{"type": "service_account","project_id": "emulator"}`,
 				FirebaseAPIEndpoint: "http://firebase:9099/identitytoolkit.googleapis.com",
 				FirebaseAPIKey:      "emulator",
+				ResendAPIKey:        "resend_api_key",
+				ResendSender:        "noreply@localhost",
 			},
 		},
 	}
@@ -132,6 +144,8 @@ func TestNewAPI(t *testing.T) {
 			t.Setenv("FIREBASE_SECRET", tt.args.FirebaseSecret)
 			t.Setenv("FIREBASE_API_ENDPOINT", tt.args.FirebaseAPIEndpoint)
 			t.Setenv("FIREBASE_API_KEY", tt.args.FirebaseAPIKey)
+			t.Setenv("RESEND_API_KEY", tt.args.ResendAPIKey)
+			t.Setenv("RESEND_SENDER", tt.args.ResendSender)
 			if got := config.NewAPI(); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("NewAPI() = %+v, want %+v", got, tt.want)
 			}
