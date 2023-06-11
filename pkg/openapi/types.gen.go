@@ -78,6 +78,27 @@ type V1AuthChangePasswordRequestSchema struct {
 	PublicKey string `json:"publicKey"`
 }
 
+// V1AuthInviteRequestSchema defines model for V1AuthInviteRequestSchema.
+type V1AuthInviteRequestSchema struct {
+	// Email メールアドレス
+	Email openapi_types.Email `json:"email"`
+}
+
+// V1AuthInviteResponseSchema defines model for V1AuthInviteResponseSchema.
+type V1AuthInviteResponseSchema struct {
+	// Code 招待コード
+	Code string `json:"code"`
+}
+
+// V1AuthJoinRequestSchema defines model for V1AuthJoinRequestSchema.
+type V1AuthJoinRequestSchema struct {
+	// Code 招待コード
+	Code string `json:"code"`
+
+	// Password パスワード
+	Password string `json:"password"`
+}
+
 // V1AuthSignInRequestSchema defines model for V1AuthSignInRequestSchema.
 type V1AuthSignInRequestSchema struct {
 	// Email メールアドレス
@@ -140,6 +161,12 @@ type V1AuthRefreshParams struct {
 
 // V1ArticleShareJSONRequestBody defines body for V1ArticleShare for application/json ContentType.
 type V1ArticleShareJSONRequestBody = V1ArticleShareRequestSchema
+
+// V1AuthInviteJSONRequestBody defines body for V1AuthInvite for application/json ContentType.
+type V1AuthInviteJSONRequestBody = V1AuthInviteRequestSchema
+
+// V1AuthJoinJSONRequestBody defines body for V1AuthJoin for application/json ContentType.
+type V1AuthJoinJSONRequestBody = V1AuthJoinRequestSchema
 
 // V1AuthChangePasswordJSONRequestBody defines body for V1AuthChangePassword for application/json ContentType.
 type V1AuthChangePasswordJSONRequestBody = V1AuthChangePasswordRequestSchema

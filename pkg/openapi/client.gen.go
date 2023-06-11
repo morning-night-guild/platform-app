@@ -104,6 +104,16 @@ type ClientInterface interface {
 	// V1ArticleAddOwn request
 	V1ArticleAddOwn(ctx context.Context, articleId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// V1AuthInvite request with any body
+	V1AuthInviteWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	V1AuthInvite(ctx context.Context, body V1AuthInviteJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// V1AuthJoin request with any body
+	V1AuthJoinWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	V1AuthJoin(ctx context.Context, body V1AuthJoinJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// V1AuthChangePassword request with any body
 	V1AuthChangePasswordWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -196,6 +206,54 @@ func (c *Client) V1ArticleRemoveOwn(ctx context.Context, articleId openapi_types
 
 func (c *Client) V1ArticleAddOwn(ctx context.Context, articleId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewV1ArticleAddOwnRequest(c.Server, articleId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) V1AuthInviteWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewV1AuthInviteRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) V1AuthInvite(ctx context.Context, body V1AuthInviteJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewV1AuthInviteRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) V1AuthJoinWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewV1AuthJoinRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) V1AuthJoin(ctx context.Context, body V1AuthJoinJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewV1AuthJoinRequest(c.Server, body)
 	if err != nil {
 		return nil, err
 	}
@@ -587,6 +645,86 @@ func NewV1ArticleAddOwnRequest(server string, articleId openapi_types.UUID) (*ht
 	if err != nil {
 		return nil, err
 	}
+
+	return req, nil
+}
+
+// NewV1AuthInviteRequest calls the generic V1AuthInvite builder with application/json body
+func NewV1AuthInviteRequest(server string, body V1AuthInviteJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewV1AuthInviteRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewV1AuthInviteRequestWithBody generates requests for V1AuthInvite with any type of body
+func NewV1AuthInviteRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v1/auth/invite")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewV1AuthJoinRequest calls the generic V1AuthJoin builder with application/json body
+func NewV1AuthJoinRequest(server string, body V1AuthJoinJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewV1AuthJoinRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewV1AuthJoinRequestWithBody generates requests for V1AuthJoin with any type of body
+func NewV1AuthJoinRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v1/auth/join")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
 
 	return req, nil
 }
@@ -1050,6 +1188,16 @@ type ClientWithResponsesInterface interface {
 	// V1ArticleAddOwn request
 	V1ArticleAddOwnWithResponse(ctx context.Context, articleId openapi_types.UUID, reqEditors ...RequestEditorFn) (*V1ArticleAddOwnResponse, error)
 
+	// V1AuthInvite request with any body
+	V1AuthInviteWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*V1AuthInviteResponse, error)
+
+	V1AuthInviteWithResponse(ctx context.Context, body V1AuthInviteJSONRequestBody, reqEditors ...RequestEditorFn) (*V1AuthInviteResponse, error)
+
+	// V1AuthJoin request with any body
+	V1AuthJoinWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*V1AuthJoinResponse, error)
+
+	V1AuthJoinWithResponse(ctx context.Context, body V1AuthJoinJSONRequestBody, reqEditors ...RequestEditorFn) (*V1AuthJoinResponse, error)
+
 	// V1AuthChangePassword request with any body
 	V1AuthChangePasswordWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*V1AuthChangePasswordResponse, error)
 
@@ -1171,6 +1319,50 @@ func (r V1ArticleAddOwnResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r V1ArticleAddOwnResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type V1AuthInviteResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *V1AuthInviteResponseSchema
+}
+
+// Status returns HTTPResponse.Status
+func (r V1AuthInviteResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r V1AuthInviteResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type V1AuthJoinResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *V1ArticleListResponseSchema
+}
+
+// Status returns HTTPResponse.Status
+func (r V1AuthJoinResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r V1AuthJoinResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -1453,6 +1645,40 @@ func (c *ClientWithResponses) V1ArticleAddOwnWithResponse(ctx context.Context, a
 	return ParseV1ArticleAddOwnResponse(rsp)
 }
 
+// V1AuthInviteWithBodyWithResponse request with arbitrary body returning *V1AuthInviteResponse
+func (c *ClientWithResponses) V1AuthInviteWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*V1AuthInviteResponse, error) {
+	rsp, err := c.V1AuthInviteWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseV1AuthInviteResponse(rsp)
+}
+
+func (c *ClientWithResponses) V1AuthInviteWithResponse(ctx context.Context, body V1AuthInviteJSONRequestBody, reqEditors ...RequestEditorFn) (*V1AuthInviteResponse, error) {
+	rsp, err := c.V1AuthInvite(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseV1AuthInviteResponse(rsp)
+}
+
+// V1AuthJoinWithBodyWithResponse request with arbitrary body returning *V1AuthJoinResponse
+func (c *ClientWithResponses) V1AuthJoinWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*V1AuthJoinResponse, error) {
+	rsp, err := c.V1AuthJoinWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseV1AuthJoinResponse(rsp)
+}
+
+func (c *ClientWithResponses) V1AuthJoinWithResponse(ctx context.Context, body V1AuthJoinJSONRequestBody, reqEditors ...RequestEditorFn) (*V1AuthJoinResponse, error) {
+	rsp, err := c.V1AuthJoin(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseV1AuthJoinResponse(rsp)
+}
+
 // V1AuthChangePasswordWithBodyWithResponse request with arbitrary body returning *V1AuthChangePasswordResponse
 func (c *ClientWithResponses) V1AuthChangePasswordWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*V1AuthChangePasswordResponse, error) {
 	rsp, err := c.V1AuthChangePasswordWithBody(ctx, contentType, body, reqEditors...)
@@ -1653,6 +1879,58 @@ func ParseV1ArticleAddOwnResponse(rsp *http.Response) (*V1ArticleAddOwnResponse,
 	response := &V1ArticleAddOwnResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
+	}
+
+	return response, nil
+}
+
+// ParseV1AuthInviteResponse parses an HTTP response from a V1AuthInviteWithResponse call
+func ParseV1AuthInviteResponse(rsp *http.Response) (*V1AuthInviteResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &V1AuthInviteResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest V1AuthInviteResponseSchema
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseV1AuthJoinResponse parses an HTTP response from a V1AuthJoinWithResponse call
+func ParseV1AuthJoinResponse(rsp *http.Response) (*V1AuthJoinResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &V1AuthJoinResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest V1ArticleListResponseSchema
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
 	}
 
 	return response, nil

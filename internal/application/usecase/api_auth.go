@@ -13,6 +13,8 @@ import (
 
 // APIAuth.
 type APIAuth interface {
+	Invite(context.Context, APIAuthInviteInput) (APIAuthInviteOutput, error)
+	Join(context.Context, APIAuthJoinInput) (APIAuthJoinOutput, error)
 	SignUp(context.Context, APIAuthSignUpInput) (APIAuthSignUpOutput, error)
 	SignIn(context.Context, APIAuthSignInInput) (APIAuthSignInOutput, error)
 	SignOut(context.Context, APIAuthSignOutInput) (APIAuthSignOutOutput, error)
@@ -22,6 +24,21 @@ type APIAuth interface {
 	Refresh(context.Context, APIAuthRefreshInput) (APIAuthRefreshOutput, error)
 	ChangePassword(context.Context, APIAuthChangePasswordInput) (APIAuthChangePasswordOutput, error)
 }
+
+type APIAuthInviteInput struct {
+	Email auth.Email
+}
+
+type APIAuthInviteOutput struct {
+	InvitationCode auth.InvitationCode
+}
+
+type APIAuthJoinInput struct {
+	InvitationCode auth.InvitationCode
+	Password       auth.Password
+}
+
+type APIAuthJoinOutput struct{}
 
 type APIAuthSignUpInput struct {
 	Email    auth.Email

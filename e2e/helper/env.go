@@ -28,3 +28,9 @@ func GetDSN(t *testing.T) string {
 
 	return os.Getenv("DATABASE_URL")
 }
+
+func GetRedisURL(t *testing.T) string {
+	t.Helper()
+
+	return os.Getenv("REDIS_URL")
+}

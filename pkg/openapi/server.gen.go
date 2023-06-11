@@ -27,6 +27,12 @@ type ServerInterface interface {
 	// 記事追加
 	// (POST /v1/articles/{articleId})
 	V1ArticleAddOwn(w http.ResponseWriter, r *http.Request, articleId openapi_types.UUID)
+	// 招待
+	// (POST /v1/auth/invite)
+	V1AuthInvite(w http.ResponseWriter, r *http.Request)
+	// 参加
+	// (POST /v1/auth/join)
+	V1AuthJoin(w http.ResponseWriter, r *http.Request)
 	// パスワード変更
 	// (PUT /v1/auth/password)
 	V1AuthChangePassword(w http.ResponseWriter, r *http.Request)
@@ -42,7 +48,7 @@ type ServerInterface interface {
 	// サインアウトオール
 	// (GET /v1/auth/signout/all)
 	V1AuthSignOutAll(w http.ResponseWriter, r *http.Request)
-	// サインアップ
+	// サインアップ(テスト用)
 	// (POST /v1/auth/signup)
 	V1AuthSignUp(w http.ResponseWriter, r *http.Request)
 	// 検証
@@ -195,6 +201,38 @@ func (siw *ServerInterfaceWrapper) V1ArticleAddOwn(w http.ResponseWriter, r *htt
 
 	var handler http.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.V1ArticleAddOwn(w, r, articleId)
+	})
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r.WithContext(ctx))
+}
+
+// V1AuthInvite operation middleware
+func (siw *ServerInterfaceWrapper) V1AuthInvite(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, ApiKeyScopes, []string{})
+
+	var handler http.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.V1AuthInvite(w, r)
+	})
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r.WithContext(ctx))
+}
+
+// V1AuthJoin operation middleware
+func (siw *ServerInterfaceWrapper) V1AuthJoin(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	var handler http.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.V1AuthJoin(w, r)
 	})
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -571,6 +609,12 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/v1/articles/{articleId}", wrapper.V1ArticleAddOwn)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/v1/auth/invite", wrapper.V1AuthInvite)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/v1/auth/join", wrapper.V1AuthJoin)
 	})
 	r.Group(func(r chi.Router) {
 		r.Put(options.BaseURL+"/v1/auth/password", wrapper.V1AuthChangePassword)

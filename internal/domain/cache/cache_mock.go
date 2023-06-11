@@ -19,6 +19,8 @@ type CacheMock[V any] struct {
 	SetErr               error
 	DelAssert            func(t *testing.T, key string)
 	DelErr               error
+	GetDelAssert         func(t *testing.T, key string)
+	GetDelErr            error
 	CreateTxSetCmdAssert func(t *testing.T, key string, value V, ttl time.Duration)
 	CreateTxSetCmdErr    error
 	CreateTxDelCmdAssert func(t *testing.T, key string)
@@ -52,6 +54,14 @@ func (mock *CacheMock[V]) Del(ctx context.Context, key string) error {
 	mock.DelAssert(mock.T, key)
 
 	return mock.DelErr
+}
+
+func (mock *CacheMock[V]) GetDel(ctx context.Context, key string) (V, error) {
+	mock.T.Helper()
+
+	mock.GetDelAssert(mock.T, key)
+
+	return mock.Value, mock.GetDelErr
 }
 
 func (mock *CacheMock[V]) CreateTxSetCmd(ctx context.Context, key string, value V, ttl time.Duration) (TxSetCmd, error) {

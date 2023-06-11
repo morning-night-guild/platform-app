@@ -81,6 +81,30 @@ func (kvs *KVS[T]) Del(ctx context.Context, key string) error {
 	return nil
 }
 
+func (kvs *KVS[T]) GetDel(ctx context.Context, key string) (T, error) {
+	var value T
+
+	key = fmt.Sprintf(format, kvs.Prefix, key)
+
+	str, err := kvs.Client.GetDel(ctx, key).Result()
+	if err != nil {
+		log.GetLogCtx(ctx).Warn("failed to get cache", log.ErrorField(err))
+
+		return value, errors.NewNotFoundError("failed to get cache", err)
+	}
+
+	dec, err := base64.StdEncoding.DecodeString(str)
+	if err != nil {
+		return value, fmt.Errorf("failed to decode base64: %w", err)
+	}
+
+	if err := json.Unmarshal(dec, &value); err != nil {
+		return value, fmt.Errorf("failed to unmarshal json: %w", err)
+	}
+
+	return value, nil
+}
+
 func (kvs *KVS[T]) CreateTxSetCmd(_ context.Context, key string, value T, ttl time.Duration) (cache.TxSetCmd, error) {
 	val, err := json.Marshal(value)
 	if err != nil {
