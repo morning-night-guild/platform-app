@@ -20,12 +20,6 @@
   
     - [ArticleService](#article-v1-ArticleService)
   
-- [proto/health/v1/health.proto](#proto_health_v1_health-proto)
-    - [CheckRequest](#health-v1-CheckRequest)
-    - [CheckResponse](#health-v1-CheckResponse)
-  
-    - [HealthService](#health-v1-HealthService)
-  
 - [proto/user/v1/user.proto](#proto_user_v1_user-proto)
     - [CreateRequest](#user-v1-CreateRequest)
     - [CreateResponse](#user-v1-CreateResponse)
@@ -34,6 +28,12 @@
     - [User](#user-v1-User)
   
     - [UserService](#user-v1-UserService)
+  
+- [proto/health/v1/health.proto](#proto_health_v1_health-proto)
+    - [CheckRequest](#health-v1-CheckRequest)
+    - [CheckResponse](#health-v1-CheckResponse)
+  
+    - [HealthService](#health-v1-HealthService)
   
 - [Scalar Value Types](#scalar-value-types)
 
@@ -267,52 +267,6 @@
 
 
 
-<a name="proto_health_v1_health-proto"></a>
-<p align="right"><a href="#top">Top</a></p>
-
-## proto/health/v1/health.proto
-
-
-
-<a name="health-v1-CheckRequest"></a>
-
-### CheckRequest
-チェックリクエスト
-
-
-
-
-
-
-<a name="health-v1-CheckResponse"></a>
-
-### CheckResponse
-チェックレスポンス
-
-
-
-
-
- 
-
- 
-
- 
-
-
-<a name="health-v1-HealthService"></a>
-
-### HealthService
-ヘルスサービス
-
-| Method Name | Request Type | Response Type | Description |
-| ----------- | ------------ | ------------- | ------------|
-| Check | [CheckRequest](#health-v1-CheckRequest) | [CheckResponse](#health-v1-CheckResponse) | チェック Need X-Api-Key Header |
-
- 
-
-
-
 <a name="proto_user_v1_user-proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
@@ -405,6 +359,52 @@
 | ----------- | ------------ | ------------- | ------------|
 | Create | [CreateRequest](#user-v1-CreateRequest) | [CreateResponse](#user-v1-CreateResponse) | 作成 |
 | Update | [UpdateRequest](#user-v1-UpdateRequest) | [UpdateResponse](#user-v1-UpdateResponse) | 更新 |
+
+ 
+
+
+
+<a name="proto_health_v1_health-proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## proto/health/v1/health.proto
+
+
+
+<a name="health-v1-CheckRequest"></a>
+
+### CheckRequest
+チェックリクエスト
+
+
+
+
+
+
+<a name="health-v1-CheckResponse"></a>
+
+### CheckResponse
+チェックレスポンス
+
+
+
+
+
+ 
+
+ 
+
+ 
+
+
+<a name="health-v1-HealthService"></a>
+
+### HealthService
+ヘルスサービス
+
+| Method Name | Request Type | Response Type | Description |
+| ----------- | ------------ | ------------- | ------------|
+| Check | [CheckRequest](#health-v1-CheckRequest) | [CheckResponse](#health-v1-CheckResponse) | チェック Need X-Api-Key Header |
 
  
 

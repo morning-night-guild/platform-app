@@ -29,13 +29,121 @@ Email: <a href="mailto:morning.night.guild@example.com">Support</a>
 
 認証
 
+## v1AuthInvite
+
+<a id="opIdv1AuthInvite"></a>
+
+`POST /v1/auth/invite`
+
+*招待*
+
+ユーザーを招待する
+招待コードはメールアドレスに送信される
+
+> Body parameter
+
+```json
+{
+  "email": "morning.night.guild@example.com"
+}
+```
+
+<h3 id="v1authinvite-parameters">Parameters</h3>
+
+|Name|In|Type|Required|Description|
+|---|---|---|---|---|
+|body|body|[V1AuthInviteRequestSchema](#schemav1authinviterequestschema)|true|招待リクエストボディ|
+
+> Example responses
+
+> 200 Response
+
+```json
+{
+  "code": "xxxxxxxx"
+}
+```
+
+<h3 id="v1authinvite-responses">Responses</h3>
+
+|Status|Meaning|Description|Schema|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|OK|[V1AuthInviteResponseSchema](#schemav1authinviteresponseschema)|
+|400|[Bad Request](https://tools.ietf.org/html/rfc7231#section-6.5.1)|Bad Request|None|
+|401|[Unauthorized](https://tools.ietf.org/html/rfc7235#section-3.1)|Unauthorized|None|
+|500|[Internal Server Error](https://tools.ietf.org/html/rfc7231#section-6.6.1)|Internal Server Error|None|
+
+<aside class="warning">
+To perform this operation, you must be authenticated by means of one of the following methods:
+apiKey
+</aside>
+
+## v1AuthJoin
+
+<a id="opIdv1AuthJoin"></a>
+
+`POST /v1/auth/join`
+
+*参加*
+
+招待コードを用いてサインアップする
+
+> Body parameter
+
+```json
+{
+  "code": "xxxxxxxx",
+  "password": "password"
+}
+```
+
+<h3 id="v1authjoin-parameters">Parameters</h3>
+
+|Name|In|Type|Required|Description|
+|---|---|---|---|---|
+|body|body|[V1AuthJoinRequestSchema](#schemav1authjoinrequestschema)|true|参加リクエストボディ|
+
+> Example responses
+
+> 200 Response
+
+```json
+{
+  "articles": [
+    {
+      "id": "497f6eca-6276-4993-bfeb-53cbbbba6f08",
+      "url": "https://example.com",
+      "title": "title",
+      "description": "description",
+      "thumbnail": "https://example.com",
+      "tags": [
+        "tag"
+      ]
+    }
+  ],
+  "nextPageToken": "string"
+}
+```
+
+<h3 id="v1authjoin-responses">Responses</h3>
+
+|Status|Meaning|Description|Schema|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|OK|[V1ArticleListResponseSchema](#schemav1articlelistresponseschema)|
+|404|[Not Found](https://tools.ietf.org/html/rfc7231#section-6.5.4)|Not Found|None|
+|500|[Internal Server Error](https://tools.ietf.org/html/rfc7231#section-6.6.1)|Internal Server Error|None|
+
+<aside class="success">
+This operation does not require authentication
+</aside>
+
 ## v1AuthSignUp
 
 <a id="opIdv1AuthSignUp"></a>
 
 `POST /v1/auth/signup`
 
-*サインアップ*
+*サインアップ(テスト用)*
 
 ユーザーを登録する
 
@@ -576,6 +684,68 @@ This operation does not require authentication
 |description|string|false|none|description|
 |thumbnail|string(uri)|false|none|サムネイルのURL|
 |tags|[string]|false|none|タグ|
+
+<h2 id="tocS_V1AuthInviteRequestSchema">V1AuthInviteRequestSchema</h2>
+<!-- backwards compatibility -->
+<a id="schemav1authinviterequestschema"></a>
+<a id="schema_V1AuthInviteRequestSchema"></a>
+<a id="tocSv1authinviterequestschema"></a>
+<a id="tocsv1authinviterequestschema"></a>
+
+```json
+{
+  "email": "morning.night.guild@example.com"
+}
+
+```
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|email|string(email)|true|none|メールアドレス|
+
+<h2 id="tocS_V1AuthInviteResponseSchema">V1AuthInviteResponseSchema</h2>
+<!-- backwards compatibility -->
+<a id="schemav1authinviteresponseschema"></a>
+<a id="schema_V1AuthInviteResponseSchema"></a>
+<a id="tocSv1authinviteresponseschema"></a>
+<a id="tocsv1authinviteresponseschema"></a>
+
+```json
+{
+  "code": "xxxxxxxx"
+}
+
+```
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|code|string|true|none|招待コード|
+
+<h2 id="tocS_V1AuthJoinRequestSchema">V1AuthJoinRequestSchema</h2>
+<!-- backwards compatibility -->
+<a id="schemav1authjoinrequestschema"></a>
+<a id="schema_V1AuthJoinRequestSchema"></a>
+<a id="tocSv1authjoinrequestschema"></a>
+<a id="tocsv1authjoinrequestschema"></a>
+
+```json
+{
+  "code": "xxxxxxxx",
+  "password": "password"
+}
+
+```
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|code|string|true|none|招待コード|
+|password|string|true|none|パスワード|
 
 <h2 id="tocS_V1AuthSignUpRequestSchema">V1AuthSignUpRequestSchema</h2>
 <!-- backwards compatibility -->
