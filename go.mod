@@ -19,7 +19,7 @@ require (
 	github.com/oklog/ulid/v2 v2.1.0
 	github.com/pkg/errors v0.9.1
 	github.com/redis/go-redis/v9 v9.0.5
-	github.com/resendlabs/resend-go v1.6.0
+	github.com/resendlabs/resend-go v1.6.1
 	go.uber.org/zap v1.24.0
 	golang.org/x/net v0.11.0
 	google.golang.org/api v0.128.0
