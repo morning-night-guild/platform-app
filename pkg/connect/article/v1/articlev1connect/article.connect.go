@@ -171,38 +171,54 @@ type ArticleServiceHandler interface {
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
 func NewArticleServiceHandler(svc ArticleServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
-	mux := http.NewServeMux()
-	mux.Handle(ArticleServiceShareProcedure, connect_go.NewUnaryHandler(
+	articleServiceShareHandler := connect_go.NewUnaryHandler(
 		ArticleServiceShareProcedure,
 		svc.Share,
 		opts...,
-	))
-	mux.Handle(ArticleServiceListProcedure, connect_go.NewUnaryHandler(
+	)
+	articleServiceListHandler := connect_go.NewUnaryHandler(
 		ArticleServiceListProcedure,
 		svc.List,
 		opts...,
-	))
-	mux.Handle(ArticleServiceListByUserProcedure, connect_go.NewUnaryHandler(
+	)
+	articleServiceListByUserHandler := connect_go.NewUnaryHandler(
 		ArticleServiceListByUserProcedure,
 		svc.ListByUser,
 		opts...,
-	))
-	mux.Handle(ArticleServiceDeleteProcedure, connect_go.NewUnaryHandler(
+	)
+	articleServiceDeleteHandler := connect_go.NewUnaryHandler(
 		ArticleServiceDeleteProcedure,
 		svc.Delete,
 		opts...,
-	))
-	mux.Handle(ArticleServiceAddToUserProcedure, connect_go.NewUnaryHandler(
+	)
+	articleServiceAddToUserHandler := connect_go.NewUnaryHandler(
 		ArticleServiceAddToUserProcedure,
 		svc.AddToUser,
 		opts...,
-	))
-	mux.Handle(ArticleServiceRemoveFromUserProcedure, connect_go.NewUnaryHandler(
+	)
+	articleServiceRemoveFromUserHandler := connect_go.NewUnaryHandler(
 		ArticleServiceRemoveFromUserProcedure,
 		svc.RemoveFromUser,
 		opts...,
-	))
-	return "/article.v1.ArticleService/", mux
+	)
+	return "/article.v1.ArticleService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case ArticleServiceShareProcedure:
+			articleServiceShareHandler.ServeHTTP(w, r)
+		case ArticleServiceListProcedure:
+			articleServiceListHandler.ServeHTTP(w, r)
+		case ArticleServiceListByUserProcedure:
+			articleServiceListByUserHandler.ServeHTTP(w, r)
+		case ArticleServiceDeleteProcedure:
+			articleServiceDeleteHandler.ServeHTTP(w, r)
+		case ArticleServiceAddToUserProcedure:
+			articleServiceAddToUserHandler.ServeHTTP(w, r)
+		case ArticleServiceRemoveFromUserProcedure:
+			articleServiceRemoveFromUserHandler.ServeHTTP(w, r)
+		default:
+			http.NotFound(w, r)
+		}
+	})
 }
 
 // UnimplementedArticleServiceHandler returns CodeUnimplemented from all methods.
