@@ -100,18 +100,26 @@ type UserServiceHandler interface {
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
 func NewUserServiceHandler(svc UserServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
-	mux := http.NewServeMux()
-	mux.Handle(UserServiceCreateProcedure, connect_go.NewUnaryHandler(
+	userServiceCreateHandler := connect_go.NewUnaryHandler(
 		UserServiceCreateProcedure,
 		svc.Create,
 		opts...,
-	))
-	mux.Handle(UserServiceUpdateProcedure, connect_go.NewUnaryHandler(
+	)
+	userServiceUpdateHandler := connect_go.NewUnaryHandler(
 		UserServiceUpdateProcedure,
 		svc.Update,
 		opts...,
-	))
-	return "/user.v1.UserService/", mux
+	)
+	return "/user.v1.UserService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case UserServiceCreateProcedure:
+			userServiceCreateHandler.ServeHTTP(w, r)
+		case UserServiceUpdateProcedure:
+			userServiceUpdateHandler.ServeHTTP(w, r)
+		default:
+			http.NotFound(w, r)
+		}
+	})
 }
 
 // UnimplementedUserServiceHandler returns CodeUnimplemented from all methods.
