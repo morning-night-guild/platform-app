@@ -1,7 +1,7 @@
 services:
   redis:
     container_name: ${APP_NAME}-redis
-    image: redis:7.0.11-alpine
+    image: redis:7.0.12-alpine
     ports:
       - ${REDIS_PORT}:6379
     restart: always
@@ -117,7 +117,7 @@ services:
 # for integration test
   redis-test:
     container_name: ${APP_NAME}-redis-test
-    image: redis:7.0.11-alpine
+    image: redis:7.0.12-alpine
     ports:
       - ${TEST_REDIS_PORT}:6379
     restart: always
