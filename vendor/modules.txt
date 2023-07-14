@@ -59,7 +59,7 @@ entgo.io/ent/schema
 entgo.io/ent/schema/edge
 entgo.io/ent/schema/field
 entgo.io/ent/schema/index
-# firebase.google.com/go/v4 v4.11.0
+# firebase.google.com/go/v4 v4.12.0
 ## explicit; go 1.17
 firebase.google.com/go/v4
 firebase.google.com/go/v4/appcheck

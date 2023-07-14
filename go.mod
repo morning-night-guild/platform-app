@@ -4,7 +4,7 @@ go 1.20
 
 require (
 	entgo.io/ent v0.12.3
-	firebase.google.com/go/v4 v4.11.0
+	firebase.google.com/go/v4 v4.12.0
 	github.com/bufbuild/connect-go v1.9.0
 	github.com/bufbuild/connect-grpchealth-go v1.1.1
 	github.com/deepmap/oapi-codegen v1.13.0
