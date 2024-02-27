@@ -37,6 +37,11 @@ func FormatType(t schema.Type) (string, error) {
 		f = strings.ToLower(t.T)
 	case *CurrencyType:
 		f = strings.ToLower(t.T)
+	case *DomainType:
+		if t.T == "" {
+			return "", errors.New("postgres: missing domain type name")
+		}
+		f = t.T
 	case *schema.EnumType:
 		if t.T == "" {
 			return "", errors.New("postgres: missing enum type name")
@@ -154,7 +159,7 @@ func FormatType(t schema.Type) (string, error) {
 		case typeOID, typeRegClass, typeRegCollation, typeRegConfig, typeRegDictionary, typeRegNamespace,
 			typeRegOper, typeRegOperator, typeRegProc, typeRegProcedure, typeRegRole, typeRegType:
 		default:
-			return "", fmt.Errorf("postgres: unsupported object identfier type: %q", t.T)
+			return "", fmt.Errorf("postgres: unsupported object identifier type: %q", t.T)
 		}
 	case *TextSearchType:
 		if f = strings.ToLower(t.T); f != TypeTSVector && f != TypeTSQuery {
@@ -163,6 +168,8 @@ func FormatType(t schema.Type) (string, error) {
 	case *UserDefinedType:
 		f = strings.ToLower(t.T)
 	case *XMLType:
+		f = strings.ToLower(t.T)
+	case *PseudoType:
 		f = strings.ToLower(t.T)
 	case *schema.UnsupportedType:
 		return "", fmt.Errorf("postgres: unsupported type: %q", t.T)
@@ -280,6 +287,9 @@ func columnType(c *columnDesc) (schema.Type, error) {
 		typ = &OIDType{T: t}
 	case TypeUserDefined:
 		typ = &UserDefinedType{T: c.fmtype}
+	case typeAny, typeAnyElement, typeAnyArray, typeAnyNonArray, typeAnyEnum, typeInternal,
+		typeRecord, typeTrigger, typeVoid, typeUnknown:
+		typ = &PseudoType{T: t}
 	default:
 		typ = &schema.UnsupportedType{T: t}
 	}
@@ -290,8 +300,7 @@ func columnType(c *columnDesc) (schema.Type, error) {
 		// https://postgresql.org/docs/current/catalog-pg-type.html
 		typ = newEnumType(c.fmtype, c.typid)
 	case "d":
-		// Use user-defined for domain types as we do not
-		// support their creation at this stage.
+		// Use user-defined for domain types as not all atlas versions support it.
 		typ = &UserDefinedType{T: c.fmtype}
 	}
 	return typ, nil
@@ -342,6 +351,9 @@ type columnDesc struct {
 var reDigits = regexp.MustCompile(`\d`)
 
 func parseColumn(s string) (*columnDesc, error) {
+	if s == "" {
+		return nil, errors.New("postgres: unexpected empty column type")
+	}
 	parts := strings.FieldsFunc(s, func(r rune) bool {
 		return r == '(' || r == ')' || r == ' ' || r == ','
 	})

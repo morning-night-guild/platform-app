@@ -24,7 +24,7 @@ type (
 	// Driver represents a PostgreSQL driver for introspecting database schemas,
 	// generating diff between schema elements and apply migrations changes.
 	Driver struct {
-		conn
+		*conn
 		schema.Differ
 		schema.Inspector
 		migrate.PlanApplier
@@ -36,12 +36,17 @@ type (
 		// The schema in the `search_path` parameter (if given).
 		schema string
 		// System variables that are set on `Open`.
-		collate string
-		ctype   string
 		version int
 		crdb    bool
 	}
 )
+
+var _ interface {
+	migrate.Snapshoter
+	migrate.StmtScanner
+	migrate.CleanChecker
+	schema.TypeParseFormatter
+} = (*Driver)(nil)
 
 // DriverName holds the name used for registration.
 const DriverName = "postgres"
@@ -86,7 +91,7 @@ func opener(_ context.Context, u *url.URL) (*sqlclient.Client, error) {
 
 // Open opens a new PostgreSQL driver.
 func Open(db schema.ExecQuerier) (migrate.Driver, error) {
-	c := conn{ExecQuerier: db}
+	c := &conn{ExecQuerier: db}
 	rows, err := db.QueryContext(context.Background(), paramsQuery)
 	if err != nil {
 		return nil, fmt.Errorf("postgres: scanning system variables: %w", err)
@@ -95,10 +100,9 @@ func Open(db schema.ExecQuerier) (migrate.Driver, error) {
 	if err != nil {
 		return nil, fmt.Errorf("postgres: failed scanning rows: %w", err)
 	}
-	if len(params) != 3 && len(params) != 4 {
+	if len(params) != 1 && len(params) != 2 {
 		return nil, fmt.Errorf("postgres: unexpected number of rows: %d", len(params))
 	}
-	c.ctype, c.collate = params[1], params[2]
 	if c.version, err = strconv.Atoi(params[0]); err != nil {
 		return nil, fmt.Errorf("postgres: malformed version: %s: %w", params[0], err)
 	}
@@ -106,7 +110,7 @@ func Open(db schema.ExecQuerier) (migrate.Driver, error) {
 		return nil, fmt.Errorf("postgres: unsupported postgres version: %d", c.version)
 	}
 	// Means we are connected to CockroachDB because we have a result for name='crdb_version'. see `paramsQuery`.
-	if c.crdb = len(params) == 4; c.crdb {
+	if c.crdb = len(params) == 2; c.crdb {
 		return noLockDriver{
 			&Driver{
 				conn:        c,
@@ -126,10 +130,9 @@ func Open(db schema.ExecQuerier) (migrate.Driver, error) {
 
 func (d *Driver) dev() *sqlx.DevDriver {
 	return &sqlx.DevDriver{
-		Driver:     d,
-		MaxNameLen: 63,
-		PatchColumn: func(s *schema.Schema, c *schema.Column) {
-			if e, ok := hasEnumType(c); ok {
+		Driver: d,
+		PatchObject: func(s *schema.Schema, o schema.Object) {
+			if e, ok := o.(*schema.EnumType); ok {
 				e.Schema = s
 			}
 		},
@@ -185,53 +188,81 @@ func (d *Driver) Snapshot(ctx context.Context) (migrate.RestoreFunc, error) {
 			return nil, err
 		}
 		if len(s.Tables) > 0 {
-			return nil, &migrate.NotCleanError{Reason: fmt.Sprintf("found table %q in connected schema", s.Tables[0].Name)}
+			return nil, &migrate.NotCleanError{
+				State:  schema.NewRealm(s),
+				Reason: fmt.Sprintf("found table %q in connected schema", s.Tables[0].Name),
+			}
 		}
-		return func(ctx context.Context) error {
-			current, err := d.InspectSchema(ctx, s.Name, nil)
-			if err != nil {
-				return err
-			}
-			changes, err := d.SchemaDiff(current, s)
-			if err != nil {
-				return err
-			}
-			return d.ApplyChanges(ctx, withCascade(changes))
-		}, nil
+		return d.SchemaRestoreFunc(s), nil
 	}
 	// Not bound to a schema.
 	realm, err := d.InspectRealm(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
-	restore := func(ctx context.Context) error {
-		current, err := d.InspectRealm(ctx, nil)
-		if err != nil {
-			return err
-		}
-		changes, err := d.RealmDiff(current, realm)
-		if err != nil {
-			return err
-		}
-		return d.ApplyChanges(ctx, withCascade(changes))
-	}
+	restore := d.RealmRestoreFunc(realm)
 	// Postgres is considered clean, if there are no schemas or the public schema has no tables.
 	if len(realm.Schemas) == 0 {
 		return restore, nil
 	}
 	if s, ok := realm.Schema("public"); len(realm.Schemas) == 1 && ok {
 		if len(s.Tables) > 0 {
-			return nil, &migrate.NotCleanError{Reason: fmt.Sprintf("found table %q in schema %q", s.Tables[0].Name, s.Name)}
+			return nil, &migrate.NotCleanError{
+				State:  realm,
+				Reason: fmt.Sprintf("found table %q in schema %q", s.Tables[0].Name, s.Name),
+			}
 		}
 		return restore, nil
 	}
-	return nil, &migrate.NotCleanError{Reason: fmt.Sprintf("found schema %q", realm.Schemas[0].Name)}
+	return nil, &migrate.NotCleanError{
+		State:  realm,
+		Reason: fmt.Sprintf("found schema %q", realm.Schemas[0].Name),
+	}
+}
+
+// SchemaRestoreFunc returns a function that restores the given schema to its desired state.
+func (d *Driver) SchemaRestoreFunc(desired *schema.Schema) migrate.RestoreFunc {
+	return func(ctx context.Context) error {
+		current, err := d.InspectSchema(ctx, desired.Name, nil)
+		if err != nil {
+			return err
+		}
+		changes, err := d.SchemaDiff(current, desired)
+		if err != nil {
+			return err
+		}
+		return d.ApplyChanges(ctx, withCascade(changes))
+	}
+}
+
+// RealmRestoreFunc returns a function that restores the given realm to its desired state.
+func (d *Driver) RealmRestoreFunc(desired *schema.Realm) migrate.RestoreFunc {
+	return func(ctx context.Context) error {
+		current, err := d.InspectRealm(ctx, nil)
+		if err != nil {
+			return err
+		}
+		changes, err := d.RealmDiff(current, desired)
+		if err != nil {
+			return err
+		}
+		return d.ApplyChanges(ctx, withCascade(changes))
+	}
 }
 
 func withCascade(changes schema.Changes) schema.Changes {
 	for _, c := range changes {
-		if d, ok := c.(*schema.DropTable); ok {
-			d.Extra = append(d.Extra, &Cascade{})
+		switch c := c.(type) {
+		case *schema.DropTable:
+			c.Extra = append(c.Extra, &schema.IfExists{}, &Cascade{})
+		case *schema.DropView:
+			c.Extra = append(c.Extra, &schema.IfExists{}, &Cascade{})
+		case *schema.DropProc:
+			c.Extra = append(c.Extra, &schema.IfExists{}, &Cascade{})
+		case *schema.DropFunc:
+			c.Extra = append(c.Extra, &schema.IfExists{}, &Cascade{})
+		case *schema.DropObject:
+			c.Extra = append(c.Extra, &schema.IfExists{}, &Cascade{})
 		}
 	}
 	return changes
@@ -249,7 +280,7 @@ func (d *Driver) CheckClean(ctx context.Context, revT *migrate.TableIdent) error
 		case len(s.Tables) == 0, (revT.Schema == "" || s.Name == revT.Schema) && len(s.Tables) == 1 && s.Tables[0].Name == revT.Name:
 			return nil
 		default:
-			return &migrate.NotCleanError{Reason: fmt.Sprintf("found table %q in schema %q", s.Tables[0].Name, s.Name)}
+			return &migrate.NotCleanError{State: schema.NewRealm(s), Reason: fmt.Sprintf("found table %q in schema %q", s.Tables[0].Name, s.Name)}
 		}
 	}
 	r, err := d.InspectRealm(ctx, nil)
@@ -260,11 +291,11 @@ func (d *Driver) CheckClean(ctx context.Context, revT *migrate.TableIdent) error
 		switch {
 		case len(s.Tables) == 0 && s.Name == "public":
 		case len(s.Tables) == 0 || s.Name != revT.Schema:
-			return &migrate.NotCleanError{Reason: fmt.Sprintf("found schema %q", s.Name)}
+			return &migrate.NotCleanError{State: r, Reason: fmt.Sprintf("found schema %q", s.Name)}
 		case len(s.Tables) > 1:
-			return &migrate.NotCleanError{Reason: fmt.Sprintf("found %d tables in schema %q", len(s.Tables), s.Name)}
+			return &migrate.NotCleanError{State: r, Reason: fmt.Sprintf("found %d tables in schema %q", len(s.Tables), s.Name)}
 		case len(s.Tables) == 1 && s.Tables[0].Name != revT.Name:
-			return &migrate.NotCleanError{Reason: fmt.Sprintf("found table %q in schema %q", s.Tables[0].Name, s.Name)}
+			return &migrate.NotCleanError{State: r, Reason: fmt.Sprintf("found table %q in schema %q", s.Tables[0].Name, s.Name)}
 		}
 	}
 	return nil
@@ -273,6 +304,27 @@ func (d *Driver) CheckClean(ctx context.Context, revT *migrate.TableIdent) error
 // Version returns the version of the connected database.
 func (d *Driver) Version() string {
 	return strconv.Itoa(d.conn.version)
+}
+
+// FormatType converts schema type to its column form in the database.
+func (*Driver) FormatType(t schema.Type) (string, error) {
+	return FormatType(t)
+}
+
+// ParseType returns the schema.Type value represented by the given string.
+func (*Driver) ParseType(s string) (schema.Type, error) {
+	return ParseType(s)
+}
+
+// ScanStmts implements migrate.StmtScanner.
+func (*Driver) ScanStmts(input string) ([]*migrate.Stmt, error) {
+	return (&migrate.Scanner{
+		ScannerOptions: migrate.ScannerOptions{
+			MatchBegin:       true,
+			MatchBeginAtomic: true,
+			MatchDollarQuote: true,
+		},
+	}).Scan(input)
 }
 
 func acquire(ctx context.Context, conn schema.ExecQuerier, id uint32, timeout time.Duration) error {
@@ -313,6 +365,11 @@ func acquire(ctx context.Context, conn schema.ExecQuerier, id uint32, timeout ti
 // supportsIndexInclude reports if the server supports the INCLUDE clause.
 func (c *conn) supportsIndexInclude() bool {
 	return c.version >= 11_00_00
+}
+
+// supportsIndexNullsDistinct reports if the server supports the NULLS [NOT] DISTINCT clause.
+func (c *conn) supportsIndexNullsDistinct() bool {
+	return c.version >= 15_00_00
 }
 
 type parser struct{}
@@ -431,6 +488,18 @@ const (
 	typeRegProcedure  = "regprocedure"
 	typeRegRole       = "regrole"
 	typeRegType       = "regtype"
+
+	// PostgreSQL of supported pseudo-types.
+	typeAny         = "any"
+	typeAnyElement  = "anyelement"
+	typeAnyArray    = "anyarray"
+	typeAnyNonArray = "anynonarray"
+	typeAnyEnum     = "anyenum"
+	typeInternal    = "internal"
+	typeRecord      = "record"
+	typeTrigger     = "trigger"
+	typeVoid        = "void"
+	typeUnknown     = "unknown"
 )
 
 // List of supported index types.
