@@ -26,7 +26,7 @@ type (
 	// Driver represents a SQLite driver for introspecting database schemas,
 	// generating diff between schema elements and apply migrations changes.
 	Driver struct {
-		conn
+		*conn
 		schema.Differ
 		schema.Inspector
 		migrate.PlanApplier
@@ -40,6 +40,13 @@ type (
 		collations []string
 	}
 )
+
+var _ interface {
+	migrate.Snapshoter
+	migrate.StmtScanner
+	migrate.CleanChecker
+	schema.TypeParseFormatter
+} = (*Driver)(nil)
 
 // DriverName holds the name used for registration.
 const DriverName = "sqlite3"
@@ -60,12 +67,26 @@ func init() {
 			return uc
 		})),
 	)
+	sqlclient.Register(
+		"libsql",
+		sqlclient.DriverOpener(Open),
+		sqlclient.RegisterTxOpener(OpenTx),
+		sqlclient.RegisterCodec(MarshalHCL, EvalHCL),
+		sqlclient.RegisterFlavours("libsql+ws", "libsql+wss", "libsql+file"),
+		sqlclient.RegisterURLParser(sqlclient.URLParserFunc(func(u *url.URL) *sqlclient.URL {
+			dsn := strings.TrimPrefix(u.String(), "libsql+")
+			if strings.HasPrefix(dsn, "file://") {
+				dsn = strings.Replace(dsn, "file://", "file:", 1)
+			}
+			return &sqlclient.URL{URL: u, DSN: dsn, Schema: mainFile}
+		})),
+	)
 }
 
 // Open opens a new SQLite driver.
 func Open(db schema.ExecQuerier) (migrate.Driver, error) {
 	var (
-		c   = conn{ExecQuerier: db}
+		c   = &conn{ExecQuerier: db}
 		ctx = context.Background()
 	)
 	rows, err := db.QueryContext(ctx, "SELECT sqlite_version()")
@@ -96,12 +117,12 @@ func (d *Driver) Snapshot(ctx context.Context) (migrate.RestoreFunc, error) {
 		return nil, err
 	}
 	if !(r == nil || (len(r.Schemas) == 1 && r.Schemas[0].Name == mainFile && len(r.Schemas[0].Tables) == 0)) {
-		return nil, &migrate.NotCleanError{Reason: fmt.Sprintf("found table %q", r.Schemas[0].Tables[0].Name)}
+		return nil, &migrate.NotCleanError{State: r, Reason: fmt.Sprintf("found table %q", r.Schemas[0].Tables[0].Name)}
 	}
 	return func(ctx context.Context) error {
 		for _, stmt := range []string{
 			"PRAGMA writable_schema = 1;",
-			"DELETE FROM sqlite_master WHERE type IN ('table', 'index', 'trigger');",
+			"DELETE FROM sqlite_master WHERE type IN ('table', 'view', 'index', 'trigger');",
 			"PRAGMA writable_schema = 0;",
 			"VACUUM;",
 		} {
@@ -121,13 +142,13 @@ func (d *Driver) CheckClean(ctx context.Context, revT *migrate.TableIdent) error
 	}
 	switch n := len(r.Schemas); {
 	case n > 1:
-		return &migrate.NotCleanError{Reason: fmt.Sprintf("found multiple schemas: %d", len(r.Schemas))}
+		return &migrate.NotCleanError{State: r, Reason: fmt.Sprintf("found multiple schemas: %d", len(r.Schemas))}
 	case n == 1 && r.Schemas[0].Name != mainFile:
-		return &migrate.NotCleanError{Reason: fmt.Sprintf("found schema %q", r.Schemas[0].Name)}
+		return &migrate.NotCleanError{State: r, Reason: fmt.Sprintf("found schema %q", r.Schemas[0].Name)}
 	case n == 1 && len(r.Schemas[0].Tables) > 1:
-		return &migrate.NotCleanError{Reason: fmt.Sprintf("found multiple tables: %d", len(r.Schemas[0].Tables))}
+		return &migrate.NotCleanError{State: r, Reason: fmt.Sprintf("found multiple tables: %d", len(r.Schemas[0].Tables))}
 	case n == 1 && len(r.Schemas[0].Tables) == 1 && (revT == nil || r.Schemas[0].Tables[0].Name != revT.Name):
-		return &migrate.NotCleanError{Reason: fmt.Sprintf("found table %q", r.Schemas[0].Tables[0].Name)}
+		return &migrate.NotCleanError{State: r, Reason: fmt.Sprintf("found table %q", r.Schemas[0].Tables[0].Name)}
 	}
 	return nil
 }
@@ -156,6 +177,28 @@ func (d *Driver) Lock(_ context.Context, name string, timeout time.Duration) (sc
 // Version returns the version of the connected database.
 func (d *Driver) Version() string {
 	return d.conn.version
+}
+
+// FormatType converts schema type to its column form in the database.
+func (*Driver) FormatType(t schema.Type) (string, error) {
+	return FormatType(t)
+}
+
+// ParseType returns the schema.Type value represented by the given string.
+func (*Driver) ParseType(s string) (schema.Type, error) {
+	return ParseType(s)
+}
+
+// ScanStmts implements migrate.StmtScanner.
+func (*Driver) ScanStmts(input string) ([]*migrate.Stmt, error) {
+	return (&migrate.Scanner{
+		ScannerOptions: migrate.ScannerOptions{
+			MatchBegin: true,
+			// The following are not support by SQLite.
+			MatchBeginAtomic: false,
+			MatchDollarQuote: false,
+		},
+	}).Scan(input)
 }
 
 func acquireLock(path string, timeout time.Duration) (schema.UnlockFunc, error) {

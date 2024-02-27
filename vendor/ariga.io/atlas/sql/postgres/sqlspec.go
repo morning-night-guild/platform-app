@@ -23,21 +23,116 @@ import (
 
 type (
 	doc struct {
-		Tables  []*sqlspec.Table  `spec:"table"`
-		Enums   []*Enum           `spec:"enum"`
-		Schemas []*sqlspec.Schema `spec:"schema"`
+		Tables       []*sqlspec.Table   `spec:"table"`
+		Views        []*sqlspec.View    `spec:"view"`
+		Materialized []*sqlspec.View    `spec:"materialized"`
+		Enums        []*enum            `spec:"enum"`
+		Domains      []*domain          `spec:"domain"`
+		Sequences    []*sequence        `spec:"sequence"`
+		Funcs        []*sqlspec.Func    `spec:"function"`
+		Procs        []*sqlspec.Func    `spec:"procedure"`
+		Triggers     []*sqlspec.Trigger `spec:"trigger"`
+		Schemas      []*sqlspec.Schema  `spec:"schema"`
 	}
-	// Enum holds a specification for an enum, that can be referenced as a column type.
-	Enum struct {
-		Name   string         `spec:",name"`
-		Schema *schemahcl.Ref `spec:"schema"`
-		Values []string       `spec:"values"`
+
+	// Enum holds a specification for an enum type.
+	enum struct {
+		Name      string         `spec:",name"`
+		Qualifier string         `spec:",qualifier"`
+		Schema    *schemahcl.Ref `spec:"schema"`
+		Values    []string       `spec:"values"`
+		schemahcl.DefaultExtension
+	}
+
+	// Domain holds a specification for a domain type.
+	domain struct {
+		Name      string           `spec:",name"`
+		Qualifier string           `spec:",qualifier"`
+		Schema    *schemahcl.Ref   `spec:"schema"`
+		Type      *schemahcl.Type  `spec:"type"`
+		Null      bool             `spec:"null"`
+		Default   cty.Value        `spec:"default"`
+		Checks    []*sqlspec.Check `spec:"check"`
+		schemahcl.DefaultExtension
+	}
+
+	// Sequence holds a specification for a sequence.
+	sequence struct {
+		Name      string         `spec:",name"`
+		Qualifier string         `spec:",qualifier"`
+		Schema    *schemahcl.Ref `spec:"schema"`
+		// Type, Start, Increment, Min, Max, Cache, Cycle
+		// are optionally added to the sequence definition.
 		schemahcl.DefaultExtension
 	}
 )
 
+// merge merges the doc d1 into d.
+func (d *doc) merge(d1 *doc) {
+	d.Enums = append(d.Enums, d1.Enums...)
+	d.Funcs = append(d.Funcs, d1.Funcs...)
+	d.Procs = append(d.Procs, d1.Procs...)
+	d.Views = append(d.Views, d1.Views...)
+	d.Tables = append(d.Tables, d1.Tables...)
+	d.Domains = append(d.Domains, d1.Domains...)
+	d.Schemas = append(d.Schemas, d1.Schemas...)
+	d.Sequences = append(d.Sequences, d1.Sequences...)
+	d.Triggers = append(d.Triggers, d1.Triggers...)
+	d.Materialized = append(d.Materialized, d1.Materialized...)
+}
+
+func (d *doc) ScanDoc() *specutil.ScanDoc {
+	return &specutil.ScanDoc{
+		Schemas:      d.Schemas,
+		Tables:       d.Tables,
+		Views:        d.Views,
+		Funcs:        d.Funcs,
+		Procs:        d.Procs,
+		Triggers:     d.Triggers,
+		Materialized: d.Materialized,
+	}
+}
+
+// Label returns the defaults label used for the enum resource.
+func (e *enum) Label() string { return e.Name }
+
+// QualifierLabel returns the qualifier label used for the enum resource, if any.
+func (e *enum) QualifierLabel() string { return e.Qualifier }
+
+// SetQualifier sets the qualifier label used for the enum resource.
+func (e *enum) SetQualifier(q string) { e.Qualifier = q }
+
+// SchemaRef returns the schema reference for the enum.
+func (e *enum) SchemaRef() *schemahcl.Ref { return e.Schema }
+
+// Label returns the defaults label used for the domain resource.
+func (d *domain) Label() string { return d.Name }
+
+// QualifierLabel returns the qualifier label used for the domain resource, if any.
+func (d *domain) QualifierLabel() string { return d.Qualifier }
+
+// SetQualifier sets the qualifier label used for the domain resource.
+func (d *domain) SetQualifier(q string) { d.Qualifier = q }
+
+// SchemaRef returns the schema reference for the domain.
+func (d *domain) SchemaRef() *schemahcl.Ref { return d.Schema }
+
+// Label returns the defaults label used for the sequence resource.
+func (s *sequence) Label() string { return s.Name }
+
+// QualifierLabel returns the qualifier label used for the sequence resource, if any.
+func (s *sequence) QualifierLabel() string { return s.Qualifier }
+
+// SetQualifier sets the qualifier label used for the sequence resource.
+func (s *sequence) SetQualifier(q string) { s.Qualifier = q }
+
+// SchemaRef returns the schema reference for the sequence.
+func (s *sequence) SchemaRef() *schemahcl.Ref { return s.Schema }
+
 func init() {
-	schemahcl.Register("enum", &Enum{})
+	schemahcl.Register("enum", &enum{})
+	schemahcl.Register("domain", &domain{})
+	schemahcl.Register("sequence", &sequence{})
 }
 
 // evalSpec evaluates an Atlas DDL document into v using the input.
@@ -48,13 +143,20 @@ func evalSpec(p *hclparse.Parser, v any, input map[string]cty.Value) error {
 		if err := hclState.Eval(p, &d, input); err != nil {
 			return err
 		}
-		if err := specutil.Scan(v, d.Schemas, d.Tables, convertTable); err != nil {
+		if err := specutil.Scan(v, d.ScanDoc(), scanFuncs); err != nil {
 			return fmt.Errorf("specutil: failed converting to *schema.Realm: %w", err)
 		}
-		if len(d.Enums) > 0 {
-			if err := convertEnums(d.Tables, d.Enums, v); err != nil {
-				return err
-			}
+		if err := convertEnums(d.Tables, d.Enums, v); err != nil {
+			return err
+		}
+		if err := convertDomains(d.Tables, d.Domains, v); err != nil {
+			return err
+		}
+		if err := convertSequences(d.Tables, d.Sequences, v); err != nil {
+			return err
+		}
+		if err := normalizeRealm(v); err != nil {
+			return err
 		}
 	case *schema.Schema:
 		var d doc
@@ -65,59 +167,98 @@ func evalSpec(p *hclparse.Parser, v any, input map[string]cty.Value) error {
 			return fmt.Errorf("specutil: expecting document to contain a single schema, got %d", len(d.Schemas))
 		}
 		r := &schema.Realm{}
-		if err := specutil.Scan(r, d.Schemas, d.Tables, convertTable); err != nil {
+		if err := specutil.Scan(r, d.ScanDoc(), scanFuncs); err != nil {
 			return err
 		}
 		if err := convertEnums(d.Tables, d.Enums, r); err != nil {
+			return err
+		}
+		if err := convertDomains(d.Tables, d.Domains, r); err != nil {
+			return err
+		}
+		if err := convertSequences(d.Tables, d.Sequences, r); err != nil {
+			return err
+		}
+		if err := normalizeRealm(r); err != nil {
 			return err
 		}
 		*v = *r.Schemas[0]
 	case schema.Schema, schema.Realm:
 		return fmt.Errorf("postgres: Eval expects a pointer: received %[1]T, expected *%[1]T", v)
 	default:
-		return hclState.Eval(p, v, input)
+		return fmt.Errorf("postgres: unexpected type %T", v)
 	}
 	return nil
 }
 
 // MarshalSpec marshals v into an Atlas DDL document using a schemahcl.Marshaler.
 func MarshalSpec(v any, marshaler schemahcl.Marshaler) ([]byte, error) {
-	var d doc
+	var (
+		d  doc
+		ts []*schema.Trigger
+	)
 	switch s := v.(type) {
 	case *schema.Schema:
-		var err error
-		doc, err := schemaSpec(s)
+		d1, trs, err := schemaSpec(s)
 		if err != nil {
 			return nil, fmt.Errorf("specutil: failed converting schema to spec: %w", err)
 		}
-		d.Tables = doc.Tables
-		d.Schemas = doc.Schemas
-		d.Enums = doc.Enums
+		ts = trs
+		d.merge(d1)
 	case *schema.Realm:
 		for _, s := range s.Schemas {
-			doc, err := schemaSpec(s)
+			d1, trs, err := schemaSpec(s)
 			if err != nil {
 				return nil, fmt.Errorf("specutil: failed converting schema to spec: %w", err)
 			}
-			d.Tables = append(d.Tables, doc.Tables...)
-			d.Schemas = append(d.Schemas, doc.Schemas...)
-			d.Enums = append(d.Enums, doc.Enums...)
+			d.merge(d1)
+			ts = append(ts, trs...)
 		}
-		if err := specutil.QualifyDuplicates(d.Tables); err != nil {
+		if err := specutil.QualifyObjects(d.Tables); err != nil {
+			return nil, err
+		}
+		if err := specutil.QualifyObjects(d.Views); err != nil {
+			return nil, err
+		}
+		if err := specutil.QualifyObjects(d.Materialized); err != nil {
+			return nil, err
+		}
+		if err := specutil.QualifyObjects(d.Enums); err != nil {
+			return nil, err
+		}
+		if err := specutil.QualifyObjects(d.Domains); err != nil {
+			return nil, err
+		}
+		if err := specutil.QualifyObjects(d.Sequences); err != nil {
+			return nil, err
+		}
+		if err := specutil.QualifyObjects(d.Funcs); err != nil {
+			return nil, err
+		}
+		if err := specutil.QualifyObjects(d.Procs); err != nil {
 			return nil, err
 		}
 		if err := specutil.QualifyReferences(d.Tables, s); err != nil {
 			return nil, err
 		}
+		if err := qualifySeqRefs(d.Sequences, d.Tables, s); err != nil {
+			return nil, err
+		}
 	default:
 		return nil, fmt.Errorf("specutil: failed marshaling spec. %T is not supported", v)
+	}
+	if err := triggersSpec(ts, &d); err != nil {
+		return nil, err
 	}
 	return marshaler.MarshalSpec(&d)
 }
 
 var (
-	hclState = schemahcl.New(
+	hclState = schemahcl.New(append(specOptions,
 		schemahcl.WithTypes("table.column.type", TypeRegistry.Specs()),
+		schemahcl.WithTypes("view.column.type", TypeRegistry.Specs()),
+		schemahcl.WithTypes("materialized.column.type", TypeRegistry.Specs()),
+		schemahcl.WithScopedEnums("view.check_option", schema.ViewCheckOptionLocal, schema.ViewCheckOptionCascaded),
 		schemahcl.WithScopedEnums("table.index.type", IndexTypeBTree, IndexTypeBRIN, IndexTypeHash, IndexTypeGIN, IndexTypeGiST, "GiST", IndexTypeSPGiST, "SPGiST"),
 		schemahcl.WithScopedEnums("table.partition.type", PartitionTypeRange, PartitionTypeList, PartitionTypeHash),
 		schemahcl.WithScopedEnums("table.column.identity.generated", GeneratedTypeAlways, GeneratedTypeByDefault),
@@ -129,7 +270,7 @@ var (
 				ops = append(ops, op.Name)
 			}
 			return ops
-		}()...),
+		}()...))...,
 	)
 	// MarshalHCL marshals v into an Atlas HCL DDL document.
 	MarshalHCL = schemahcl.MarshalerFunc(func(v any) ([]byte, error) {
@@ -155,6 +296,28 @@ func convertTable(spec *sqlspec.Table, parent *schema.Schema) (*schema.Table, er
 		return nil, err
 	}
 	return t, nil
+}
+
+// convertView converts a sqlspec.View to a schema.View.
+func convertView(spec *sqlspec.View, parent *schema.Schema) (*schema.View, error) {
+	v, err := specutil.View(
+		spec, parent,
+		func(c *sqlspec.Column, _ *schema.View) (*schema.Column, error) {
+			return specutil.Column(c, convertColumnType)
+		},
+		func(i *sqlspec.Index, v *schema.View) (*schema.Index, error) {
+			idx, err := convertIndex(i, v.AsTable())
+			if err != nil {
+				return nil, err
+			}
+			idx.Table, idx.View = nil, v
+			return idx, nil
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return v, nil
 }
 
 // convertPartition converts and appends the partition block into the table attributes if exists.
@@ -338,6 +501,13 @@ func convertIndex(spec *sqlspec.Index, t *schema.Table) (*schema.Index, error) {
 		}
 		idx.Attrs = append(idx.Attrs, &IndexPredicate{P: p})
 	}
+	if attr, ok := spec.Attr("nulls_distinct"); ok {
+		v, err := attr.Bool()
+		if err != nil {
+			return nil, err
+		}
+		idx.Attrs = append(idx.Attrs, &IndexNullsDistinct{V: v})
+	}
 	if err := convertIndexPK(spec, t, idx); err != nil {
 		return nil, err
 	}
@@ -423,47 +593,52 @@ func convertColumnType(spec *sqlspec.Column) (schema.Type, error) {
 
 // convertEnums converts possibly referenced column types (like enums) to
 // an actual schema.Type and sets it on the correct schema.Column.
-func convertEnums(tables []*sqlspec.Table, enums []*Enum, r *schema.Realm) error {
-	var (
-		used   = make(map[*Enum]struct{})
-		byName = make(map[string]*Enum)
-	)
+func convertEnums(tables []*sqlspec.Table, enums []*enum, r *schema.Realm) error {
+	if len(enums) == 0 {
+		return nil
+	}
+	byName := make(map[string]*schema.EnumType)
 	for _, e := range enums {
-		byName[e.Name] = e
+		if byName[e.Name] != nil {
+			return fmt.Errorf("duplicate enum %q", e.Name)
+		}
+		ns, err := specutil.SchemaName(e.Schema)
+		if err != nil {
+			return fmt.Errorf("extract schema name from enum reference: %w", err)
+		}
+		es, ok := r.Schema(ns)
+		if !ok {
+			return fmt.Errorf("schema %q defined on enum %q was not found in realm", ns, e.Name)
+		}
+		e1 := &schema.EnumType{T: e.Name, Schema: es, Values: e.Values}
+		es.AddObjects(e1)
+		byName[e.Name] = e1
 	}
 	for _, t := range tables {
 		for _, c := range t.Columns {
-			var enum *Enum
+			var enum *schema.EnumType
 			switch {
-			case c.Type.IsRef:
+			case c.Type.IsRefTo("enum"):
 				n, err := enumName(c.Type)
 				if err != nil {
 					return err
 				}
 				e, ok := byName[n]
 				if !ok {
-					return fmt.Errorf("enum %q was not found", n)
+					return fmt.Errorf("enum %q was not found in realm", n)
 				}
 				enum = e
 			default:
-				n, ok := arrayType(c.Type.T)
-				if !ok || byName[n] == nil {
-					continue
+				if n, ok := arrayType(c.Type.T); ok {
+					enum = byName[n]
 				}
-				enum = byName[n]
 			}
-			used[enum] = struct{}{}
-			schemaE, err := specutil.SchemaName(enum.Schema)
-			if err != nil {
-				return fmt.Errorf("extract schema name from enum refrence: %w", err)
-			}
-			es, ok := r.Schema(schemaE)
-			if !ok {
-				return fmt.Errorf("schema %q not found in realm for table %q", schemaE, t.Name)
+			if enum == nil {
+				continue
 			}
 			schemaT, err := specutil.SchemaName(t.Schema)
 			if err != nil {
-				return fmt.Errorf("extract schema name from table refrence: %w", err)
+				return fmt.Errorf("extract schema name from table reference: %w", err)
 			}
 			ts, ok := r.Schema(schemaT)
 			if !ok {
@@ -477,18 +652,12 @@ func convertEnums(tables []*sqlspec.Table, enums []*Enum, r *schema.Realm) error
 			if !ok {
 				return fmt.Errorf("column %q not found in table %q", c.Name, t.Name)
 			}
-			e := &schema.EnumType{T: enum.Name, Schema: es, Values: enum.Values}
 			switch t := cc.Type.Type.(type) {
 			case *ArrayType:
-				t.Type = e
+				t.Type = enum
 			default:
-				cc.Type.Type = e
+				cc.Type.Type = enum
 			}
-		}
-	}
-	for _, e := range enums {
-		if _, ok := used[e]; !ok {
-			return fmt.Errorf("enum %q declared but not used", e.Name)
 		}
 	}
 	return nil
@@ -511,36 +680,32 @@ func enumRef(n string) *schemahcl.Ref {
 }
 
 // schemaSpec converts from a concrete Postgres schema to Atlas specification.
-func schemaSpec(schem *schema.Schema) (*doc, error) {
-	s, tbls, err := specutil.FromSchema(schem, tableSpec)
+func schemaSpec(s *schema.Schema) (*doc, []*schema.Trigger, error) {
+	spec, err := specutil.FromSchema(s, specFuncs)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	d := &doc{
-		Tables:  tbls,
-		Schemas: []*sqlspec.Schema{s},
+		Tables:       spec.Tables,
+		Views:        spec.Views,
+		Materialized: spec.Materialized,
+		Funcs:        spec.Funcs,
+		Procs:        spec.Procs,
+		Schemas:      []*sqlspec.Schema{spec.Schema},
+		Enums:        make([]*enum, 0, len(s.Objects)),
+		Domains:      make([]*domain, 0, len(s.Objects)),
 	}
-	enums := make(map[string]bool)
-	for _, t := range schem.Tables {
-		for _, c := range t.Columns {
-			if e, ok := hasEnumType(c); ok && !enums[e.T] {
-				d.Enums = append(d.Enums, &Enum{
-					Name:   e.T,
-					Schema: specutil.SchemaRef(s.Name),
-					Values: e.Values,
-				})
-				enums[e.T] = true
-			}
-		}
+	if err := objectSpec(d, spec, s); err != nil {
+		return nil, nil, err
 	}
-	return d, nil
+	return d, spec.Triggers, nil
 }
 
 // tableSpec converts from a concrete Postgres sqlspec.Table to a schema.Table.
 func tableSpec(table *schema.Table) (*sqlspec.Table, error) {
 	spec, err := specutil.FromTable(
 		table,
-		columnSpec,
+		tableColumnSpec,
 		pkSpec,
 		indexSpec,
 		specutil.FromForeignKey,
@@ -551,6 +716,21 @@ func tableSpec(table *schema.Table) (*sqlspec.Table, error) {
 	}
 	if p := (Partition{}); sqlx.Has(table.Attrs, &p) {
 		spec.Extra.Children = append(spec.Extra.Children, fromPartition(p))
+	}
+	return spec, nil
+}
+
+// viewSpec converts from a concrete PostgreSQL schema.View to a sqlspec.View.
+func viewSpec(view *schema.View) (*sqlspec.View, error) {
+	spec, err := specutil.FromView(
+		view,
+		func(c *schema.Column, _ *schema.View) (*sqlspec.Column, error) {
+			return specutil.FromColumn(c, columnTypeSpec)
+		},
+		indexSpec,
+	)
+	if err != nil {
+		return nil, err
 	}
 	return spec, nil
 }
@@ -575,6 +755,9 @@ func indexSpec(idx *schema.Index) (*sqlspec.Index, error) {
 	}
 	if i := (IndexPredicate{}); sqlx.Has(idx.Attrs, &i) && i.P != "" {
 		spec.Extra.Attrs = append(spec.Extra.Attrs, specutil.VarAttr("where", strconv.Quote(i.P)))
+	}
+	if i := (IndexNullsDistinct{}); sqlx.Has(idx.Attrs, &i) && !i.V {
+		spec.Extra.Attrs = append(spec.Extra.Attrs, schemahcl.BoolAttr("nulls_distinct", i.V))
 	}
 	spec.Extra.Attrs = indexPKSpec(idx, spec.Extra.Attrs)
 	return spec, nil
@@ -611,8 +794,8 @@ func partAttr(idx *schema.Index, part *schema.IndexPart, spec *sqlspec.IndexPart
 	return nil
 }
 
-// columnSpec converts from a concrete Postgres schema.Column into a sqlspec.Column.
-func columnSpec(c *schema.Column, _ *schema.Table) (*sqlspec.Column, error) {
+// tableColumnSpec converts from a concrete Postgres schema.Column into a sqlspec.Column.
+func tableColumnSpec(c *schema.Column, _ *schema.Table) (*sqlspec.Column, error) {
 	s, err := specutil.FromColumn(c, columnTypeSpec)
 	if err != nil {
 		return nil, err
@@ -648,17 +831,24 @@ func fromIdentity(i *Identity) *schemahcl.Resource {
 // columnTypeSpec converts from a concrete Postgres schema.Type into sqlspec.Column Type.
 func columnTypeSpec(t schema.Type) (*sqlspec.Column, error) {
 	// Handle postgres enum types. They cannot be put into the TypeRegistry since their name is dynamic.
-	if e, ok := t.(*schema.EnumType); ok {
+	switch o := t.(type) {
+	case *schema.EnumType:
 		return &sqlspec.Column{Type: &schemahcl.Type{
-			T:     enumRef(e.T).V,
+			T:     enumRef(o.T).V,
 			IsRef: true,
 		}}, nil
+	case *DomainType:
+		return &sqlspec.Column{Type: &schemahcl.Type{
+			T:     o.Ref().V,
+			IsRef: true,
+		}}, nil
+	default:
+		st, err := TypeRegistry.Convert(t)
+		if err != nil {
+			return nil, err
+		}
+		return &sqlspec.Column{Type: st}, nil
 	}
-	st, err := TypeRegistry.Convert(t)
-	if err != nil {
-		return nil, err
-	}
-	return &sqlspec.Column{Type: st}, nil
 }
 
 // TypeRegistry contains the supported TypeSpecs for the Postgres driver.
@@ -695,17 +885,17 @@ var TypeRegistry = schemahcl.NewRegistry(
 		schemahcl.NewTypeSpec(TypePoint),
 		schemahcl.NewTypeSpec(TypePolygon),
 		schemahcl.NewTypeSpec(TypeDate),
-		schemahcl.NewTypeSpec(TypeTime, schemahcl.WithAttributes(precisionTypeAttr()), formatTime()),
-		schemahcl.NewTypeSpec(TypeTimeTZ, schemahcl.WithAttributes(precisionTypeAttr()), formatTime()),
-		schemahcl.NewTypeSpec(TypeTimestampTZ, schemahcl.WithAttributes(precisionTypeAttr()), formatTime()),
-		schemahcl.NewTypeSpec(TypeTimestamp, schemahcl.WithAttributes(precisionTypeAttr()), formatTime()),
+		schemahcl.NewTypeSpec(TypeTime, schemahcl.WithAttributes(schemahcl.PrecisionTypeAttr()), formatTime()),
+		schemahcl.NewTypeSpec(TypeTimeTZ, schemahcl.WithAttributes(schemahcl.PrecisionTypeAttr()), formatTime()),
+		schemahcl.NewTypeSpec(TypeTimestampTZ, schemahcl.WithAttributes(schemahcl.PrecisionTypeAttr()), formatTime()),
+		schemahcl.NewTypeSpec(TypeTimestamp, schemahcl.WithAttributes(schemahcl.PrecisionTypeAttr()), formatTime()),
 		schemahcl.AliasTypeSpec("double_precision", TypeDouble),
 		schemahcl.NewTypeSpec(TypeReal),
-		schemahcl.NewTypeSpec(TypeFloat, schemahcl.WithAttributes(precisionTypeAttr())),
+		schemahcl.NewTypeSpec(TypeFloat, schemahcl.WithAttributes(schemahcl.PrecisionTypeAttr())),
 		schemahcl.NewTypeSpec(TypeFloat8),
 		schemahcl.NewTypeSpec(TypeFloat4),
-		schemahcl.NewTypeSpec(TypeNumeric, schemahcl.WithAttributes(precisionTypeAttr(), &schemahcl.TypeAttr{Name: "scale", Kind: reflect.Int, Required: false})),
-		schemahcl.NewTypeSpec(TypeDecimal, schemahcl.WithAttributes(precisionTypeAttr(), &schemahcl.TypeAttr{Name: "scale", Kind: reflect.Int, Required: false})),
+		schemahcl.NewTypeSpec(TypeNumeric, schemahcl.WithAttributes(schemahcl.PrecisionTypeAttr(), schemahcl.ScaleTypeAttr())),
+		schemahcl.NewTypeSpec(TypeDecimal, schemahcl.WithAttributes(schemahcl.PrecisionTypeAttr(), schemahcl.ScaleTypeAttr())),
 		schemahcl.NewTypeSpec(TypeSmallSerial),
 		schemahcl.NewTypeSpec(TypeSerial),
 		schemahcl.NewTypeSpec(TypeBigSerial),
@@ -732,13 +922,14 @@ var TypeRegistry = schemahcl.NewRegistry(
 		schemahcl.NewTypeSpec(TypeDateRange),
 		schemahcl.NewTypeSpec(TypeDateMultiRange),
 		schemahcl.NewTypeSpec("hstore"),
-		schemahcl.NewTypeSpec("sql", schemahcl.WithAttributes(&schemahcl.TypeAttr{Name: "def", Required: true, Kind: reflect.String})),
 	),
-	// PostgreSQL internal and special types.
+	// PostgreSQL internal, pseudo, and special types.
 	schemahcl.WithSpecs(func() (specs []*schemahcl.TypeSpec) {
 		for _, t := range []string{
 			typeOID, typeRegClass, typeRegCollation, typeRegConfig, typeRegDictionary, typeRegNamespace,
 			typeName, typeRegOper, typeRegOperator, typeRegProc, typeRegProcedure, typeRegRole, typeRegType,
+			typeAny, typeAnyElement, typeAnyArray, typeAnyNonArray, typeAnyEnum, typeInternal, typeRecord,
+			typeTrigger, typeVoid, typeUnknown,
 		} {
 			specs = append(specs, schemahcl.NewTypeSpec(t))
 		}
@@ -778,7 +969,7 @@ var TypeRegistry = schemahcl.NewRegistry(
 			}),
 		}
 		for _, f := range []string{"interval", "second", "day to second", "hour to second", "minute to second"} {
-			specs = append(specs, schemahcl.NewTypeSpec(specutil.Var(f), append(opts, schemahcl.WithAttributes(precisionTypeAttr()))...))
+			specs = append(specs, schemahcl.NewTypeSpec(specutil.Var(f), append(opts, schemahcl.WithAttributes(schemahcl.PrecisionTypeAttr()))...))
 		}
 		for _, f := range []string{"year", "month", "day", "hour", "minute", "year to month", "day to hour", "day to minute", "hour to minute"} {
 			specs = append(specs, schemahcl.NewTypeSpec(specutil.Var(f), opts...))
@@ -786,14 +977,6 @@ var TypeRegistry = schemahcl.NewRegistry(
 		return specs
 	}()...),
 )
-
-func precisionTypeAttr() *schemahcl.TypeAttr {
-	return &schemahcl.TypeAttr{
-		Name:     "precision",
-		Kind:     reflect.Int,
-		Required: false,
-	}
-}
 
 func attr(typ *schemahcl.Type, key string) (*schemahcl.Attr, bool) {
 	for _, a := range typ.Attrs {

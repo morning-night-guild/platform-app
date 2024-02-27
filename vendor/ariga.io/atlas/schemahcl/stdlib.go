@@ -5,8 +5,13 @@
 package schemahcl
 
 import (
+	"errors"
+	"fmt"
 	"net/url"
+	"os"
+	"path/filepath"
 	"strconv"
+	"strings"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/ext/tryfunc"
@@ -14,6 +19,7 @@ import (
 	"github.com/zclconf/go-cty/cty/convert"
 	"github.com/zclconf/go-cty/cty/function"
 	"github.com/zclconf/go-cty/cty/function/stdlib"
+	"github.com/zclconf/go-cty/cty/json"
 )
 
 func stdTypes(ctx *hcl.EvalContext) *hcl.EvalContext {
@@ -100,6 +106,7 @@ func stdTypes(ctx *hcl.EvalContext) *hcl.EvalContext {
 func stdFuncs() map[string]function.Function {
 	return map[string]function.Function{
 		"abs":             stdlib.AbsoluteFunc,
+		"can":             tryfunc.CanFunc,
 		"ceil":            stdlib.CeilFunc,
 		"chomp":           stdlib.ChompFunc,
 		"chunklist":       stdlib.ChunklistFunc,
@@ -110,6 +117,7 @@ func stdFuncs() map[string]function.Function {
 		"csvdecode":       stdlib.CSVDecodeFunc,
 		"distinct":        stdlib.DistinctFunc,
 		"element":         stdlib.ElementFunc,
+		"endswith":        endsWithFunc,
 		"flatten":         stdlib.FlattenFunc,
 		"floor":           stdlib.FloorFunc,
 		"format":          stdlib.FormatFunc,
@@ -121,6 +129,7 @@ func stdFuncs() map[string]function.Function {
 		"jsondecode":      stdlib.JSONDecodeFunc,
 		"jsonencode":      stdlib.JSONEncodeFunc,
 		"keys":            stdlib.KeysFunc,
+		"length":          stdlib.LengthFunc,
 		"log":             stdlib.LogFunc,
 		"lower":           stdlib.LowerFunc,
 		"max":             stdlib.MaxFunc,
@@ -128,6 +137,7 @@ func stdFuncs() map[string]function.Function {
 		"min":             stdlib.MinFunc,
 		"parseint":        stdlib.ParseIntFunc,
 		"pow":             stdlib.PowFunc,
+		"print":           printFunc,
 		"range":           stdlib.RangeFunc,
 		"regex":           stdlib.RegexFunc,
 		"regexall":        stdlib.RegexAllFunc,
@@ -141,6 +151,7 @@ func stdFuncs() map[string]function.Function {
 		"slice":           stdlib.SliceFunc,
 		"sort":            stdlib.SortFunc,
 		"split":           stdlib.SplitFunc,
+		"startswith":      startsWithFunc,
 		"strrev":          stdlib.ReverseFunc,
 		"substr":          stdlib.SubstrFunc,
 		"timeadd":         stdlib.TimeAddFunc,
@@ -156,14 +167,15 @@ func stdFuncs() map[string]function.Function {
 		"trimsuffix":      stdlib.TrimSuffixFunc,
 		"try":             tryfunc.TryFunc,
 		"upper":           stdlib.UpperFunc,
-		"urlescape":       urlEscape,
+		"urlescape":       urlEscapeFunc,
+		"urluserinfo":     urlUserinfoFunc,
 		"urlqueryset":     urlQuerySetFunc,
 		"urlsetpath":      urlSetPathFunc,
 		"values":          stdlib.ValuesFunc,
 		"zipmap":          stdlib.ZipmapFunc,
 		// A patch from the past. Should be moved
 		// to specific scopes in the future.
-		"sql": rawExprImpl(),
+		"sql": rawExprFunc,
 	}
 }
 
@@ -243,66 +255,213 @@ func makeToFunc(wantTy cty.Type) function.Function {
 	})
 }
 
-var urlQuerySetFunc = function.New(&function.Spec{
-	Params: []function.Parameter{
-		{
-			Name: "url",
-			Type: cty.String,
+var (
+	// rawExprFunc is a stub function for raw expressions.
+	rawExprFunc = function.New(&function.Spec{
+		Params: []function.Parameter{
+			{Name: "def", Type: cty.String, AllowNull: false},
 		},
-		{
-			Name: "key",
-			Type: cty.String,
+		Type: function.StaticReturnType(ctyRawExpr),
+		Impl: func(args []cty.Value, retType cty.Type) (cty.Value, error) {
+			x := args[0].AsString()
+			if len(x) == 0 {
+				return cty.NilVal, errors.New("empty expression")
+			}
+			t := &RawExpr{X: x}
+			return cty.CapsuleVal(ctyRawExpr, t), nil
 		},
-		{
-			Name: "value",
-			Type: cty.String,
-		},
-	},
-	Type: function.StaticReturnType(cty.String),
-	Impl: func(args []cty.Value, retType cty.Type) (cty.Value, error) {
-		u, err := url.Parse(args[0].AsString())
-		if err != nil {
-			return cty.NilVal, err
-		}
-		q := u.Query()
-		q.Set(args[1].AsString(), args[2].AsString())
-		u.RawQuery = q.Encode()
-		return cty.StringVal(u.String()), nil
-	},
-})
+	})
 
-var urlSetPathFunc = function.New(&function.Spec{
-	Params: []function.Parameter{
-		{
-			Name: "url",
-			Type: cty.String,
+	urlQuerySetFunc = function.New(&function.Spec{
+		Params: []function.Parameter{
+			{
+				Name: "url",
+				Type: cty.String,
+			},
+			{
+				Name: "key",
+				Type: cty.String,
+			},
+			{
+				Name: "value",
+				Type: cty.String,
+			},
 		},
-		{
-			Name: "path",
-			Type: cty.String,
+		Type: function.StaticReturnType(cty.String),
+		Impl: func(args []cty.Value, retType cty.Type) (cty.Value, error) {
+			u, err := url.Parse(args[0].AsString())
+			if err != nil {
+				return cty.NilVal, err
+			}
+			q := u.Query()
+			q.Set(args[1].AsString(), args[2].AsString())
+			u.RawQuery = q.Encode()
+			return cty.StringVal(u.String()), nil
 		},
-	},
-	Type: function.StaticReturnType(cty.String),
-	Impl: func(args []cty.Value, retType cty.Type) (cty.Value, error) {
-		u, err := url.Parse(args[0].AsString())
-		if err != nil {
-			return cty.NilVal, err
-		}
-		u.Path = args[1].AsString()
-		return cty.StringVal(u.String()), nil
-	},
-})
+	})
 
-var urlEscape = function.New(&function.Spec{
-	Params: []function.Parameter{
-		{
-			Name: "string",
-			Type: cty.String,
+	urlUserinfoFunc = function.New(&function.Spec{
+		Params: []function.Parameter{
+			{
+				Name: "url",
+				Type: cty.String,
+			},
+			{
+				Name: "user",
+				Type: cty.String,
+			},
 		},
-	},
-	Type: function.StaticReturnType(cty.String),
-	Impl: func(args []cty.Value, retType cty.Type) (cty.Value, error) {
-		u := url.QueryEscape(args[0].AsString())
-		return cty.StringVal(u), nil
-	},
-})
+		VarParam: &function.Parameter{
+			Name:      "pass",
+			Type:      cty.String,
+			AllowNull: true,
+		},
+		Type: function.StaticReturnType(cty.String),
+		Impl: func(args []cty.Value, retType cty.Type) (cty.Value, error) {
+			u, err := url.Parse(args[0].AsString())
+			if err != nil {
+				return cty.NilVal, err
+			}
+			user := args[1].AsString()
+			if len(args) > 2 && !args[2].IsNull() {
+				u.User = url.UserPassword(user, args[2].AsString())
+			} else {
+				u.User = url.User(user)
+			}
+			return cty.StringVal(u.String()), nil
+		},
+	})
+
+	urlSetPathFunc = function.New(&function.Spec{
+		Params: []function.Parameter{
+			{
+				Name: "url",
+				Type: cty.String,
+			},
+			{
+				Name: "path",
+				Type: cty.String,
+			},
+		},
+		Type: function.StaticReturnType(cty.String),
+		Impl: func(args []cty.Value, retType cty.Type) (cty.Value, error) {
+			u, err := url.Parse(args[0].AsString())
+			if err != nil {
+				return cty.NilVal, err
+			}
+			u.Path = args[1].AsString()
+			return cty.StringVal(u.String()), nil
+		},
+	})
+
+	urlEscapeFunc = function.New(&function.Spec{
+		Params: []function.Parameter{
+			{
+				Name: "string",
+				Type: cty.String,
+			},
+		},
+		Type: function.StaticReturnType(cty.String),
+		Impl: func(args []cty.Value, retType cty.Type) (cty.Value, error) {
+			u := url.QueryEscape(args[0].AsString())
+			return cty.StringVal(u), nil
+		},
+	})
+
+	printFunc = function.New(&function.Spec{
+		Params: []function.Parameter{
+			{
+				Name: "print",
+				Type: cty.DynamicPseudoType,
+			},
+		},
+		Type: func(args []cty.Value) (cty.Type, error) {
+			return args[0].Type(), nil
+		},
+		Impl: func(args []cty.Value, retType cty.Type) (cty.Value, error) {
+			switch args[0].Type() {
+			case cty.String:
+				fmt.Println(args[0].AsString())
+			case cty.Number:
+				fmt.Println(args[0].AsBigFloat().String())
+			case cty.Bool:
+				fmt.Println(args[0].True())
+			default:
+				if b, err := json.Marshal(args[0], args[0].Type()); err != nil {
+					fmt.Println(args[0].GoString())
+				} else {
+					fmt.Println(string(b))
+				}
+			}
+			return args[0], nil
+		},
+	})
+
+	startsWithFunc = function.New(&function.Spec{
+		Params: []function.Parameter{
+			{
+				Name: "s",
+				Type: cty.String,
+			},
+			{
+				Name: "prefix",
+				Type: cty.String,
+			},
+		},
+		Type: function.StaticReturnType(cty.Bool),
+		Impl: func(args []cty.Value, retType cty.Type) (cty.Value, error) {
+			if s1, s2 := args[0].AsString(), args[1].AsString(); strings.HasPrefix(s1, s2) {
+				return cty.True, nil
+			}
+			return cty.False, nil
+		},
+	})
+
+	endsWithFunc = function.New(&function.Spec{
+		Params: []function.Parameter{
+			{
+				Name: "s",
+				Type: cty.String,
+			},
+			{
+				Name: "suffix",
+				Type: cty.String,
+			},
+		},
+		Type: function.StaticReturnType(cty.Bool),
+		Impl: func(args []cty.Value, retType cty.Type) (cty.Value, error) {
+			if s1, s2 := args[0].AsString(), args[1].AsString(); strings.HasSuffix(s1, s2) {
+				return cty.True, nil
+			}
+			return cty.False, nil
+		},
+	})
+)
+
+// MakeFileFunc returns a function that reads a file
+// from the given base directory.
+func MakeFileFunc(base string) function.Function {
+	return function.New(&function.Spec{
+		Params: []function.Parameter{
+			{
+				Name: "path",
+				Type: cty.String,
+			},
+		},
+		Type: function.StaticReturnType(cty.String),
+		Impl: func(args []cty.Value, retType cty.Type) (cty.Value, error) {
+			if !filepath.IsAbs(base) {
+				return cty.NilVal, fmt.Errorf("base directory must be an absolute path. got: %s", base)
+			}
+			path := args[0].AsString()
+			if !filepath.IsAbs(path) {
+				path = filepath.Clean(filepath.Join(base, path))
+			}
+			src, err := os.ReadFile(path)
+			if err != nil {
+				return cty.NilVal, err
+			}
+			return cty.StringVal(string(src)), nil
+		},
+	})
+}

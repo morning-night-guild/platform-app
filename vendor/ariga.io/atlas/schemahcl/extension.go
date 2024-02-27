@@ -496,7 +496,7 @@ func scanPtr(key string, r *Resource, field reflect.Value) error {
 	default:
 		t, err := gocty.ImpliedType(e)
 		if err != nil {
-			return fmt.Errorf("schemahcl: cannot infer type for field %q when scaning pointer: %w", key, err)
+			return fmt.Errorf("schemahcl: cannot infer type for field %q when scanning pointer: %w", key, err)
 		}
 		attr.V, err = gocty.ToCtyValue(e, t)
 		if err != nil {
@@ -547,10 +547,16 @@ func scanAttr(key string, r *Resource, field reflect.Value) error {
 	return nil
 }
 
+// specCache holds a cache for type-spec fields descriptions.
+var specCache sync.Map
+
 // specFields uses reflection to find struct fields that are tagged with "spec"
 // and returns a list of mappings from the tag to the field name.
 func specFields(ext any) []fieldDesc {
 	t := indirect(reflect.TypeOf(ext))
+	if d, ok := specCache.Load(t); ok {
+		return d.([]fieldDesc)
+	}
 	var fields []fieldDesc
 	for i := 0; i < t.NumField(); i++ {
 		f := t.Field(i)
@@ -564,6 +570,7 @@ func specFields(ext any) []fieldDesc {
 		}
 		fields = append(fields, d)
 	}
+	specCache.Store(t, fields)
 	return fields
 }
 

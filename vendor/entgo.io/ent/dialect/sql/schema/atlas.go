@@ -40,12 +40,13 @@ type Atlas struct {
 	dropIndexes     bool   // drop deleted indexes
 	withForeignKeys bool   // with foreign keys
 	mode            Mode
-	hooks           []Hook            // hooks to apply before creation
-	diffHooks       []DiffHook        // diff hooks to run when diffing current and desired
-	applyHook       []ApplyHook       // apply hooks to run when applying the plan
-	skip            ChangeKind        // what changes to skip and not apply
-	dir             migrate.Dir       // the migration directory to read from
-	fmt             migrate.Formatter // how to format the plan into migration files
+	hooks           []Hook              // hooks to apply before creation
+	diffHooks       []DiffHook          // diff hooks to run when diffing current and desired
+	diffOptions     []schema.DiffOption // diff options to pass to the diff engine
+	applyHook       []ApplyHook         // apply hooks to run when applying the plan
+	skip            ChangeKind          // what changes to skip and not apply
+	dir             migrate.Dir         // the migration directory to read from
+	fmt             migrate.Formatter   // how to format the plan into migration files
 
 	driver  dialect.Driver // driver passed in when not using an atlas URL
 	url     *url.URL       // url of database connection
@@ -210,7 +211,7 @@ func (a *Atlas) cleanSchema(ctx context.Context, name string, err0 error) (err e
 	}
 	drop := make([]schema.Change, len(s.Tables))
 	for i, t := range s.Tables {
-		drop[i] = &schema.DropTable{T: t}
+		drop[i] = &schema.DropTable{T: t, Extra: []schema.Clause{&schema.IfExists{}}}
 	}
 	return a.atDriver.ApplyChanges(ctx, drop)
 }
@@ -301,6 +302,13 @@ func (f DiffFunc) Diff(current, desired *schema.Schema) ([]schema.Change, error)
 func WithDiffHook(hooks ...DiffHook) MigrateOption {
 	return func(a *Atlas) {
 		a.diffHooks = append(a.diffHooks, hooks...)
+	}
+}
+
+// WithDiffOptions adds a list of options to pass to the diff engine.
+func WithDiffOptions(opts ...schema.DiffOption) MigrateOption {
+	return func(a *Atlas) {
+		a.diffOptions = append(a.diffOptions, opts...)
 	}
 }
 
@@ -791,17 +799,18 @@ func (a *Atlas) planReplay(ctx context.Context, name string, tables []*Table) (*
 }
 
 func (a *Atlas) diff(ctx context.Context, name string, current, desired *schema.Schema, newTypes []string, opts ...migrate.PlanOption) (*migrate.Plan, error) {
-	changes, err := (&diffDriver{a.atDriver, a.diffHooks}).SchemaDiff(current, desired)
+	changes, err := (&diffDriver{a.atDriver, a.diffHooks}).SchemaDiff(current, desired, a.diffOptions...)
 	if err != nil {
 		return nil, err
 	}
 	filtered := make([]schema.Change, 0, len(changes))
 	for _, c := range changes {
-		// Skip any table drops explicitly. The reason we may encounter this, even though specific tables are passed
-		// to Inspect, is if the MySQL system variable 'lower_case_table_names' is set to 1. In such a case, the given
-		// tables will be returned from inspection because MySQL compares case-insensitive, but they won't match when
-		// compare them in code.
-		if _, ok := c.(*schema.DropTable); !ok {
+		switch c.(type) {
+		// Select only table creation and modification. The reason we may encounter this, even though specific tables
+		// are passed to Inspect, is if the MySQL system variable 'lower_case_table_names' is set to 1. In such a case,
+		// the given tables will be returned from inspection because MySQL compares case-insensitive, but they won't
+		// match when compare them in code.
+		case *schema.AddTable, *schema.ModifyTable:
 			filtered = append(filtered, c)
 		}
 	}
@@ -1147,14 +1156,14 @@ type diffDriver struct {
 
 // RealmDiff creates the diff between two realms. Since Ent does not care about Realms,
 // not even schema changes, calling this method raises an error.
-func (r *diffDriver) RealmDiff(_, _ *schema.Realm) ([]schema.Change, error) {
+func (r *diffDriver) RealmDiff(_, _ *schema.Realm, _ ...schema.DiffOption) ([]schema.Change, error) {
 	return nil, errors.New("sqlDialect does not support working with realms")
 }
 
 // SchemaDiff creates the diff between two schemas, but includes "diff hooks".
-func (r *diffDriver) SchemaDiff(from, to *schema.Schema) ([]schema.Change, error) {
+func (r *diffDriver) SchemaDiff(from, to *schema.Schema, opts ...schema.DiffOption) ([]schema.Change, error) {
 	var d Differ = DiffFunc(func(current, desired *schema.Schema) ([]schema.Change, error) {
-		return r.Driver.SchemaDiff(current, desired)
+		return r.Driver.SchemaDiff(current, desired, opts...)
 	})
 	for i := len(r.hooks) - 1; i >= 0; i-- {
 		d = r.hooks[i](d)
