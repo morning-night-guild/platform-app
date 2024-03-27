@@ -174,7 +174,7 @@ func (s *Segment) End() {
 		return
 	}
 
-	if s.StartTime.thread != nil && s.StartTime.thread.thread != nil && s.StartTime.thread.thread.threadID > 0 {
+	if s.StartTime.thread != nil && s.StartTime.thread.thread != nil && s.StartTime.thread.thread.threadID > 0 && IsSecurityAgentPresent() {
 		// async thread
 		secureAgent.SendEvent("NEW_GOROUTINE_END", "")
 	}
@@ -239,10 +239,9 @@ func (s *ExternalSegment) End() {
 		s.StartTime.thread.logAPIError(err, "end external segment", extraDetails)
 	}
 
-	if (s.statusCode != nil && *s.statusCode != 404) || (s.Response != nil && s.Response.StatusCode != 404) {
+	if ((s.statusCode != nil && *s.statusCode != 404) || (s.Response != nil && s.Response.StatusCode != 404)) && IsSecurityAgentPresent() {
 		secureAgent.SendExitEvent(s.secureAgentEvent, nil)
 	}
-
 }
 
 // AddAttribute adds a key value pair to the current MessageProducerSegment.
@@ -287,6 +286,23 @@ func (s *ExternalSegment) outboundHeaders() http.Header {
 	return outboundHeaders(s)
 }
 
+func (s *ExternalSegment) GetOutboundHeaders() http.Header {
+	return s.outboundHeaders()
+}
+
+// SetSecureAgentEvent allows integration packages to set the secureAgentEvent
+// for this external segment. That field is otherwise unexported and not available
+// for other manipulation.
+func (s *ExternalSegment) SetSecureAgentEvent(event any) {
+	s.secureAgentEvent = event
+}
+
+// GetSecureAgentEvent retrieves the secureAgentEvent previously stored by
+// a SetSecureAgentEvent method.
+func (s *ExternalSegment) GetSecureAgentEvent() any {
+	return s.secureAgentEvent
+}
+
 // StartSegmentNow starts timing a segment.
 //
 // Deprecated: StartSegmentNow is deprecated and will be removed in a future
@@ -321,14 +337,18 @@ func StartExternalSegment(txn *Transaction, request *http.Request) *ExternalSegm
 		StartTime: txn.StartSegmentNow(),
 		Request:   request,
 	}
-	s.secureAgentEvent = secureAgent.SendEvent("OUTBOUND", request)
+	if IsSecurityAgentPresent() {
+		s.secureAgentEvent = secureAgent.SendEvent("OUTBOUND", request)
+	}
 	if request != nil && request.Header != nil {
 		for key, values := range s.outboundHeaders() {
 			for _, value := range values {
 				request.Header.Set(key, value)
 			}
 		}
-		secureAgent.DistributedTraceHeaders(request, s.secureAgentEvent)
+		if IsSecurityAgentPresent() {
+			secureAgent.DistributedTraceHeaders(request, s.secureAgentEvent)
+		}
 	}
 
 	return s
