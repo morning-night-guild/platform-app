@@ -56,6 +56,8 @@ const (
 	AttributeErrorGroupName = "error.group.name"
 	// AttributeUserID tracks the user a transaction and its child events are impacting
 	AttributeUserID = "enduser.id"
+	// AttributeLLM tracks LLM transactions
+	AttributeLLM = "llm"
 )
 
 // Attributes destined for Errors and Transaction Traces:
@@ -127,6 +129,8 @@ const (
 	AttributeMessageReplyTo = "message.replyTo"
 	// The application-generated identifier used in RPC configurations.
 	AttributeMessageCorrelationID = "message.correlationId"
+	// The headers of the message without CAT keys/values
+	AttributeMessageHeaders = "message.headers"
 )
 
 // Attributes destined for Span Events. These attributes appear only on Span
