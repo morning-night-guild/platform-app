@@ -123,7 +123,8 @@ type (
 	//	}
 	//
 	// Deprecated: the Config object predates the schema.Annotation method and it
-	// is planned be removed in v0.5.0. New code should use Annotations instead.
+	// is planned to be removed in future versions. New code should use Annotations
+	// instead.
 	//
 	//	func (T) Annotations() []schema.Annotation {
 	//		return []schema.Annotation{
@@ -209,6 +210,20 @@ type (
 	Schema struct {
 		Interface
 	}
+
+	// A View only schema describes an entity that all its operations
+	// are limited to read-only. For example, a database view.
+	//
+	// Users that wants to define a view schema should embed the View
+	// struct in their schema as follows:
+	//
+	//	type V struct {
+	//		ent.View
+	//	}
+	//
+	View struct {
+		Schema
+	}
 )
 
 // Fields of the schema.
@@ -238,8 +253,15 @@ func (Schema) Policy() Policy { return nil }
 // Annotations of the schema.
 func (Schema) Annotations() []schema.Annotation { return nil }
 
+// Viewer is an interface that wraps the view method.
+// Implemented by the View struct.
+type Viewer interface{ view() }
+
+// view is a dummy method to distinguish between Schema and View.
+func (View) view() {}
+
 type (
-	// Value represents a value returned by ent.
+	// Value represents a dynamic value returned by mutations or queries.
 	Value any
 
 	// Mutation represents an operation that mutate the graph.
@@ -328,7 +350,14 @@ type (
 
 	// Mutator is the interface that wraps the Mutate method.
 	Mutator interface {
-		// Mutate apply the given mutation on the graph.
+		// Mutate apply the given mutation on the graph. The returned
+		// ent.Value is changing according to the mutation operation:
+		//
+		// OpCreate, the returned value is the created node (T).
+		// OpUpdateOne, the returned value is the updated node (T).
+		// OpUpdate, the returned value is the amount of updated nodes (int).
+		// OpDeleteOne, OpDelete, the returned value is the amount of deleted nodes (int).
+		//
 		Mutate(context.Context, Mutation) (Value, error)
 	}
 
@@ -468,6 +497,20 @@ const (
 
 // Is reports whether o is match the given operation.
 func (i Op) Is(o Op) bool { return i&o != 0 }
+
+// List of query operations used by the codegen.
+const (
+	OpQueryFirst   = "First"
+	OpQueryFirstID = "FirstID"
+	OpQueryOnly    = "Only"
+	OpQueryOnlyID  = "OnlyID"
+	OpQueryAll     = "All"
+	OpQueryIDs     = "IDs"
+	OpQueryCount   = "Count"
+	OpQueryExist   = "Exist"
+	OpQueryGroupBy = "GroupBy"
+	OpQuerySelect  = "Select"
+)
 
 type (
 	// QueryContext contains additional information about

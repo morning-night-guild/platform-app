@@ -91,6 +91,15 @@ type (
 	}
 )
 
+// IsRefTo indicates if the Type is a reference to specific schema type definition.
+func (t *Type) IsRefTo(n string) bool {
+	if !t.IsRef {
+		return false
+	}
+	path, err := (&Ref{V: t.T}).ByType(n)
+	return err == nil && len(path) > 0
+}
+
 // IsRef indicates if the attribute is a reference type.
 func (a *Attr) IsRef() bool {
 	if !a.V.Type().IsCapsuleType() {
@@ -375,16 +384,29 @@ func (r *Resource) Resource(t string) (*Resource, bool) {
 
 // Attr returns the Attr by the provided name and reports whether it was found.
 func (r *Resource) Attr(name string) (*Attr, bool) {
-	return attrVal(r.Attrs, name)
+	if at, ok := attrVal(r.Attrs, name); ok {
+		return at, true
+	}
+	for _, r := range r.Children {
+		if at, ok := attrVal(r.Attrs, name); ok && r.Type == "" {
+			return at, true // Match on embedded resource.
+		}
+	}
+	return nil, false
 }
 
 // SetAttr sets the Attr on the Resource. If r is nil, a zero value Resource
 // is initialized. If an Attr with the same key exists, it is replaced by attr.
 func (r *Resource) SetAttr(attr *Attr) {
-	if r == nil {
-		*r = Resource{}
-	}
 	r.Attrs = replaceOrAppendAttr(r.Attrs, attr)
+}
+
+// EmbedAttr is like SetAttr but appends the attribute to an embedded
+// resource, cause it to be marshaled after current blocks and attributes.
+func (r *Resource) EmbedAttr(attr *Attr) {
+	r.Children = append(r.Children, &Resource{
+		Attrs: []*Attr{attr},
+	})
 }
 
 // MarshalSpec implements Marshaler.
@@ -458,6 +480,16 @@ func RefAttr(k string, v *Ref) *Attr {
 		K: k,
 		V: cty.CapsuleVal(ctyRefType, v),
 	}
+}
+
+// RefValue is a helper method for constructing a cty.Value that contains a Ref value.
+func RefValue(v string) cty.Value {
+	return cty.CapsuleVal(ctyRefType, &Ref{V: v})
+}
+
+// TypeValue is a helper method for constructing a cty.Value that contains a Type value.
+func TypeValue(t *Type) cty.Value {
+	return cty.CapsuleVal(ctyTypeSpec, t)
 }
 
 // StringsAttr is a helper method for constructing *schemahcl.Attr instances that contain list strings.
