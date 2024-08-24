@@ -70,6 +70,39 @@ func (s *Schema) AddTables(tables ...*Table) *Schema {
 	return s
 }
 
+// AddViews adds and links the given views to the schema.
+func (s *Schema) AddViews(views ...*View) *Schema {
+	for _, v := range views {
+		v.SetSchema(s)
+	}
+	s.Views = append(s.Views, views...)
+	return s
+}
+
+// AddObjects adds the given objects to the schema.
+func (s *Schema) AddObjects(objs ...Object) *Schema {
+	s.Objects = append(s.Objects, objs...)
+	return s
+}
+
+// AddFuncs appends the given functions to the schema.
+func (s *Schema) AddFuncs(funcs ...*Func) *Schema {
+	for _, f := range funcs {
+		f.Schema = s
+	}
+	s.Funcs = append(s.Funcs, funcs...)
+	return s
+}
+
+// AddProcs appends the given procedures to the schema.
+func (s *Schema) AddProcs(procs ...*Proc) *Schema {
+	for _, f := range procs {
+		f.Schema = s
+	}
+	s.Procs = append(s.Procs, procs...)
+	return s
+}
+
 // NewRealm creates a new Realm.
 func NewRealm(schemas ...*Schema) *Realm {
 	r := &Realm{Schemas: schemas}
@@ -209,6 +242,69 @@ func (t *Table) AddForeignKeys(fks ...*ForeignKey) *Table {
 func (t *Table) AddAttrs(attrs ...Attr) *Table {
 	t.Attrs = append(t.Attrs, attrs...)
 	return t
+}
+
+// AddDeps adds the given objects as dependencies to the view.
+func (t *Table) AddDeps(objs ...Object) *Table {
+	t.Deps = append(t.Deps, objs...)
+	return t
+}
+
+// NewView creates a new View.
+func NewView(name, def string) *View {
+	return &View{Name: name, Def: def}
+}
+
+// NewMaterializedView creates a new materialized View.
+func NewMaterializedView(name, def string) *View {
+	return NewView(name, def).
+		SetMaterialized(true)
+}
+
+// SetSchema sets the schema (named-database) of the view.
+func (v *View) SetSchema(s *Schema) *View {
+	v.Schema = s
+	return v
+}
+
+// AddColumns appends the given columns to the table column list.
+func (v *View) AddColumns(columns ...*Column) *View {
+	v.Columns = append(v.Columns, columns...)
+	return v
+}
+
+// SetComment sets or appends the Comment attribute
+// to the view with the given value.
+func (v *View) SetComment(c string) *View {
+	ReplaceOrAppend(&v.Attrs, &Comment{Text: c})
+	return v
+}
+
+// AddAttrs adds and additional attributes to the view.
+func (v *View) AddAttrs(attrs ...Attr) *View {
+	v.Attrs = append(v.Attrs, attrs...)
+	return v
+}
+
+// AddDeps adds the given objects as dependencies to the view.
+func (v *View) AddDeps(objs ...Object) *View {
+	v.Deps = append(v.Deps, objs...)
+	return v
+}
+
+// AddIndexes appends the given indexes to the table index list.
+func (v *View) AddIndexes(indexes ...*Index) *View {
+	for _, idx := range indexes {
+		idx.View = v
+	}
+	v.Indexes = append(v.Indexes, indexes...)
+	return v
+}
+
+// SetCheckOption sets the check option of the view.
+func (v *View) SetCheckOption(opt string) *View {
+	ReplaceOrAppend(&v.Attrs, &ViewCheckOption{V: opt})
+	return v
 }
 
 // NewColumn creates a new column with the given name.
@@ -427,6 +523,13 @@ type TimeOption func(*TimeType)
 func TimePrecision(precision int) TimeOption {
 	return func(b *TimeType) {
 		b.Precision = &precision
+	}
+}
+
+// TimeScale configures the scale of the time type.
+func TimeScale(scale int) TimeOption {
+	return func(b *TimeType) {
+		b.Scale = &scale
 	}
 }
 
@@ -735,6 +838,18 @@ func (f *ForeignKey) SetOnUpdate(o ReferenceOption) *ForeignKey {
 func (f *ForeignKey) SetOnDelete(o ReferenceOption) *ForeignKey {
 	f.OnDelete = o
 	return f
+}
+
+// AddDeps adds the given objects as dependencies to the function.
+func (f *Func) AddDeps(objs ...Object) *Func {
+	f.Deps = append(f.Deps, objs...)
+	return f
+}
+
+// AddDeps adds the given objects as dependencies to the procedure.
+func (p *Proc) AddDeps(objs ...Object) *Proc {
+	p.Deps = append(p.Deps, objs...)
+	return p
 }
 
 // ReplaceOrAppend searches an attribute of the same type as v in

@@ -17,7 +17,7 @@ import (
 )
 
 var (
-	noConn = conn{ExecQuerier: sqlx.NoRows, V: "8.0.31"}
+	noConn = &conn{ExecQuerier: sqlx.NoRows, V: "8.0.31"}
 	// DefaultPlan provides basic planning capabilities for MySQL dialects.
 	// Note, it is recommended to call Open, create a new Driver and use its
 	// migrate.PlanApplier when a database connection is available.
@@ -25,10 +25,10 @@ var (
 )
 
 // A planApply provides migration capabilities for schema elements.
-type planApply struct{ conn }
+type planApply struct{ *conn }
 
 // PlanChanges returns a migration plan for the given schema changes.
-func (p *planApply) PlanChanges(_ context.Context, name string, changes []schema.Change, opts ...migrate.PlanOption) (*migrate.Plan, error) {
+func (p *planApply) PlanChanges(ctx context.Context, name string, changes []schema.Change, opts ...migrate.PlanOption) (*migrate.Plan, error) {
 	s := &state{
 		conn: p.conn,
 		Plan: migrate.Plan{
@@ -40,6 +40,9 @@ func (p *planApply) PlanChanges(_ context.Context, name string, changes []schema
 	}
 	for _, o := range opts {
 		o(&s.PlanOptions)
+	}
+	if err := verifyChanges(ctx, changes); err != nil {
+		return nil, err
 	}
 	if err := s.plan(changes); err != nil {
 		return nil, err
@@ -61,7 +64,7 @@ func (p *planApply) ApplyChanges(ctx context.Context, changes []schema.Change, o
 // planApply so that multiple planning/applying can be called
 // in parallel.
 type state struct {
-	conn
+	*conn
 	migrate.Plan
 	migrate.PlanOptions
 }
@@ -70,7 +73,7 @@ type state struct {
 // given changes on the attached connection.
 func (s *state) plan(changes []schema.Change) error {
 	if s.SchemaQualifier != nil {
-		if err := sqlx.CheckChangesScope(changes); err != nil {
+		if err := sqlx.CheckChangesScope(s.PlanOptions, changes); err != nil {
 			return err
 		}
 	}
@@ -82,7 +85,7 @@ func (s *state) plan(changes []schema.Change) error {
 	if err != nil {
 		return err
 	}
-	for _, c := range planned {
+	for _, c := range sqlx.SortChanges(planned) {
 		switch c := c.(type) {
 		case *schema.AddTable:
 			err = s.addTable(c)
@@ -92,6 +95,32 @@ func (s *state) plan(changes []schema.Change) error {
 			err = s.modifyTable(c)
 		case *schema.RenameTable:
 			s.renameTable(c)
+		case *schema.AddFunc:
+			err = s.addFunc(c)
+		case *schema.AddProc:
+			err = s.addProc(c)
+		case *schema.ModifyFunc:
+			err = s.modifyFunc(c)
+		case *schema.ModifyProc:
+			err = s.modifyProc(c)
+		case *schema.DropFunc:
+			err = s.dropFunc(c)
+		case *schema.DropProc:
+			err = s.dropProc(c)
+		case *schema.AddView:
+			err = s.addView(c)
+		case *schema.DropView:
+			err = s.dropView(c)
+		case *schema.ModifyView:
+			err = s.modifyView(c)
+		case *schema.RenameView:
+			s.renameView(c)
+		case *schema.AddTrigger:
+			err = s.addTrigger(c)
+		case *schema.ModifyTrigger:
+			err = s.modifyTrigger(c)
+		case *schema.DropTrigger:
+			err = s.dropTrigger(c)
 		default:
 			err = fmt.Errorf("unsupported change %T", c)
 		}
@@ -482,7 +511,7 @@ func (s *state) alterTable(t *schema.Table, changes []schema.Change) error {
 		// a reversed order they were created.
 		sqlx.ReverseChanges(reverse)
 		if change.Reverse, err = build(reverse); err != nil {
-			return fmt.Errorf("reversd alter table %q: %v", t.Name, err)
+			return fmt.Errorf("reversed alter table %q: %v", t.Name, err)
 		}
 	}
 	s.append(change)
@@ -569,7 +598,12 @@ func index(b *sqlx.Builder, idx *schema.Index) {
 	switch t := indexType(idx.Attrs); {
 	case idx.Unique:
 		b.P("UNIQUE")
-	case t.T == IndexTypeFullText || t.T == IndexTypeSpatial:
+	case t.T == IndexTypeFullText:
+		if p := (&IndexParser{}); sqlx.Has(idx.Attrs, p) {
+			defer func() { b.P("WITH PARSER").Ident(p.P) }()
+		}
+		b.P(t.T)
+	case t.T == IndexTypeSpatial:
 		b.P(t.T)
 	}
 	b.P("INDEX").Ident(idx.Name)
@@ -729,7 +763,7 @@ func (s *state) columnDefault(b *sqlx.Builder, c *schema.Column) {
 
 // Build instantiates a new builder and writes the given phrase to it.
 func (s *state) Build(phrases ...string) *sqlx.Builder {
-	b := &sqlx.Builder{QuoteChar: '`', Schema: s.SchemaQualifier, Indent: s.Indent}
+	b := &sqlx.Builder{QuoteOpening: '`', QuoteClosing: '`', Schema: s.SchemaQualifier, Indent: s.Indent}
 	return b.P(phrases...)
 }
 

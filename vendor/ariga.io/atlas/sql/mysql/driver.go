@@ -6,6 +6,7 @@ package mysql
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"net/url"
 	"strings"
@@ -22,7 +23,7 @@ type (
 	// Driver represents a MySQL driver for introspecting database schemas,
 	// generating diff between schema elements and apply migrations changes.
 	Driver struct {
-		conn
+		*conn
 		schema.Differ
 		schema.Inspector
 		migrate.PlanApplier
@@ -31,6 +32,8 @@ type (
 	// database connection and its information.
 	conn struct {
 		schema.ExecQuerier
+		// The schema was set in the path (schema connection).
+		schema string
 		// System variables that are set on `Open`.
 		mysqlversion.V
 		collate string
@@ -39,13 +42,21 @@ type (
 	}
 )
 
+var _ interface {
+	migrate.Snapshoter
+	migrate.StmtScanner
+	migrate.CleanChecker
+	schema.TypeParseFormatter
+} = (*Driver)(nil)
+
 // DriverName holds the name used for registration.
 const DriverName = "mysql"
 
 func init() {
 	sqlclient.Register(
 		DriverName,
-		sqlclient.DriverOpener(Open),
+		sqlclient.OpenerFunc(opener),
+		sqlclient.RegisterDriverOpener(Open),
 		sqlclient.RegisterCodec(MarshalHCL, EvalHCL),
 		sqlclient.RegisterFlavours("mysql+unix", "maria", "maria+unix", "mariadb", "mariadb+unix"),
 		sqlclient.RegisterURLParser(parser{}),
@@ -54,7 +65,7 @@ func init() {
 
 // Open opens a new MySQL driver.
 func Open(db schema.ExecQuerier) (migrate.Driver, error) {
-	c := conn{ExecQuerier: db}
+	c := &conn{ExecQuerier: db}
 	rows, err := db.QueryContext(context.Background(), variablesQuery)
 	if err != nil {
 		return nil, fmt.Errorf("mysql: query system variables: %w", err)
@@ -78,18 +89,36 @@ func Open(db schema.ExecQuerier) (migrate.Driver, error) {
 	}, nil
 }
 
-func (d *Driver) dev() *sqlx.DevDriver {
-	return &sqlx.DevDriver{Driver: d, MaxNameLen: 64}
+func opener(_ context.Context, u *url.URL) (*sqlclient.Client, error) {
+	ur := parser{}.ParseURL(u)
+	db, err := sql.Open(DriverName, ur.DSN)
+	if err != nil {
+		return nil, err
+	}
+	drv, err := Open(db)
+	if err != nil {
+		if cerr := db.Close(); cerr != nil {
+			err = fmt.Errorf("%w: %v", err, cerr)
+		}
+		return nil, err
+	}
+	drv.(*Driver).schema = ur.Schema
+	return &sqlclient.Client{
+		Name:   DriverName,
+		DB:     db,
+		URL:    ur,
+		Driver: drv,
+	}, nil
 }
 
 // NormalizeRealm returns the normal representation of the given database.
 func (d *Driver) NormalizeRealm(ctx context.Context, r *schema.Realm) (*schema.Realm, error) {
-	return d.dev().NormalizeRealm(ctx, r)
+	return (&sqlx.DevDriver{Driver: d}).NormalizeRealm(ctx, r)
 }
 
 // NormalizeSchema returns the normal representation of the given database.
 func (d *Driver) NormalizeSchema(ctx context.Context, s *schema.Schema) (*schema.Schema, error) {
-	return d.dev().NormalizeSchema(ctx, s)
+	return (&sqlx.DevDriver{Driver: d}).NormalizeSchema(ctx, s)
 }
 
 // Lock implements the schema.Locker interface.
@@ -128,19 +157,12 @@ func (d *Driver) Snapshot(ctx context.Context) (migrate.RestoreFunc, error) {
 	// If a schema was found, it has to have no tables attached to be considered clean.
 	if s != nil {
 		if len(s.Tables) > 0 {
-			return nil, &migrate.NotCleanError{Reason: fmt.Sprintf("found table %q in schema %q", s.Tables[0].Name, s.Name)}
+			return nil, &migrate.NotCleanError{
+				State:  schema.NewRealm(s),
+				Reason: fmt.Sprintf("found table %q in schema %q", s.Tables[0].Name, s.Name),
+			}
 		}
-		return func(ctx context.Context) error {
-			current, err := d.InspectSchema(ctx, s.Name, nil)
-			if err != nil {
-				return err
-			}
-			changes, err := d.SchemaDiff(current, s)
-			if err != nil {
-				return err
-			}
-			return d.ApplyChanges(ctx, changes)
-		}, nil
+		return d.SchemaRestoreFunc(s), nil
 	}
 	// Otherwise, the database can not have any schema.
 	realm, err := d.InspectRealm(ctx, nil)
@@ -148,19 +170,39 @@ func (d *Driver) Snapshot(ctx context.Context) (migrate.RestoreFunc, error) {
 		return nil, err
 	}
 	if len(realm.Schemas) > 0 {
-		return nil, &migrate.NotCleanError{Reason: fmt.Sprintf("found schema %q", realm.Schemas[0].Name)}
+		return nil, &migrate.NotCleanError{State: realm, Reason: fmt.Sprintf("found schema %q", realm.Schemas[0].Name)}
 	}
+	return d.RealmRestoreFunc(realm), nil
+}
+
+// SchemaRestoreFunc returns a function that restores the given schema to its desired state.
+func (d *Driver) SchemaRestoreFunc(desired *schema.Schema) migrate.RestoreFunc {
+	return func(ctx context.Context) error {
+		current, err := d.InspectSchema(ctx, desired.Name, nil)
+		if err != nil {
+			return err
+		}
+		changes, err := d.SchemaDiff(current, desired)
+		if err != nil {
+			return err
+		}
+		return d.ApplyChanges(ctx, changes)
+	}
+}
+
+// RealmRestoreFunc returns a function that restores the given realm to its desired state.
+func (d *Driver) RealmRestoreFunc(desired *schema.Realm) migrate.RestoreFunc {
 	return func(ctx context.Context) error {
 		current, err := d.InspectRealm(ctx, nil)
 		if err != nil {
 			return err
 		}
-		changes, err := d.RealmDiff(current, realm)
+		changes, err := d.RealmDiff(current, desired)
 		if err != nil {
 			return err
 		}
 		return d.ApplyChanges(ctx, changes)
-	}, nil
+	}
 }
 
 // CheckClean implements migrate.CleanChecker.
@@ -176,7 +218,10 @@ func (d *Driver) CheckClean(ctx context.Context, revT *migrate.TableIdent) error
 		if len(s.Tables) == 0 || (revT.Schema == "" || s.Name == revT.Schema) && len(s.Tables) == 1 && s.Tables[0].Name == revT.Name {
 			return nil
 		}
-		return &migrate.NotCleanError{Reason: fmt.Sprintf("found table %q in schema %q", s.Tables[0].Name, s.Name)}
+		return &migrate.NotCleanError{
+			State:  schema.NewRealm(s),
+			Reason: fmt.Sprintf("found table %q in schema %q", s.Tables[0].Name, s.Name),
+		}
 	}
 	r, err := d.InspectRealm(ctx, nil)
 	if err != nil {
@@ -184,13 +229,13 @@ func (d *Driver) CheckClean(ctx context.Context, revT *migrate.TableIdent) error
 	}
 	switch n := len(r.Schemas); {
 	case n > 1:
-		return &migrate.NotCleanError{Reason: fmt.Sprintf("found multiple schemas: %d", len(r.Schemas))}
+		return &migrate.NotCleanError{State: r, Reason: fmt.Sprintf("found multiple schemas: %d", len(r.Schemas))}
 	case n == 1 && r.Schemas[0].Name != revT.Schema:
-		return &migrate.NotCleanError{Reason: fmt.Sprintf("found schema %q", r.Schemas[0].Name)}
+		return &migrate.NotCleanError{State: r, Reason: fmt.Sprintf("found schema %q", r.Schemas[0].Name)}
 	case n == 1 && len(r.Schemas[0].Tables) > 1:
-		return &migrate.NotCleanError{Reason: fmt.Sprintf("found multiple tables: %d", len(r.Schemas[0].Tables))}
+		return &migrate.NotCleanError{State: r, Reason: fmt.Sprintf("found multiple tables: %d", len(r.Schemas[0].Tables))}
 	case n == 1 && len(r.Schemas[0].Tables) == 1 && r.Schemas[0].Tables[0].Name != revT.Name:
-		return &migrate.NotCleanError{Reason: fmt.Sprintf("found table %q", r.Schemas[0].Tables[0].Name)}
+		return &migrate.NotCleanError{State: r, Reason: fmt.Sprintf("found table %q", r.Schemas[0].Tables[0].Name)}
 	}
 	return nil
 }
@@ -198,6 +243,28 @@ func (d *Driver) CheckClean(ctx context.Context, revT *migrate.TableIdent) error
 // Version returns the version of the connected database.
 func (d *Driver) Version() string {
 	return string(d.conn.V)
+}
+
+// FormatType converts schema type to its column form in the database.
+func (*Driver) FormatType(t schema.Type) (string, error) {
+	return FormatType(t)
+}
+
+// ParseType returns the schema.Type value represented by the given string.
+func (*Driver) ParseType(s string) (schema.Type, error) {
+	return ParseType(s)
+}
+
+// ScanStmts implements migrate.StmtScanner.
+func (*Driver) ScanStmts(input string) ([]*migrate.Stmt, error) {
+	return (&migrate.Scanner{
+		ScannerOptions: migrate.ScannerOptions{
+			MatchBegin: true,
+			// The following are not support by MySQL/MariaDB.
+			MatchBeginAtomic: false,
+			MatchDollarQuote: false,
+		},
+	}).Scan(input)
 }
 
 func acquire(ctx context.Context, conn schema.ExecQuerier, name string, timeout time.Duration) error {
@@ -362,6 +429,9 @@ const (
 	IndexTypeHash     = "HASH"
 	IndexTypeFullText = "FULLTEXT"
 	IndexTypeSpatial  = "SPATIAL"
+
+	IndexParserNGram = "ngram"
+	IndexParserMeCab = "mecab"
 
 	EngineInnoDB = "InnoDB"
 	EngineMyISAM = "MyISAM"

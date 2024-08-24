@@ -40,12 +40,13 @@ type Atlas struct {
 	dropIndexes     bool   // drop deleted indexes
 	withForeignKeys bool   // with foreign keys
 	mode            Mode
-	hooks           []Hook            // hooks to apply before creation
-	diffHooks       []DiffHook        // diff hooks to run when diffing current and desired
-	applyHook       []ApplyHook       // apply hooks to run when applying the plan
-	skip            ChangeKind        // what changes to skip and not apply
-	dir             migrate.Dir       // the migration directory to read from
-	fmt             migrate.Formatter // how to format the plan into migration files
+	hooks           []Hook              // hooks to apply before creation
+	diffHooks       []DiffHook          // diff hooks to run when diffing current and desired
+	diffOptions     []schema.DiffOption // diff options to pass to the diff engine
+	applyHook       []ApplyHook         // apply hooks to run when applying the plan
+	skip            ChangeKind          // what changes to skip and not apply
+	dir             migrate.Dir         // the migration directory to read from
+	fmt             migrate.Formatter   // how to format the plan into migration files
 
 	driver  dialect.Driver // driver passed in when not using an atlas URL
 	url     *url.URL       // url of database connection
@@ -210,7 +211,7 @@ func (a *Atlas) cleanSchema(ctx context.Context, name string, err0 error) (err e
 	}
 	drop := make([]schema.Change, len(s.Tables))
 	for i, t := range s.Tables {
-		drop[i] = &schema.DropTable{T: t}
+		drop[i] = &schema.DropTable{T: t, Extra: []schema.Clause{&schema.IfExists{}}}
 	}
 	return a.atDriver.ApplyChanges(ctx, drop)
 }
@@ -301,6 +302,13 @@ func (f DiffFunc) Diff(current, desired *schema.Schema) ([]schema.Change, error)
 func WithDiffHook(hooks ...DiffHook) MigrateOption {
 	return func(a *Atlas) {
 		a.diffHooks = append(a.diffHooks, hooks...)
+	}
+}
+
+// WithDiffOptions adds a list of options to pass to the diff engine.
+func WithDiffOptions(opts ...schema.DiffOption) MigrateOption {
+	return func(a *Atlas) {
+		a.diffOptions = append(a.diffOptions, opts...)
 	}
 }
 
@@ -564,7 +572,11 @@ func (a *Atlas) StateReader(tables ...*Table) migrate.StateReaderFunc {
 		if err != nil {
 			return nil, err
 		}
-		return &schema.Realm{Schemas: []*schema.Schema{{Tables: ts}}}, nil
+		vs, err := a.views(tables)
+		if err != nil {
+			return nil, err
+		}
+		return &schema.Realm{Schemas: []*schema.Schema{{Tables: ts, Views: vs}}}, nil
 	}
 }
 
@@ -791,17 +803,18 @@ func (a *Atlas) planReplay(ctx context.Context, name string, tables []*Table) (*
 }
 
 func (a *Atlas) diff(ctx context.Context, name string, current, desired *schema.Schema, newTypes []string, opts ...migrate.PlanOption) (*migrate.Plan, error) {
-	changes, err := (&diffDriver{a.atDriver, a.diffHooks}).SchemaDiff(current, desired)
+	changes, err := (&diffDriver{a.atDriver, a.diffHooks}).SchemaDiff(current, desired, a.diffOptions...)
 	if err != nil {
 		return nil, err
 	}
 	filtered := make([]schema.Change, 0, len(changes))
 	for _, c := range changes {
-		// Skip any table drops explicitly. The reason we may encounter this, even though specific tables are passed
-		// to Inspect, is if the MySQL system variable 'lower_case_table_names' is set to 1. In such a case, the given
-		// tables will be returned from inspection because MySQL compares case-insensitive, but they won't match when
-		// compare them in code.
-		if _, ok := c.(*schema.DropTable); !ok {
+		switch c.(type) {
+		// Select only table creation and modification. The reason we may encounter this, even though specific tables
+		// are passed to Inspect, is if the MySQL system variable 'lower_case_table_names' is set to 1. In such a case,
+		// the given tables will be returned from inspection because MySQL compares case-insensitive, but they won't
+		// match when compare them in code.
+		case *schema.AddTable, *schema.ModifyTable:
 			filtered = append(filtered, c)
 		}
 	}
@@ -869,8 +882,14 @@ func (d *db) ExecContext(ctx context.Context, query string, args ...any) (sql.Re
 
 // tables converts an Ent table slice to an atlas table slice
 func (a *Atlas) tables(tables []*Table) ([]*schema.Table, error) {
-	ts := make([]*schema.Table, len(tables))
-	for i, et := range tables {
+	var (
+		byT = make(map[*Table]*schema.Table)
+		ts  = make([]*schema.Table, 0, len(tables))
+	)
+	for _, et := range tables {
+		if et.View {
+			continue
+		}
 		at := schema.NewTable(et.Name)
 		if et.Comment != "" {
 			at.SetComment(et.Comment)
@@ -889,10 +908,14 @@ func (a *Atlas) tables(tables []*Table) ([]*schema.Table, error) {
 		if err := a.aIndexes(et, at); err != nil {
 			return nil, err
 		}
-		ts[i] = at
+		ts = append(ts, at)
+		byT[et] = at
 	}
-	for i, t1 := range tables {
-		t2 := ts[i]
+	for _, t1 := range tables {
+		if t1.View {
+			continue
+		}
+		t2 := byT[t1]
 		for _, fk1 := range t1.ForeignKeys {
 			fk2 := schema.NewForeignKey(fk1.Symbol).
 				SetTable(t2).
@@ -929,6 +952,30 @@ func (a *Atlas) tables(tables []*Table) ([]*schema.Table, error) {
 	return ts, nil
 }
 
+// tables converts an Ent table slice to an atlas table slice
+func (a *Atlas) views(tables []*Table) ([]*schema.View, error) {
+	vs := make([]*schema.View, 0, len(tables))
+	for _, et := range tables {
+		// Not a view, or the view defined externally.
+		if !et.View || et.Annotation == nil || (et.Annotation.ViewAs == "" && et.Annotation.ViewFor[a.dialect] == "") {
+			continue
+		}
+		def := et.Annotation.ViewFor[a.dialect]
+		if def == "" {
+			def = et.Annotation.ViewAs
+		}
+		av := schema.NewView(et.Name, def)
+		if et.Comment != "" {
+			av.SetComment(et.Comment)
+		}
+		if err := a.aVColumns(et, av); err != nil {
+			return nil, err
+		}
+		vs = append(vs, av)
+	}
+	return vs, nil
+}
+
 func (a *Atlas) aColumns(et *Table, at *schema.Table) error {
 	for _, c1 := range et.Columns {
 		c2 := schema.NewColumn(c1.Name).
@@ -950,6 +997,27 @@ func (a *Atlas) aColumns(et *Table, at *schema.Table) error {
 		}
 		if c1.Increment {
 			a.sqlDialect.atIncrementC(at, c2)
+		}
+		at.AddColumns(c2)
+	}
+	return nil
+}
+
+func (a *Atlas) aVColumns(et *Table, at *schema.View) error {
+	for _, c1 := range et.Columns {
+		c2 := schema.NewColumn(c1.Name).
+			SetNull(c1.Nullable)
+		if c1.Collation != "" {
+			c2.SetCollation(c1.Collation)
+		}
+		if c1.Comment != "" {
+			c2.SetComment(c1.Comment)
+		}
+		if err := a.sqlDialect.atTypeC(c1, c2); err != nil {
+			return err
+		}
+		if err := a.atDefault(c1, c2); err != nil {
+			return err
 		}
 		at.AddColumns(c2)
 	}
@@ -1147,14 +1215,14 @@ type diffDriver struct {
 
 // RealmDiff creates the diff between two realms. Since Ent does not care about Realms,
 // not even schema changes, calling this method raises an error.
-func (r *diffDriver) RealmDiff(_, _ *schema.Realm) ([]schema.Change, error) {
+func (r *diffDriver) RealmDiff(_, _ *schema.Realm, _ ...schema.DiffOption) ([]schema.Change, error) {
 	return nil, errors.New("sqlDialect does not support working with realms")
 }
 
 // SchemaDiff creates the diff between two schemas, but includes "diff hooks".
-func (r *diffDriver) SchemaDiff(from, to *schema.Schema) ([]schema.Change, error) {
+func (r *diffDriver) SchemaDiff(from, to *schema.Schema, opts ...schema.DiffOption) ([]schema.Change, error) {
 	var d Differ = DiffFunc(func(current, desired *schema.Schema) ([]schema.Change, error) {
-		return r.Driver.SchemaDiff(current, desired)
+		return r.Driver.SchemaDiff(current, desired, opts...)
 	})
 	for i := len(r.hooks) - 1; i >= 0; i-- {
 		d = r.hooks[i](d)

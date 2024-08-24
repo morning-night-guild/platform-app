@@ -10,6 +10,7 @@ import (
 	"context"
 	"database/sql/driver"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math"
 	"sort"
@@ -298,18 +299,56 @@ func HasNeighborsWith(q *sql.Selector, s *Step, pred func(*sql.Selector)) {
 		q.Where(sql.In(q.C(s.From.Column), join))
 	case s.FromEdgeOwner():
 		to := builder.Table(s.To.Table).Schema(s.To.Schema)
+		// Avoid ambiguity in case both source
+		// and edge tables are the same.
+		if s.To.Table == q.TableName() {
+			to.As(fmt.Sprintf("%s_edge", s.To.Table))
+			// Choose the alias name until we do not
+			// have a collision. Limit to 5 iterations.
+			for i := 1; i <= 5; i++ {
+				if to.C("c") != q.C("c") {
+					break
+				}
+				to.As(fmt.Sprintf("%s_edge_%d", s.To.Table, i))
+			}
+		}
 		matches := builder.Select(to.C(s.To.Column)).
 			From(to)
 		matches.WithContext(q.Context())
+		matches.Where(
+			sql.ColumnsEQ(
+				q.C(s.Edge.Columns[0]),
+				to.C(s.To.Column),
+			),
+		)
 		pred(matches)
-		q.Where(sql.In(q.C(s.Edge.Columns[0]), matches))
+		q.Where(sql.Exists(matches))
 	case s.ToEdgeOwner():
 		to := builder.Table(s.Edge.Table).Schema(s.Edge.Schema)
+		// Avoid ambiguity in case both source
+		// and edge tables are the same.
+		if s.Edge.Table == q.TableName() {
+			to.As(fmt.Sprintf("%s_edge", s.Edge.Table))
+			// Choose the alias name until we do not
+			// have a collision. Limit to 5 iterations.
+			for i := 1; i <= 5; i++ {
+				if to.C("c") != q.C("c") {
+					break
+				}
+				to.As(fmt.Sprintf("%s_edge_%d", s.Edge.Table, i))
+			}
+		}
 		matches := builder.Select(to.C(s.Edge.Columns[0])).
 			From(to)
 		matches.WithContext(q.Context())
+		matches.Where(
+			sql.ColumnsEQ(
+				q.C(s.From.Column),
+				to.C(s.Edge.Columns[0]),
+			),
+		)
 		pred(matches)
-		q.Where(sql.In(q.C(s.From.Column), matches))
+		q.Where(sql.Exists(matches))
 	}
 }
 
@@ -518,6 +557,68 @@ func OrderByNeighborTerms(q *sql.Selector, s *Step, opts ...sql.OrderTerm) {
 			On(q.C(s.From.Column), join.C(s.Edge.Columns[0]))
 	}
 	orderTerms(q, join, opts)
+}
+
+// NeighborsLimit provides a modifier function that limits the
+// number of neighbors (rows) loaded per parent row (node).
+type NeighborsLimit struct {
+	// SrcCTE, LimitCTE and RowNumber hold the identifier names
+	// to src query, new limited one (using window function) and
+	// the column for counting rows.
+	SrcCTE, LimitCTE, RowNumber string
+	// DefaultOrderField sets the default ordering for
+	// sub-queries in case no order terms were provided.
+	DefaultOrderField string
+}
+
+// LimitNeighbors returns a modifier that limits the number of neighbors (rows) loaded per parent
+// row (node). The "partitionBy" is the foreign-key column (edge) to partition the window function
+// by, the "limit" is the maximum number of rows per parent, and the "orderBy" defines the order of
+// how neighbors (connected by the edge) are returned.
+//
+// This function is useful for non-unique edges, such as O2M and M2M, where the same parent can
+// have multiple children.
+func LimitNeighbors(partitionBy string, limit int, orderBy ...sql.Querier) func(*sql.Selector) {
+	l := &NeighborsLimit{
+		SrcCTE:            "src_query",
+		LimitCTE:          "limited_query",
+		RowNumber:         "row_number",
+		DefaultOrderField: "id",
+	}
+	return l.Modifier(partitionBy, limit, orderBy...)
+}
+
+// Modifier returns a modifier function that limits the number of rows of the eager load query.
+func (l *NeighborsLimit) Modifier(partitionBy string, limit int, orderBy ...sql.Querier) func(s *sql.Selector) {
+	return func(s *sql.Selector) {
+		var (
+			d  = sql.Dialect(s.Dialect())
+			rn = sql.RowNumber().PartitionBy(partitionBy)
+		)
+		switch {
+		case len(orderBy) > 0:
+			rn.OrderExpr(orderBy...)
+		case l.DefaultOrderField != "":
+			rn.OrderBy(l.DefaultOrderField)
+		default:
+			s.AddError(errors.New("no order terms provided for window function"))
+			return
+		}
+		s.SetDistinct(false)
+		with := d.With(l.SrcCTE).
+			As(s.Clone()).
+			With(l.LimitCTE).
+			As(
+				d.Select("*").
+					AppendSelectExprAs(rn, l.RowNumber).
+					From(d.Table(l.SrcCTE)),
+			)
+		t := d.Table(l.LimitCTE).As(s.TableName())
+		*s = *d.Select(s.UnqualifiedColumns()...).
+			From(t).
+			Where(sql.LTE(t.C(l.RowNumber), limit)).
+			Prefix(with)
+	}
 }
 
 type (
@@ -971,11 +1072,11 @@ func (q *query) selector(ctx context.Context) (*sql.Selector, error) {
 		selector = q.From
 	}
 	selector.Select(selector.Columns(q.Node.Columns...)...)
-	if pred := q.Predicate; pred != nil {
-		pred(selector)
-	}
 	if order := q.Order; order != nil {
 		order(selector)
+	}
+	if pred := q.Predicate; pred != nil {
+		pred(selector)
 	}
 	if q.Offset != 0 {
 		// Limit is mandatory for the offset clause. We start
@@ -1861,7 +1962,14 @@ func (c *batchCreator) insertLastIDs(ctx context.Context, tx dialect.ExecQuerier
 		defer rows.Close()
 		for i := 0; rows.Next(); i++ {
 			node := c.Nodes[i]
-			if node.ID.Type.Numeric() {
+			switch _, ok := node.ID.Value.(field.ValueScanner); {
+			case ok:
+				// If the ID implements the sql.Scanner
+				// interface it should be a pointer type.
+				if err := rows.Scan(node.ID.Value); err != nil {
+					return err
+				}
+			case node.ID.Type.Numeric():
 				// Normalize the type to int64 to make it looks
 				// like LastInsertId.
 				var id int64
@@ -1869,8 +1977,10 @@ func (c *batchCreator) insertLastIDs(ctx context.Context, tx dialect.ExecQuerier
 					return err
 				}
 				node.ID.Value = id
-			} else if err := rows.Scan(&node.ID.Value); err != nil {
-				return err
+			default:
+				if err := rows.Scan(&node.ID.Value); err != nil {
+					return err
+				}
 			}
 		}
 		return rows.Err()

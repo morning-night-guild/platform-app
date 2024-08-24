@@ -30,6 +30,7 @@ const (
 // Table schema definition for SQL dialects.
 type Table struct {
 	Name        string
+	Schema      string
 	Columns     []*Column
 	columns     map[string]*Column
 	Indexes     []*Index
@@ -37,6 +38,7 @@ type Table struct {
 	ForeignKeys []*ForeignKey
 	Annotation  *entsql.Annotation
 	Comment     string
+	View        bool // Indicate the table is a view.
 }
 
 // NewTable returns a new table with the given name.
@@ -47,9 +49,22 @@ func NewTable(name string) *Table {
 	}
 }
 
+// NewView returns a new view with the given name.
+func NewView(name string) *Table {
+	t := NewTable(name)
+	t.View = true
+	return t
+}
+
 // SetComment sets the table comment.
 func (t *Table) SetComment(c string) *Table {
 	t.Comment = c
+	return t
+}
+
+// SetSchema sets the table schema.
+func (t *Table) SetSchema(s string) *Table {
+	t.Schema = s
 	return t
 }
 
