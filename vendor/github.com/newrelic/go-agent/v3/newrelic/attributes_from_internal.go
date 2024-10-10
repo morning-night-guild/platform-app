@@ -5,10 +5,12 @@ package newrelic
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"math"
 	"net/http"
 	"net/url"
+	"reflect"
 	"sort"
 	"strconv"
 	"strings"
@@ -19,6 +21,9 @@ const (
 	// listed as span attributes to simplify code. It is not listed in the
 	// public attributes.go file for this reason to prevent confusion.
 	spanAttributeQueryParameters = "query_parameters"
+
+	// The collector can only allow attributes to be a maximum of 256 bytes
+	maxAttributeLengthBytes = 256
 )
 
 var (
@@ -29,35 +34,45 @@ var (
 	// attributes.go and add its default destinations here.
 	//
 	agentAttributeDefaultDests = map[string]destinationSet{
-		AttributeHostDisplayName:            usualDests,
-		AttributeRequestMethod:              usualDests,
-		AttributeRequestAccept:              usualDests,
-		AttributeRequestContentType:         usualDests,
-		AttributeRequestContentLength:       usualDests,
-		AttributeRequestHost:                usualDests,
-		AttributeRequestUserAgent:           tracesDests,
-		AttributeRequestUserAgentDeprecated: tracesDests,
-		AttributeRequestReferer:             tracesDests,
-		AttributeRequestURI:                 usualDests,
-		AttributeResponseContentType:        usualDests,
-		AttributeResponseContentLength:      usualDests,
-		AttributeResponseCode:               usualDests,
-		AttributeResponseCodeDeprecated:     usualDests,
-		AttributeAWSRequestID:               usualDests,
-		AttributeAWSLambdaARN:               usualDests,
-		AttributeAWSLambdaColdStart:         usualDests,
-		AttributeAWSLambdaEventSourceARN:    usualDests,
-		AttributeMessageRoutingKey:          usualDests,
-		AttributeMessageQueueName:           usualDests,
-		AttributeMessageExchangeType:        destNone,
-		AttributeMessageReplyTo:             destNone,
-		AttributeMessageCorrelationID:       destNone,
-		AttributeCodeFunction:               usualDests,
-		AttributeCodeNamespace:              usualDests,
-		AttributeCodeFilepath:               usualDests,
-		AttributeCodeLineno:                 usualDests,
-		AttributeUserID:                     usualDests,
-
+		AttributeCloudAccountID:                  usualDests,
+		AttributeMessageDestinationName:          usualDests,
+		AttributeCloudRegion:                     usualDests,
+		AttributeMessageSystem:                   usualDests,
+		AttributeHostDisplayName:                 usualDests,
+		AttributeRequestMethod:                   usualDests,
+		AttributeRequestAccept:                   usualDests,
+		AttributeRequestContentType:              usualDests,
+		AttributeRequestContentLength:            usualDests,
+		AttributeRequestHost:                     usualDests,
+		AttributeRequestUserAgent:                tracesDests,
+		AttributeRequestUserAgentDeprecated:      tracesDests,
+		AttributeRequestReferer:                  tracesDests,
+		AttributeRequestURI:                      usualDests,
+		AttributeResponseContentType:             usualDests,
+		AttributeResponseContentLength:           usualDests,
+		AttributeResponseCode:                    usualDests,
+		AttributeResponseCodeDeprecated:          usualDests,
+		AttributeAWSRequestID:                    usualDests,
+		AttributeAWSLambdaARN:                    usualDests,
+		AttributeAWSLambdaColdStart:              usualDests,
+		AttributeAWSLambdaEventSourceARN:         usualDests,
+		AttributeMessageRoutingKey:               usualDests,
+		AttributeMessageQueueName:                usualDests,
+		AttributeMessageHeaders:                  usualDests,
+		AttributeMessageExchangeType:             destNone,
+		AttributeMessageReplyTo:                  destNone,
+		AttributeMessageCorrelationID:            destNone,
+		AttributeCodeFunction:                    usualDests,
+		AttributeCodeNamespace:                   usualDests,
+		AttributeCodeFilepath:                    usualDests,
+		AttributeCodeLineno:                      usualDests,
+		AttributeUserID:                          usualDests,
+		AttributeLLM:                             usualDests,
+		AttributeServerAddress:                   usualDests,
+		AttributeServerPort:                      usualDests,
+		AttributeSpanKind:                        usualDests,
+		AttributeMessagingDestinationPublishName: usualDests,
+		AttributeRabbitMQDestinationRoutingKey:   usualDests,
 		// Span specific attributes
 		SpanAttributeDBStatement:             usualDests,
 		SpanAttributeDBInstance:              usualDests,
@@ -381,6 +396,36 @@ func validateUserAttribute(key string, val interface{}) (interface{}, error) {
 	return val, nil
 }
 
+// validateUserAttributeUnlimitedSize validates a user attribute without truncating string values.
+func validateUserAttributeUnlimitedSize(key string, val interface{}) (interface{}, error) {
+	switch v := val.(type) {
+	case string, bool,
+		uint8, uint16, uint32, uint64, int8, int16, int32, int64,
+		uint, int, uintptr:
+	case float32:
+		if err := validateFloat(float64(v), key); err != nil {
+			return nil, err
+		}
+	case float64:
+		if err := validateFloat(v, key); err != nil {
+			return nil, err
+		}
+	default:
+		return nil, errInvalidAttributeType{
+			key: key,
+			val: val,
+		}
+	}
+
+	// Attributes whose keys are excessively long are dropped rather than
+	// truncated to avoid worrying about the application of configuration to
+	// truncated values or performing the truncation after configuration.
+	if len(key) > attributeKeyLengthLimit {
+		return nil, invalidAttributeKeyErr{key: key}
+	}
+	return val, nil
+}
+
 func validateFloat(v float64, key string) error {
 	if math.IsInf(v, 0) || math.IsNaN(v) {
 		return invalidFloatAttrValue{
@@ -420,7 +465,16 @@ func addUserAttribute(a *attributes, key string, val interface{}, d destinationS
 func writeAttributeValueJSON(w *jsonFieldsWriter, key string, val interface{}) {
 	switch v := val.(type) {
 	case string:
+		if len(v) > maxAttributeLengthBytes {
+			v = v[:maxAttributeLengthBytes]
+		}
 		w.stringField(key, v)
+	case error:
+		value := v.Error()
+		if len(value) > maxAttributeLengthBytes {
+			value = value[:maxAttributeLengthBytes]
+		}
+		w.stringField(key, value)
 	case bool:
 		if v {
 			w.rawField(key, `true`)
@@ -454,7 +508,17 @@ func writeAttributeValueJSON(w *jsonFieldsWriter, key string, val interface{}) {
 	case float64:
 		w.floatField(key, v)
 	default:
-		w.stringField(key, fmt.Sprintf("%T", v))
+		// attempt to construct a JSON string
+		kind := reflect.ValueOf(v).Kind()
+		if kind == reflect.Struct || kind == reflect.Map || kind == reflect.Slice || kind == reflect.Array {
+			bytes, _ := json.Marshal(v)
+			if len(bytes) > maxAttributeLengthBytes {
+				bytes = bytes[:maxAttributeLengthBytes]
+			}
+			w.stringField(key, string(bytes))
+		} else {
+			w.stringField(key, fmt.Sprintf("%T", v))
+		}
 	}
 }
 
