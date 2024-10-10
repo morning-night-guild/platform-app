@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/url"
 	"reflect"
+	"runtime"
 	"runtime/debug"
 	"sync"
 	"time"
@@ -43,7 +44,8 @@ type txn struct {
 
 	// csecData is used to propagate HTTP request context in async apps,
 	// when NewGoroutine is called.
-	csecData any
+	csecData       any
+	csecAttributes map[string]any
 }
 
 type thread struct {
@@ -118,11 +120,13 @@ func newTxn(app *app, run *appRun, name string, opts ...TraceOption) *thread {
 	if !txnOpts.SuppressCLM && run.Config.CodeLevelMetrics.Enabled && (txnOpts.DemandCLM || run.Config.CodeLevelMetrics.Scope == 0 || (run.Config.CodeLevelMetrics.Scope&TransactionCLM) != 0) {
 		reportCodeLevelMetrics(txnOpts, run, txn.Attrs.Agent.Add)
 	}
+	txn.TraceIDGenerator = run.Reply.TraceIDGenerator
+	traceID := txn.TraceIDGenerator.GenerateTraceID()
+	txn.SetTransactionID(traceID)
 
 	if run.Config.DistributedTracer.Enabled {
 		txn.BetterCAT.Enabled = true
-		txn.TraceIDGenerator = run.Reply.TraceIDGenerator
-		txn.BetterCAT.SetTraceAndTxnIDs(txn.TraceIDGenerator.GenerateTraceID())
+		txn.BetterCAT.SetTraceAndTxnIDs(traceID)
 		txn.BetterCAT.Priority = newPriorityFromRandom(txn.TraceIDGenerator.Float32)
 		txn.ShouldCollectSpanEvents = txn.shouldCollectSpanEvents
 		txn.ShouldCreateSpanGUID = txn.shouldCreateSpanGUID
@@ -442,11 +446,16 @@ func (thd *thread) End(recovered interface{}) error {
 
 	txn.finished = true
 
-	if nil != recovered {
-		e := txnErrorFromPanic(time.Now(), recovered)
-		e.Stack = getStackTrace()
-		thd.noticeErrorInternal(e, nil, false)
-		log.Println(string(debug.Stack()))
+	// It used to be the case that panic(nil) would cause recover() to return nil,
+	// which we test for here. However, that is no longer the case, hence the extra
+	// check at this point to stop panic(nil) from propagating here. (as of Go 1.21)
+	if recovered != nil {
+		if _, isNilPanic := recovered.(*runtime.PanicNilError); !isNilPanic {
+			e := txnErrorFromPanic(time.Now(), recovered)
+			e.Stack = getStackTrace()
+			thd.noticeErrorInternal(e, nil, false)
+			log.Println(string(debug.Stack()))
+		}
 	}
 
 	txn.markEnd(time.Now(), thd.thread)
@@ -523,7 +532,7 @@ func (thd *thread) End(recovered interface{}) error {
 		// segments occur.
 		for _, evt := range txn.SpanEvents {
 			evt.TraceID = txn.BetterCAT.TraceID
-			evt.TransactionID = txn.BetterCAT.TxnID
+			evt.TransactionID = txn.TxnID
 			evt.Sampled = txn.BetterCAT.Sampled
 			evt.Priority = txn.BetterCAT.Priority
 		}
@@ -539,9 +548,12 @@ func (thd *thread) End(recovered interface{}) error {
 	}
 
 	// Note that if a consumer uses `panic(nil)`, the panic will not
-	// propagate.
-	if nil != recovered {
-		panic(recovered)
+	// propagate.  Update: well, not anymore. Go now returns an actual
+	// non-nil value in this case.
+	if recovered != nil {
+		if _, isNilPanic := recovered.(*runtime.PanicNilError); !isNilPanic {
+			panic(recovered)
+		}
 	}
 
 	return nil
@@ -769,6 +781,12 @@ func (txn *txn) SetName(name string) error {
 
 	txn.Name = name
 	return nil
+}
+
+func (txn *txn) GetName() string {
+	txn.Lock()
+	defer txn.Unlock()
+	return txn.Name
 }
 
 func (txn *txn) Ignore() error {
@@ -1138,7 +1156,7 @@ func (thd *thread) CreateDistributedTracePayload(hdrs http.Header) {
 	p.Priority = txn.BetterCAT.Priority
 	p.Timestamp.Set(txn.Reply.DistributedTraceTimestampGenerator())
 	p.TrustedAccountKey = txn.Reply.TrustedAccountKey
-	p.TransactionID = txn.BetterCAT.TxnID // Set the transaction ID to the transaction guid.
+	p.TransactionID = txn.TxnID // Set the transaction ID to the transaction guid.
 	if nil != txn.BetterCAT.Inbound {
 		p.NonTrustedTraceState = txn.BetterCAT.Inbound.NonTrustedTraceState
 		p.OriginalTraceState = txn.BetterCAT.Inbound.OriginalTraceState
@@ -1362,4 +1380,33 @@ func (txn *txn) IsSampled() bool {
 	}
 
 	return txn.lazilyCalculateSampled()
+}
+
+func (txn *txn) getCsecData() any {
+	txn.Lock()
+	defer txn.Unlock()
+	return txn.csecData
+}
+
+func (txn *txn) setCsecData() {
+	txn.Lock()
+	defer txn.Unlock()
+	if txn.csecData == nil && IsSecurityAgentPresent() {
+		txn.csecData = secureAgent.SendEvent("NEW_GOROUTINE", "")
+	}
+}
+
+func (txn *txn) getCsecAttributes() any {
+	txn.Lock()
+	defer txn.Unlock()
+	return txn.csecAttributes
+}
+
+func (txn *txn) setCsecAttributes(key, value string) {
+	txn.Lock()
+	defer txn.Unlock()
+	if txn.csecAttributes == nil {
+		txn.csecAttributes = map[string]any{}
+	}
+	txn.csecAttributes[key] = value
 }
