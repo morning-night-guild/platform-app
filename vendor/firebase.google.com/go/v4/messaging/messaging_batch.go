@@ -47,6 +47,7 @@ type MulticastMessage struct {
 	Android      *AndroidConfig
 	Webpush      *WebpushConfig
 	APNS         *APNSConfig
+	FCMOptions   *FCMOptions
 }
 
 func (mm *MulticastMessage) toMessages() ([]*Message, error) {
@@ -66,6 +67,7 @@ func (mm *MulticastMessage) toMessages() ([]*Message, error) {
 			Android:      mm.Android,
 			Webpush:      mm.Webpush,
 			APNS:         mm.APNS,
+			FCMOptions:   mm.FCMOptions,
 		}
 		messages = append(messages, temp)
 	}
@@ -116,7 +118,7 @@ func (c *fcmClient) SendEachDryRun(ctx context.Context, messages []*Message) (*B
 	return c.sendEachInBatch(ctx, messages, true)
 }
 
-// SendMulticast sends the given multicast message to all the FCM registration tokens specified.
+// SendEachForMulticast sends the given multicast message to all the FCM registration tokens specified.
 //
 // The tokens array in MulticastMessage may contain up to 500 tokens. SendMulticast uses the
 // SendEach() function to send the given message to all the target recipients. The
