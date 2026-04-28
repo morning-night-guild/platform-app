@@ -6,6 +6,8 @@ package newrelic
 import (
 	"bytes"
 	"container/heap"
+	"slices"
+	"strings"
 	"time"
 
 	"github.com/newrelic/go-agent/v3/internal/jsonx"
@@ -60,7 +62,7 @@ type logEventHeap []logEvent
 
 // TODO: when go 1.18 becomes the minimum supported version, re-write to make a generic heap implementation
 // for all event heaps, to de-duplicate this code
-//func (events *logEvents)
+// func (events *logEvents)
 func (h logEventHeap) Len() int           { return len(h) }
 func (h logEventHeap) Less(i, j int) bool { return h[i].priority.isLowerPriority(h[j].priority) }
 func (h logEventHeap) Swap(i, j int)      { h[i], h[j] = h[j], h[i] }
@@ -167,6 +169,26 @@ func (events *logEvents) CollectorJSON(agentRunID string) ([]byte, error) {
 	buf.WriteByte(',')
 	buf.WriteString(`"hostname":`)
 	jsonx.AppendString(buf, events.hostname)
+	if events.config.includeLabels != nil {
+		for k, v := range events.config.includeLabels {
+			if events.config.excludeLabels == nil || !slices.ContainsFunc(*events.config.excludeLabels, func(s string) bool {
+				return strings.ToLower(s) == strings.ToLower(k)
+			}) {
+				buf.WriteByte(',')
+				jsonx.AppendString(buf, "tags."+k)
+				buf.WriteByte(':')
+				jsonx.AppendString(buf, v)
+			}
+		}
+	}
+	if events.config.customAttributes != nil {
+		for k, v := range events.config.customAttributes {
+			buf.WriteByte(',')
+			jsonx.AppendString(buf, k)
+			buf.WriteByte(':')
+			jsonx.AppendString(buf, v)
+		}
+	}
 	buf.WriteByte('}')
 	buf.WriteByte('}')
 	buf.WriteByte(',')

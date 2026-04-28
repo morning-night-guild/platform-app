@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"reflect"
 	"time"
 
 	"github.com/newrelic/go-agent/v3/internal"
@@ -248,6 +249,33 @@ func expectLogEvent(v internal.Validator, actual logEvent, want internal.WantLog
 	if actual.timestamp != want.Timestamp && want.Timestamp != internal.MatchAnyUnixMilli {
 		v.Error(fmt.Sprintf("unexpected log timestamp: got %d, want %d", actual.timestamp, want.Timestamp))
 		return
+	}
+
+	if actual.attributes != nil && want.Attributes != nil {
+		if len(actual.attributes) != len(want.Attributes) {
+			skippedAttributes := []string{}
+			for k := range actual.attributes {
+				if _, ok := want.Attributes[k]; !ok {
+					skippedAttributes = append(skippedAttributes, fmt.Sprintf("an expected attribute is missing: {\"%s\":%v}", k, actual.attributes[k]))
+				}
+			}
+			for k := range want.Attributes {
+				if _, ok := actual.attributes[k]; !ok {
+					skippedAttributes = append(skippedAttributes, fmt.Sprintf("unexpected attribute: {\"%s\":%v}", k, want.Attributes[k]))
+				}
+			}
+			v.Error(fmt.Sprintf("unexpected number of log attributes: got %d, want %d; %s", len(actual.attributes), len(want.Attributes), skippedAttributes))
+			return
+		} else {
+			for k, wantVal := range want.Attributes {
+				actualVal := actual.attributes[k]
+				ok := reflect.DeepEqual(wantVal, actualVal)
+				if !ok {
+					v.Error(fmt.Sprintf("unexpected log attribute for key \"%s\": got value: %+v, type: %T; want value: %+v, type: %T", k, actualVal, actualVal, wantVal, wantVal))
+					return
+				}
+			}
+		}
 	}
 }
 

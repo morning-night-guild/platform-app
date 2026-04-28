@@ -63,6 +63,12 @@ type app struct {
 	// (disconnect, license exception, shutdown).
 	err error
 
+	// registered callback functions
+	llmTokenCountCallback func(string, string) int
+
+	// high water mark alarms
+	heapHighWaterMarkAlarms heapHighWaterMarkAlarmSet
+
 	serverless *serverlessHarvest
 }
 
@@ -112,16 +118,16 @@ func (app *app) doHarvest(h *harvest, harvestStart time.Time, run *appRun) {
 
 		if resp.IsDisconnect() || resp.IsRestartException() {
 			select {
-			case app.collectorErrorChan <- resp:
+			case app.collectorErrorChan <- *resp:
 			case <-app.shutdownStarted:
 			}
 			return
 		}
 
-		if resp.Err != nil {
+		if resp.GetError() != nil {
 			app.Warn("harvest failure", map[string]interface{}{
 				"cmd":         cmd,
-				"error":       resp.Err.Error(),
+				"error":       resp.GetError().Error(),
 				"retain_data": resp.ShouldSaveHarvestData(),
 			})
 		}
@@ -147,15 +153,15 @@ func (app *app) connectRoutine() {
 
 		if resp.IsDisconnect() {
 			select {
-			case app.collectorErrorChan <- resp:
+			case app.collectorErrorChan <- *resp:
 			case <-app.shutdownStarted:
 			}
 			return
 		}
 
-		if nil != resp.Err {
+		if nil != resp.GetError() {
 			app.Warn("application connect failure", map[string]interface{}{
-				"error": resp.Err.Error(),
+				"error": resp.GetError().Error(),
 			})
 		}
 
@@ -252,7 +258,7 @@ func (app *app) process() {
 
 			// Remove the run before merging any final data to
 			// ensure a bounded number of receives from dataChan.
-			app.setState(nil, errors.New("application shut down"))
+			app.setState(nil, errApplicationShutDown)
 
 			if obs := app.getObserver(); obs != nil {
 				if err := obs.shutdown(timeout); err != nil {
@@ -286,7 +292,7 @@ func (app *app) process() {
 			app.setState(nil, nil)
 
 			if resp.IsDisconnect() {
-				app.setState(nil, resp.Err)
+				app.setState(nil, resp.GetError())
 				app.Error("application disconnected", map[string]interface{}{
 					"app": app.config.AppName,
 				})
@@ -538,13 +544,18 @@ var (
 	errHighSecurityEnabled        = errors.New("high security enabled")
 	errCustomEventsDisabled       = errors.New("custom events disabled")
 	errCustomEventsRemoteDisabled = errors.New("custom events disabled by server")
+	errApplicationShutDown        = errors.New("application shut down")
 )
 
 // RecordCustomEvent implements newrelic.Application's RecordCustomEvent.
 func (app *app) RecordCustomEvent(eventType string, params map[string]interface{}) error {
+	var event *customEvent
+	var e error
+
 	if nil == app {
 		return nil
 	}
+
 	if app.config.Config.HighSecurity {
 		return errHighSecurityEnabled
 	}
@@ -553,7 +564,11 @@ func (app *app) RecordCustomEvent(eventType string, params map[string]interface{
 		return errCustomEventsDisabled
 	}
 
-	event, e := createCustomEvent(eventType, params, time.Now())
+	if eventType == "LlmEmbedding" || eventType == "LlmChatCompletionSummary" || eventType == "LlmChatCompletionMessage" {
+		event, e = createCustomEventUnlimitedSize(eventType, params, time.Now())
+	} else {
+		event, e = createCustomEvent(eventType, params, time.Now())
+	}
 	if nil != e {
 		return e
 	}
@@ -593,7 +608,7 @@ func (app *app) RecordCustomMetric(name string, value float64) error {
 	if math.IsInf(value, 0) {
 		return errMetricInf
 	}
-	if "" == name {
+	if name == "" {
 		return errMetricNameEmpty
 	}
 	run, _ := app.getState()
@@ -641,7 +656,7 @@ func (app *app) Consume(id internal.AgentRunID, data harvestable) {
 		return
 	}
 
-	if "" == id {
+	if id == "" {
 		return
 	}
 

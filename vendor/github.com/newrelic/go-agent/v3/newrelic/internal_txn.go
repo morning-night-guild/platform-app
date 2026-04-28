@@ -43,7 +43,8 @@ type txn struct {
 
 	// csecData is used to propagate HTTP request context in async apps,
 	// when NewGoroutine is called.
-	csecData any
+	csecData       any
+	csecAttributes map[string]any
 }
 
 type thread struct {
@@ -51,6 +52,14 @@ type thread struct {
 	// thread does not have locking because it should only be accessed while
 	// the txn is locked.
 	thread *tracingThread
+}
+
+func (thd *thread) IsEnded() bool {
+	txn := thd.txn
+	txn.Lock()
+	defer txn.Unlock()
+
+	return txn.finished
 }
 
 func (txn *txn) markStart(now time.Time) {
@@ -118,11 +127,13 @@ func newTxn(app *app, run *appRun, name string, opts ...TraceOption) *thread {
 	if !txnOpts.SuppressCLM && run.Config.CodeLevelMetrics.Enabled && (txnOpts.DemandCLM || run.Config.CodeLevelMetrics.Scope == 0 || (run.Config.CodeLevelMetrics.Scope&TransactionCLM) != 0) {
 		reportCodeLevelMetrics(txnOpts, run, txn.Attrs.Agent.Add)
 	}
+	txn.TraceIDGenerator = run.Reply.TraceIDGenerator
+	traceID := txn.TraceIDGenerator.GenerateTraceID()
+	txn.SetTransactionID(traceID)
 
 	if run.Config.DistributedTracer.Enabled {
 		txn.BetterCAT.Enabled = true
-		txn.TraceIDGenerator = run.Reply.TraceIDGenerator
-		txn.BetterCAT.SetTraceAndTxnIDs(txn.TraceIDGenerator.GenerateTraceID())
+		txn.BetterCAT.SetTraceAndTxnIDs(traceID)
 		txn.BetterCAT.Priority = newPriorityFromRandom(txn.TraceIDGenerator.Float32)
 		txn.ShouldCollectSpanEvents = txn.shouldCollectSpanEvents
 		txn.ShouldCreateSpanGUID = txn.shouldCreateSpanGUID
@@ -284,7 +295,7 @@ func (txn *txn) freezeName() {
 }
 
 func (txn *txn) getsApdex() bool {
-	return txn.IsWeb
+	return txn.IsWeb && !txn.ignoreApdex
 }
 
 func (txn *txn) shouldSaveTrace() bool {
@@ -386,6 +397,7 @@ func headersJustWritten(thd *thread, code int, hdr http.Header) {
 		e := txnErrorFromResponseCode(time.Now(), code)
 		e.Stack = getStackTrace()
 		expect := txn.appRun.responseCodeIsExpected(code)
+		e.Expect = expect
 		thd.noticeErrorInternal(e, nil, expect)
 	}
 }
@@ -442,7 +454,7 @@ func (thd *thread) End(recovered interface{}) error {
 
 	txn.finished = true
 
-	if nil != recovered {
+	if recovered != nil {
 		e := txnErrorFromPanic(time.Now(), recovered)
 		e.Stack = getStackTrace()
 		thd.noticeErrorInternal(e, nil, false)
@@ -523,7 +535,7 @@ func (thd *thread) End(recovered interface{}) error {
 		// segments occur.
 		for _, evt := range txn.SpanEvents {
 			evt.TraceID = txn.BetterCAT.TraceID
-			evt.TransactionID = txn.BetterCAT.TxnID
+			evt.TransactionID = txn.TxnID
 			evt.Sampled = txn.BetterCAT.Sampled
 			evt.Priority = txn.BetterCAT.Priority
 		}
@@ -538,9 +550,7 @@ func (thd *thread) End(recovered interface{}) error {
 		}
 	}
 
-	// Note that if a consumer uses `panic(nil)`, the panic will not
-	// propagate.
-	if nil != recovered {
+	if recovered != nil {
 		panic(recovered)
 	}
 
@@ -771,6 +781,12 @@ func (txn *txn) SetName(name string) error {
 	return nil
 }
 
+func (txn *txn) GetName() string {
+	txn.Lock()
+	defer txn.Unlock()
+	return txn.Name
+}
+
 func (txn *txn) Ignore() error {
 	txn.Lock()
 	defer txn.Unlock()
@@ -779,6 +795,14 @@ func (txn *txn) Ignore() error {
 		return errAlreadyEnded
 	}
 	txn.ignore = true
+	return nil
+}
+
+func (txn *txn) IgnoreApdex() error {
+	txn.Lock()
+	defer txn.Unlock()
+
+	txn.ignoreApdex = true
 	return nil
 }
 
@@ -1135,10 +1159,9 @@ func (thd *thread) CreateDistributedTracePayload(hdrs http.Header) {
 	p.Account = txn.Reply.AccountID
 	p.App = txn.Reply.PrimaryAppID
 	p.TracedID = txn.BetterCAT.TraceID
-	p.Priority = txn.BetterCAT.Priority
 	p.Timestamp.Set(txn.Reply.DistributedTraceTimestampGenerator())
 	p.TrustedAccountKey = txn.Reply.TrustedAccountKey
-	p.TransactionID = txn.BetterCAT.TxnID // Set the transaction ID to the transaction guid.
+	p.TransactionID = txn.TxnID // Set the transaction ID to the transaction guid.
 	if nil != txn.BetterCAT.Inbound {
 		p.NonTrustedTraceState = txn.BetterCAT.Inbound.NonTrustedTraceState
 		p.OriginalTraceState = txn.BetterCAT.Inbound.OriginalTraceState
@@ -1149,6 +1172,35 @@ func (thd *thread) CreateDistributedTracePayload(hdrs http.Header) {
 	p.SetSampled(false)
 	if txn.numPayloadsCreated < maxSampledDistributedPayloads {
 		p.SetSampled(sampled)
+	}
+
+	if p.isSampled() { // trace parent exists and is sampled
+		switch txn.Config.DistributedTracer.Sampler.RemoteParentSampled {
+		case "always_on":
+			p.Priority = 2.0
+			txn.BetterCAT.Priority = p.Priority
+		case "always_off":
+			p.Priority = 0.0
+			txn.BetterCAT.Priority = p.Priority
+		default:
+			// If the remote parent is sampled, we use the priority from the
+			// transaction's adaptive sampler.
+			p.Priority = txn.BetterCAT.Priority
+		}
+	} else {
+		switch txn.Config.DistributedTracer.Sampler.RemoteParentNotSampled {
+		case "always_on":
+			p.Priority = 2.0
+			txn.BetterCAT.Priority = p.Priority
+
+		case "always_off":
+			p.Priority = 0.0
+			txn.BetterCAT.Priority = p.Priority
+		default:
+			// If the remote parent is not sampled, we use the priority from the
+			// transaction's adaptive sampler.
+			p.Priority = txn.BetterCAT.Priority
+		}
 	}
 
 	support.TraceContextCreateSuccess = true
@@ -1213,7 +1265,7 @@ func (txn *txn) acceptDistributedTraceHeadersLocked(t TransportType, hdrs http.H
 		return errAlreadyAccepted
 	}
 
-	if nil == hdrs {
+	if hdrs == nil {
 		support.AcceptPayloadNullPayload = true
 		return nil
 	}
@@ -1228,11 +1280,11 @@ func (txn *txn) acceptDistributedTraceHeadersLocked(t TransportType, hdrs http.H
 	txn.BetterCAT.TransportType = t.toString()
 
 	payload, err := acceptPayload(hdrs, txn.Reply.TrustedAccountKey, support)
-	if nil != err {
+	if err != nil {
 		return err
 	}
 
-	if nil == payload {
+	if payload == nil {
 		return nil
 	}
 
@@ -1362,4 +1414,36 @@ func (txn *txn) IsSampled() bool {
 	}
 
 	return txn.lazilyCalculateSampled()
+}
+
+func (txn *txn) getCsecData() any {
+	txn.Lock()
+	defer txn.Unlock()
+	return txn.csecData
+}
+
+func (txn *txn) setCsecData() {
+	txn.Lock()
+	defer txn.Unlock()
+	if txn.csecData == nil && IsSecurityAgentPresent() {
+		txn.csecData = secureAgent.SendEvent("NEW_GOROUTINE", "")
+	}
+}
+
+func (txn *txn) getCsecAttributes() map[string]any {
+	txn.Lock()
+	defer txn.Unlock()
+	if txn.csecAttributes == nil {
+		return map[string]any{}
+	}
+	return txn.csecAttributes
+}
+
+func (txn *txn) setCsecAttributes(key string, value any) {
+	txn.Lock()
+	defer txn.Unlock()
+	if txn.csecAttributes == nil {
+		txn.csecAttributes = map[string]any{}
+	}
+	txn.csecAttributes[key] = value
 }
