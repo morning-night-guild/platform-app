@@ -1,6 +1,6 @@
 module github.com/morning-night-guild/platform-app
 
-go 1.20
+go 1.21
 
 require (
 	entgo.io/ent v0.12.3
@@ -14,7 +14,7 @@ require (
 	github.com/golang/mock v1.6.0
 	github.com/google/uuid v1.3.0
 	github.com/lib/pq v1.10.9
-	github.com/mattn/go-sqlite3 v1.14.17
+	github.com/mattn/go-sqlite3 v1.14.52
 	github.com/newrelic/go-agent/v3 v3.23.1
 	github.com/oklog/ulid/v2 v2.1.0
 	github.com/pkg/errors v0.9.1
