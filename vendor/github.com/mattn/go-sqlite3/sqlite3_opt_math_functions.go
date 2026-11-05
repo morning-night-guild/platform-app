@@ -3,7 +3,7 @@
 // Use of this source code is governed by an MIT-style
 // license that can be found in the LICENSE file.
 
-// +build sqlite_math_functions
+//go:build sqlite_math_functions
 
 package sqlite3
 
